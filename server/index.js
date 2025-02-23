@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const pool = require('./config/db'); 
+const db = require('./config/db'); 
+const authRoutes = require('./routes/auth');
 
 dotenv.config();
 
@@ -12,7 +13,10 @@ const port = process.env.PORT || 3000;
 app.use(cors());          // Enable CORS for all routes
 app.use(express.json());  // Parse JSON bodies (for POST requests)
 
-// Test route
+// Routes
+app.use('/api/auth', authRoutes);
+
+
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Leaps' });
 });
@@ -20,7 +24,7 @@ app.get('/', (req, res) => {
 // Database test route
 app.get('/db-test', async (req, res) => {
     try {
-        const result = await pool.query('SELECT NOW()');
+        const result = await db.query('SELECT NOW()');
         res.json(result.rows[0]);
     } catch (err) {
         console.error(err.stack);
