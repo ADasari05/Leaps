@@ -7,7 +7,11 @@ A collaborative trip planning application that helps users coordinate trips with
 
 ### Prerequisites
 - Node.js: Download and install from nodejs.org
-- PostgreSQL: Download and install from postgresql.org
+- PostgreSQL: Download and install version 14 from postgresql.org, or run:
+
+brew install postgresql@14
+
+to automatically download version 14
 
 ### Database Setup
 Start PostgreSQL service:
@@ -18,9 +22,11 @@ Start PostgreSQL service:
    createdb leapsdb
    ```
 
+When prompted for a password, use the password you created at setup for PostgreSQL
+
 ##### For Windows:
     psql -U postgres
-    REATE DATABASE leapsdb;
+    CREATE DATABASE leapsdb;
     \q
 
 
@@ -32,15 +38,9 @@ Navigate to the server directory and install dependencies:
 Create a .env file in the server directory with:
 
     PORT=3000
-    // For Mac
-    DATABASE_URL=postgresql://[username]@localhost:5432/leapsdb
-    
-    // For Windows
+    // For Mac and Windows
     DATABASE_URL=postgresql://postgres:[password]@localhost:5432/leapsdb
 
-
-### Start the server:
-    npm run dev
 
 The server will run on http://localhost:3000.
 
@@ -52,3 +52,11 @@ Start the React development server:
 
     npm start
 The frontend will run on http://localhost:3001.
+
+### Start the server:
+Navigate to the server directory
+Start the server:
+    npm run dev
+
+
+If the server is not connecting to the client, most likely the above order was not followed.
