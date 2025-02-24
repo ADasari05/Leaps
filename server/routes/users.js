@@ -6,10 +6,11 @@ const db = require('../config/db');
 // Update the user's username
 router.put('/update/username', async (req, res) => {
     try {
-        const { id, username } = req.body;
+        const id = req.user.id; // Get from token
+        const { username } = req.body;
 
-        if (!id || !username) {
-            return res.status(400).json({ message: 'User ID and username are required' });
+        if (!username) {
+            return res.status(400).json({ message: 'Username are required' });
         }
 
         const result = await db.query(
@@ -32,10 +33,11 @@ router.put('/update/username', async (req, res) => {
 // Update the user's email
 router.put('/update/email', async (req, res) => {
     try {
-        const { id, email } = req.body;
+        const id = req.user.id;  // Get from token
+        const { email } = req.body;
 
-        if (!id || !email) {
-            return res.status(400).json({ message: 'User ID and email are required' });
+        if (!email) {
+            return res.status(400).json({ message: 'Email are required' });
         }
 
         // Email regex from https://www.regular-expressions.info/email.html
@@ -64,10 +66,11 @@ router.put('/update/email', async (req, res) => {
 // Update the user's password
 router.put('/update/password', async (req, res) => {
     try {
-        const { id, password } = req.body;
+        const id = req.user.id;  // Get from token
+        const { password } = req.body;
 
-        if (!id || !password) {
-            return res.status(400).json({ message: 'User ID and password are required' });
+        if (!password) {
+            return res.status(400).json({ message: 'Password are required' });
         }
 
         if (password.length < 8) {
@@ -98,11 +101,7 @@ router.put('/update/password', async (req, res) => {
 // Delete the user
 router.delete('/delete', async (req, res) => {
     try {
-        const { id } = req.body;
-
-        if (!id) {
-            return res.status(400).json({ message: 'User ID is required' });
-        }
+        const id = req.user.id;  // Get from token
 
         const result = await db.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
 
