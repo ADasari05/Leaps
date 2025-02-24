@@ -38,8 +38,8 @@ Navigate to the server directory and install dependencies:
 Create a .env file in the server directory with:
 
     PORT=3000
-    // For Mac and Windows
-    DATABASE_URL=postgresql://postgres:[password]@localhost:5432/leapsdb
+    // if no password just do user
+    DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
 
 
 The server will run on http://localhost:3000.
