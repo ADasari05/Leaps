@@ -1,0 +1,72 @@
+/* Navbar Container */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #7691ff; /* Match mockup color */
+    padding: 10px 50px;
+    color: white;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 30px;
+    z-index: 1000;
+}
+
+/* Flex container for equal spacing */
+.navbar-container {
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;  /* Equal spacing */
+    align-items: center;
+}
+
+/* Navigation Links */
+.nav-links {
+    display: flex;
+    gap: 30px; /* Controls spacing between links */
+}
+
+/* Individual Nav Items */
+.nav-item {
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.nav-item:hover {
+    color: #ffd700; /* Highlight on hover */
+}
+
+/* Search Bar */
+.search-container {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Allows it to take equal space */
+    max-width: 300px; /* Prevents it from growing too much */
+    transition: max-width 0.3s ease-in-out;
+}
+
+.search-input {
+    padding: 6px 10px;
+    border-radius: 15px 0 0 15px;
+    border: none;
+    outline: none;
+    font-size: 12px;
+    width: 100%;
+    transition: width 0.3s ease-in-out;
+}
+
+.search-input:focus {
+    width: 300px; /* Expanded width */
+}
+
+.search-button {
+    padding: 3.5px 10px;
+    border: none;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 0 20px 20px 0;
+}

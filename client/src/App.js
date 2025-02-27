@@ -30,6 +30,7 @@ import "./styles/auth.css";
 /////////////////////////////////////////
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import AccountPage from "./pages/AccountPage";
@@ -39,13 +40,14 @@ import "./styles/auth.css"
 
 function App() {
   return (
-      <Router>
-          <Routes>
-              <Route path="/accountpage" element={<AccountPage />} /> 
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
-          </Routes>
-      </Router>
+    <Router>
+      <Navbar />
+      <Routes>
+        <Route path="/accountpage" element={<AccountPage />} /> 
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    </Router>
   );
 }
 
