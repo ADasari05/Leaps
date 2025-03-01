@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import AccountPage from "./pages/AccountPage";
 import CreateTrip from "./pages/CreateTrip";
+import Trips from "./pages/Trips";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/accountpage" element={<AccountPage />} />
         <Route path="/createtrip" element={<CreateTrip />} />
+        <Route path="/trips" element={<Trips />} />
       </Routes>
     </Router>
   );

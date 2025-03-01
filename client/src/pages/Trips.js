@@ -1,0 +1,70 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import LeapsLogo from "../assets/Leapspng.png";
+
+const Trips = () => {
+    const [trips, setTrips] = useState([]);
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const navigate = useNavigate();
+    const token = localStorage.getItem('token');
+
+    useEffect(() => {
+        const fetchTrips = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch("http://localhost:3000/api/trips", {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch trips');
+
+                const data = await response.json();
+                setTrips(data);
+            } catch (err) {
+                setError('Error loading trips. Please try again later.');
+                console.error('Error fetching trips:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchTrips();
+    }, [token]);
+
+    return (
+        <div className="trips-container">
+            <img src={LeapsLogo} alt="Leaps Logo" className="logo" />
+            <h2>Your Trips</h2>
+
+            {error && <p className="error">{error}</p>}
+
+            {isLoading ? (
+                <p>Loading trips...</p>
+            ) : ( // Will see how this looks once backend is implemented
+                <div className="trips-list"> 
+                    {trips.length > 0 ? (
+                        trips.map(trip => (
+                            <div key={trip.id} className="trip-item">
+                                <h3>{trip.name}</h3>
+                                <p>{trip.description}</p>
+                                <p><strong>Destination:</strong> {trip.destination}</p>
+                                <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p style={{ color: 'black' }}>No trips found.</p>
+                    )}
+                </div>
+            )}
+
+            <button onClick={() => navigate("/createtrip")} className="create-trip-btn">
+                Create New Trip
+            </button>
+        </div>
+    );
+};
+
+export default Trips;
