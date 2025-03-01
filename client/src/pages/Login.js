@@ -66,7 +66,7 @@ const Login = () => {
                     required 
                 />
                 <button type="submit" disabled={isLoading}>
-                    {isLoading ? "Loggin In..." : "Log In"}    
+                    {isLoading ? "Logging In..." : "Log In"}
                 </button>
             </form>
             <p onClick={() => navigate("/signup")}>New User?</p>
