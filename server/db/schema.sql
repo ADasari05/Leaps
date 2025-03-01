@@ -44,3 +44,16 @@ CREATE TABLE trip_members (
     UNIQUE(trip_id, user_id)
 );
 
+-- Travel Table
+CREATE TABLE travel (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    type VARCHAR(255) NOT NULL,
+    price DOUBLE PRECISION NOT NULL,
+    departure TIMESTAMP NOT NULL,
+    departure_location VARCHAR(255) NOT NULL,
+    arrival TIMESTAMP NOT NULL,
+    arrival_location VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    -- this doesn't work in psql need to create  trigger
+    -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
