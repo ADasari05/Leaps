@@ -2,10 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
-const auth = require('../middleware/auth');
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+router.post('/signup', async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
@@ -47,12 +46,13 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign(
             { id: newUser.rows[0].id }, 
             process.env.JWT_SECRET, 
-            { expiresIn: '12h' }
+            { expiresIn: '1h' }
         );
 
+        const { password_hash, ...userWithoutPassword } = newUser.rows[0];
         res.json({ 
             token,
-            user: userWithoutPassword 
+            user: userWithoutPassword
         });
 
     } catch (err) {
@@ -64,23 +64,24 @@ router.post('/register', async (req, res) => {
 // Login route
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { username, password } = req.body;
 
-        if (!email || !password) {
+        if (!username || !password) {
             return res.status(400).json({ message: 'All fields are required' });
         }
-        
+
+        /*
         // Email regex from https://www.regular-expressions.info/email.html
         const emailRegex = /^[A-Z0-9._%+-]+@(?:[A-Z0-9-]+\.)+[A-Z]{2,}$/i;
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: 'Invalid email format' });
-        }
+        } */
 
 
         // Check if the user exists
         const user = await db.query(
-            'SELECT id, username, email, password_hash FROM users WHERE email = $1', 
-            [email]
+            'SELECT id, username, email, password_hash FROM users WHERE username = $1', 
+            [username]
         );
 
         if (user.rows.length === 0) {
@@ -98,7 +99,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(
             { id: user.rows[0].id }, 
             process.env.JWT_SECRET, 
-            { expiresIn: '12h' }
+            { expiresIn: '1h' }
         );
 
         // return the user without the password
