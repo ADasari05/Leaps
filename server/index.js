@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const db = require('./config/db'); 
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
+const tripRoutes = require('./routes/trips');
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ app.use(express.json());  // Parse JSON bodies (for POST requests)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/trips', tripRoutes);
+
 
 
 app.get('/', (req, res) => {
