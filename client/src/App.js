@@ -34,6 +34,8 @@ import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import AccountPage from "./pages/AccountPage";
+import ResetPassword from "./pages/ResetPassword";
+import './App.css';
 // import AccountPage from "./AccountPage";
 
 function App() {
@@ -46,6 +48,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/accountpage" element={<AccountPage />} /> 
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </Router>
   );

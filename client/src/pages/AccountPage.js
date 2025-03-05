@@ -23,10 +23,10 @@ function AccountPage() {
         setIsLoading(true);
         try {
             
-            const response = await fetch(`http://localhost:3000/api/users/profile`, {
+            const response = await fetch(`/api/users/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
             });
 
             console.log('Profile response status:', response.status);
@@ -87,7 +87,7 @@ function AccountPage() {
             if (userInfo.email) updatedFields.email = userInfo.email;
             if (userInfo.password) updatedFields.password = userInfo.password;
             
-            const response = await fetch(`http://localhost:3000/api/users/update`, {
+            const response = await fetch(`/api/users/update`, {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ function AccountPage() {
         setIsLoading(true);
         
         try {
-            const response = await fetch('http://localhost:3000/api/users/delete', {
+            const response = await fetch('/api/users/delete', {
                 method: 'DELETE',
                 headers: { 
                     'Content-Type': 'application/json',
