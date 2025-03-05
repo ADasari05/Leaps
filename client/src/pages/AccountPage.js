@@ -21,9 +21,11 @@ function AccountPage() {
 
     const fetchUserData = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
+        setSuccess(null);
         try {
             
-            const response = await fetch(`http://localhost:3000/api/users/profile`, {
+            const response = await fetch(`/api/users/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -87,7 +89,7 @@ function AccountPage() {
             if (userInfo.email) updatedFields.email = userInfo.email;
             if (userInfo.password) updatedFields.password = userInfo.password;
             
-            const response = await fetch(`http://localhost:3000/api/users/update`, {
+            const response = await fetch(`/api/users/update`, {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -128,14 +130,16 @@ function AccountPage() {
 
     const handleDeleteAccount = async () => {
         setIsLoading(true);
+        setError(null);
+        setSuccess(null);
         
         try {
-            const response = await fetch('http://localhost:3000/api/users/delete', {
+            const response = await fetch('/api/users/delete', {
                 method: 'DELETE',
                 headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                },
+                }
             });
 
             if (!response.ok) throw new Error('Failed to delete account');

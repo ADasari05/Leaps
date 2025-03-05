@@ -18,7 +18,7 @@ const SignUp = () => {
         setSuccess(null);
         
         try {
-            const response = await fetch("http://localhost:3000/api/auth/signup", {
+            const response = await fetch("/api/auth/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, email, password }),
@@ -48,7 +48,7 @@ const SignUp = () => {
             <img src={LeapsLogo} alt="Leaps Logo" className="logo" />
             <h2>Create Account</h2>
             
-            {error && <p className="error">{error}</p>}
+            {error && <p className="error-message">{error}</p>}
             {success && <div className="success-message">{success}</div>}
             
             <form onSubmit={handleSignUp}>
