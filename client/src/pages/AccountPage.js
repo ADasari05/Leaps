@@ -28,7 +28,7 @@ function AccountPage() {
             const response = await fetch(`/api/users/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
             });
 
             console.log('Profile response status:', response.status);

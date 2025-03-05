@@ -27,6 +27,7 @@ function App() {
         <Route path="/trips" element={<Trips />} />
         <Route path="/accountpage" element={<AccountPage />} /> 
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </Router>
   );
