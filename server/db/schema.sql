@@ -7,7 +7,9 @@ CREATE TABLE users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,                    
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reset_token VARCHAR(255),
+    reset_token_expiry TIMESTAMP
      -- this doesn't work in psql need to create  trigger
      -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -17,7 +19,7 @@ CREATE TABLE users (
 CREATE TABLE friendships (
     user1_id UUID REFERENCES users(id) ON DELETE CASCADE,
     user2_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (user1_id < user2_id)
 );
 
@@ -30,7 +32,7 @@ CREATE TABLE trips (
     destination VARCHAR(255) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_public BOOLEAN DEFAULT false
     -- this doesn't work in psql need to create  trigger
     -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -40,7 +42,7 @@ CREATE TABLE trips (
 CREATE TABLE trip_members (
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, user_id)
 );
 

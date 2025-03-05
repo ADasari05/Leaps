@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const db = require('./config/db'); 
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
+const passwordResetRoutes = require('./routes/password-reset');
 
 dotenv.config();
 
@@ -11,12 +12,13 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());          // Enable CORS for all routes
+app.use(cors({ origin: 'http://localhost:3001' }));   // Enable CORS for all routes
 app.use(express.json());  // Parse JSON bodies (for POST requests)
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/password-reset', passwordResetRoutes);
 
 
 app.get('/', (req, res) => {
