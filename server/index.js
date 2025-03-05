@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const tripRoutes = require('./routes/trips');
 const passwordResetRoutes = require('./routes/password-reset');
+const friendsRoutes = require('./routes/friends'); // Ensure this is present
+
 
 dotenv.config();
 
@@ -21,9 +23,8 @@ app.use(express.json());  // Parse JSON bodies (for POST requests)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/trips', tripRoutes);
-
 app.use('/api/password-reset', passwordResetRoutes);
-
+app.use('/api/friends', friendsRoutes); // Add this if missing
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Leaps' });

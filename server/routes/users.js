@@ -119,4 +119,25 @@ router.delete('/delete', auth, async (req, res) => {
     }
 });
 
+router.get('/search', auth, async (req, res) => {
+    try {
+        const { query } = req.query;
+        if (!query) return res.status(400).json({ message: 'Search query required' });
+
+        const searchTerm = `%${query.toLowerCase()}%`;
+
+        const results = await db.query(
+            `SELECT id, username, email
+             FROM users
+             WHERE LOWER(username) LIKE $1`,
+            [searchTerm]
+        );
+
+        res.json(results.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error while searching users' });
+    }
+});
+
 module.exports = router;

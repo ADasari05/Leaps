@@ -240,6 +240,21 @@ function AccountPage() {
                 </div>
             </div>
 
+            <button 
+                className="manage-friends-btn" 
+                onClick={() => navigate('/friends')}
+                disabled={isLoading}>
+                Manage Friends
+            </button>
+
+            <button     
+                className="log-out-btn" 
+                onClick={handleLogout}
+                disabled={isLoading}> 
+                Logout
+            </button>
+
+
             {/* Delete Account Section */}
             {!showDeleteConfirm ? (
                 <button 
@@ -270,15 +285,6 @@ function AccountPage() {
                     </div>
                 </div>  
             )}
-            
-            {/* Logout Button */}
-            <button     
-                className="logout-btn" 
-                onClick={handleLogout}
-                disabled={isLoading}
-            > 
-                Logout
-            </button>
         </div>
     );
 

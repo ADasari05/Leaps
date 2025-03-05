@@ -1,4 +1,4 @@
-.account-container {
+.friends-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -9,21 +9,6 @@
     margin-right: auto;
 }
 
-/* Edit Button - Smaller and Centered Under Name */
-.edit-btn {
-    background-color: #f3f3f3;
-    border: none;
-    padding: 6px 14px;
-    font-size: 14px;
-    border-radius: 12px;
-    cursor: pointer;
-    margin-top: 14px;
-}
-
-.edit-btn:hover {
-    background-color: #e6e6e6;
-}
-
 /* Profile Section */
 .profile-section {
     display: flex;
@@ -32,14 +17,6 @@
     padding: 20px;
     width: 100%;
     max-width: 400px;
-}
-
-.profile-picture {
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background-color: #d3d3d3;
-    box-shadow: 0 2px 4px rgba(118,145,255,0.3);
 }
 
 .username-title {
@@ -60,10 +37,17 @@
 .account-fields {
     display: flex;
     flex-direction: column;
-    width: 60%;
+    width: 100%;
 }
 
-input {
+.friends-container form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+}
+
+.friends-container input {
     width: 100%;
     padding: 12px 16px;
     margin: 8px 0;
@@ -73,12 +57,13 @@ input {
     box-shadow: 0 2px 4px rgba(118,145,255,0.3);
 }
 
-input:focus {
+.friends-container input:focus {
     border-color: #7691ff;
     box-shadow: 0 1px 6px rgba(118,145,255,0.3);
+    outline: none;
 }
 
-button {
+.friends-container button {
     padding: 10px 16px;
     margin: 5px;
     border: none;
@@ -91,30 +76,77 @@ button {
     transition: all 0.3s ease;
 }
 
-button:hover {
+.friends-container button:hover {
     background-color: #5a78ff;
     transform: translateY(-1px);
 }
 
-.account-fields button {
-    display: inline-block;
-    padding: 8px 15px;
-    font-size: 14px;
-    margin-left: 5px;
+.friends-container button:disabled {
+    background-color: #b4bfff;
+    cursor: not-allowed;
+    transform: none;
 }
 
-.manage-friends-btn {
-    flex-direction: column;
+/* Friends List Container */
+.friends-list-container {
+    width: 60%;
+    margin-top: 30px;
+}
+
+.friends-list-container h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Friends List */
+.friends-list {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+}
+
+.friend-item {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    margin-top: none;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+.friend-item:hover {
+    background-color: #f9f9f9;
+}
+
+.friend-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.friend-name {
+    font-weight: 500;
+    font-size: 16px;
+    color: #333;
+}
+
+.friend-email {
+    font-size: 14px;
+    color: #666;
+    margin-top: 3px;
+}
+
+.no-friends {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
 }
 
 /* Delete Button */
 .delete-btn {
-    width: fit-content;
-    margin-top: 10px;
     background-color: #ff4d4d;
-    padding: 10px 18px;
+    padding: 8px 15px;
     font-size: 14px;
     border-radius: 15px;
 }
@@ -123,60 +155,21 @@ button:hover {
     background-color: #d43f3f;
 }
 
-/* Delete Confirmation Container */
-.delete-confirm-text {
-    margin-top: 20px;
-    font-size: 16px;
-    font-weight: 500;
-    padding: 10px 16px;
-}
-
-/* Delete Confirmation Buttons */
-.delete-confirm-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-.delete-confirm-buttons button {
-    font-weight: 500;
-    padding: 10px 20px;
-    min-width: 100px;
-    cursor: pointer;
-}
-
-.delete-confirm-buttons .delete-btn {
-    background-color: #ff4d4d;
-    margin-top: 0; /* Reset the top margin since this is in a button group */
-}
-
-.delete-confirm-buttons .delete-btn:hover {
-    background-color: #d43f3f;
-}
-
-.delete-confirm-buttons .cancel-btn {
-    background-color: #e0e0e0;
-    margin-top: 0; /* Reset the top margin since this is in a button group */
-}
-
-.delete-confirm-buttons .cancel-btn:hover {
-    background-color: #e6e6e6;
-}
-
-
-.log-out-btn {
+/* Back to Account button */
+.back-btn {
     width: fit-content;
-    margin-top: none;
-    background-color: #9b9898; /* Gray color */
+    margin-top: 40px;
+    background-color: #9b9898;
     padding: 8px 15px;
     font-size: 14px;
     border-radius: 15px;
 }
 
-.log-out-btn:hover {
+.back-btn:hover {
     background-color: #7c7b7b;
 }
 
+/* Success and Error Messages */
 .success-message {
     color: #2e7d32;
     margin-top: 16px;
@@ -185,6 +178,8 @@ button:hover {
     border-radius: 8px;
     font-weight: 500;
     animation: fadeIn 0.3s ease;
+    width: 60%;
+    text-align: center;
 }
 
 .error-message {
@@ -195,10 +190,11 @@ button:hover {
     border-radius: 8px;
     font-weight: 500;
     animation: fadeIn 0.3s ease;
+    width: 60%;
+    text-align: center;
 }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-

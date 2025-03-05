@@ -54,7 +54,7 @@ router.delete('/remove', auth, async (req, res) => {
         const result = await db.query(
             `DELETE FROM friendships 
              WHERE user1_id = $1 AND user2_id = $2
-             RETURNING *`
+             RETURNING *`,
             [smaller_id, larger_id]
         );
 
@@ -66,6 +66,37 @@ router.delete('/remove', auth, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error while removing friend' });
+    }
+});
+
+router.get('/search', auth, async (req, res) => {
+    try {
+        const { query } = req.query; // e.g., ?query=nath
+        if (!query) return res.status(400).json({ message: 'Search query required' });
+
+        const user_id = req.user.id;
+        const searchTerm = `%${query.toLowerCase()}%`;
+
+        const results = await db.query(
+            `SELECT id, username, email
+             FROM users
+             WHERE LOWER(username) LIKE $1
+             AND id != $2
+             AND id NOT IN (
+                 SELECT CASE
+                     WHEN user1_id = $2 THEN user2_id
+                     WHEN user2_id = $2 THEN user1_id
+                 END
+                 FROM friendships
+                 WHERE user1_id = $2 OR user2_id = $2
+             )`,
+            [searchTerm, user_id]
+        );
+
+        res.json(results.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error while searching users' });
     }
 });
 

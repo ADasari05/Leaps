@@ -11,6 +11,8 @@ import AccountPage from "./pages/AccountPage";
 import CreateTrip from "./pages/CreateTrip";
 import Trips from "./pages/Trips";
 import ResetPassword from "./pages/ResetPassword";
+import Friends from './pages/Friends';
+import Users from './pages/Users';
 import './App.css';
 // import AccountPage from "./AccountPage";
 
@@ -27,9 +29,10 @@ function App() {
         <Route path="/trips" element={<Trips />} />
         <Route path="/accountpage" element={<AccountPage />} /> 
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/friends" element={<Friends />} />
+        <Route path="/users" element={<Users />} /> 
       </Routes>
-    </Router>
+  </Router>
   );
 }
 
