@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import dummyTrips from "../data/dummyTrips.json"; // Import the dummy trips
+import "../styles/TripDetails.css";
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -25,9 +25,6 @@ const TripDetails = () => {
                 setTrip(data);
             } catch (err) {
                 setError('Error loading trip. Please try again later.');
-                console.error('Error fetching trip:', err);
-                const dummyTrip = dummyTrips.find(trip => trip.id === id); // Use dummy trip if API call fails
-                setTrip(dummyTrip);
             } finally {
                 setIsLoading(false);
             }
@@ -37,11 +34,15 @@ const TripDetails = () => {
     }, [id, token]);
 
     if (isLoading) {
-        return <p className="loading">Loading trip details...</p>;
+        <div className="trip-details">
+            return <p className="loading">Loading trip details...</p>;
+        </div>;
     }
 
     if (error) {
-        return <p className="error">{error}</p>;
+        <div className="trip-details">
+            <p className="error">{error}</p>
+        </div>;
     }
 
     return (
@@ -52,7 +53,6 @@ const TripDetails = () => {
                     <p>{trip.description}</p>
                     <p><strong>Destination:</strong> {trip.destination}</p>
                     <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                    {/* Add form or buttons for editing the trip details here */}
                 </>
             ) : (
                 <p className="error">Trip not found.</p>

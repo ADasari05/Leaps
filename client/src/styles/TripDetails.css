@@ -1,0 +1,32 @@
+.trip-details {
+    padding: 20px;
+    padding-top: 60px; /* Add padding to move content below the navbar */
+    text-align: left;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.trip-details h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.trip-details p {
+    color: #333;
+    margin: 5px 0;
+}
+
+.error {
+    color: red;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.loading {
+    color: blue;
+    font-weight: bold;
+    margin: 10px 0;
+}
