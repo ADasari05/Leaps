@@ -34,12 +34,23 @@ When prompted for a password, use the password you created at setup for PostgreS
 ### Backend Setup (Server)
 Navigate to the server directory and install dependencies:
 
-    npm install express cors dotenv bcryptjs jsonwebtoken pg uuid
+    npm install express cors dotenv bcryptjs jsonwebtoken pg uuid 
+
+##Future installs after intial set up
+   
+   ```
+   npm install nodemailer
+   ```
 Create a .env file in the server directory with:
 
     PORT=3000
     // if no password just do user
     DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
+    JWT_SECRET=secret-key
+    EMAIL_USER= (your email you want it to come from -- will set up leaps gmail account in future)
+    EMAIL_PASS= (GMAIL app key -- https://myaccount.google.com/apppasswords  )
+    TICKETMASTER_API_KEY= (create a ticketmaster API key -- consumer key --- https://developer.ticketmaster.com/explore/  )
+
 
 
 The server will run on http://localhost:3000.
@@ -57,6 +68,10 @@ The frontend will run on http://localhost:3001.
 Navigate to the server directory
 Start the server:
     npm run dev
+
+
+
+
 
 
 If the server is not connecting to the client, most likely the above order was not followed.
