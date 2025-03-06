@@ -10,6 +10,7 @@ import SignUp from "./pages/SignUp";
 import AccountPage from "./pages/AccountPage";
 import CreateTrip from "./pages/CreateTrip";
 import Trips from "./pages/Trips";
+import TripDetails from "./pages/TripDetails";
 import ResetPassword from "./pages/ResetPassword";
 import Friends from './pages/Friends';
 import Users from './pages/Users';
@@ -27,7 +28,7 @@ function App() {
         <Route path="/accountpage" element={<AccountPage />} />
         <Route path="/createtrip" element={<CreateTrip />} />
         <Route path="/trips" element={<Trips />} />
-        <Route path="/accountpage" element={<AccountPage />} /> 
+        <Route path="/trips/:id" element={<TripDetails />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/users" element={<Users />} /> 

@@ -20,6 +20,28 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+// Get a single trip by ID
+router.get('/:id', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id; // From auth middleware
+
+        const result = await db.query(
+            'SELECT * FROM trips WHERE id = $1 AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))',
+            [tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error fetching trip:', err);
+        res.status(500).json({ message: 'Server error fetching trip' });
+    }
+});
+
 // Create a new trip
 router.post('/', auth, async (req, res) => {
     try {

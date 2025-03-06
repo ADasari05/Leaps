@@ -1,0 +1,61 @@
+.trips-container {
+    padding-top: 25px; /* Add padding to push content below the navbar */
+    text-align: center; /* Center align the content */
+}
+
+.trips-container h2 {
+    color: black; /* Make the "Your Trips" text black */
+}
+
+.trip-item {
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.trip-item h3 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.5em;
+    color: #333;
+    cursor: pointer;
+}
+
+.trip-item h3:hover {
+    color: blue;
+    text-decoration: underline;
+}
+
+.trip-item p {
+    margin: 5px 0;
+    color: #333;
+}
+
+.trip-item p:hover {
+    color: #333; /* Ensure the color does not change on hover */
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+.error {
+    color: red;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.error:hover {
+    color: red; /* Ensure the color does not change on hover */
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+.loading {
+    color: blue;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.loading:hover {
+    color: blue; /* Ensure the color does not change on hover */
+    text-decoration: none; /* Ensure no underline on hover */
+}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
+import "../styles/Trips.css";
+import dummyTrips from "../data/dummyTrips.json"; // Import the dummy trips
 
 const Trips = () => {
     const [trips, setTrips] = useState([]);
@@ -26,6 +28,7 @@ const Trips = () => {
             } catch (err) {
                 setError('Error loading trips. Please try again later.');
                 console.error('Error fetching trips:', err);
+                setTrips(dummyTrips); // Use dummy trips if API call fails
             } finally {
                 setIsLoading(false);
             }
@@ -42,13 +45,15 @@ const Trips = () => {
             {error && <p className="error">{error}</p>}
 
             {isLoading ? (
-                <p>Loading trips...</p>
-            ) : ( // Will see how this looks once backend is implemented
+                <p className="loading">Loading trips...</p>
+            ) : (
                 <div className="trips-list"> 
                     {trips.length > 0 ? (
                         trips.map(trip => (
                             <div key={trip.id} className="trip-item">
-                                <h3>{trip.name}</h3>
+                                <Link to={`/trips/${trip.id}`}>
+                                    <h3>{trip.name}</h3>
+                                </Link>
                                 <p>{trip.description}</p>
                                 <p><strong>Destination:</strong> {trip.destination}</p>
                                 <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
