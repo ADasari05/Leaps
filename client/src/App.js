@@ -18,6 +18,8 @@ import ViewEvent from "./pages/ViewEvent";
 import ViewLodging from "./pages/ViewLodging";
 import Events from "./pages/Events";
 import Search from './pages/SearchPage';
+import Lodgings from "./pages/Lodgings";
+import Travel from "./pages/Travel";
 import './App.css';
 // import AccountPage from "./AccountPage";
 
@@ -38,11 +40,13 @@ function App() {
         <Route path="/users" element={<Users />} />
         <Route path="/viewevent/:id" element={<ViewEvent />} />
         <Route path="/viewlodging/:id" element={<ViewLodging />} />
-        <Route path="/events" element={<Events/>} />
+        <Route path="/events" element={<Events />} />
         <Route path="/users" element={<Users />} /> 
         <Route path="/search" element={<Search />} />
+        <Route path="/lodgings" element={<Lodgings />} />
+        <Route path="/travel" element={<Travel />} />
       </Routes>
-  </Router>
+    </Router>
   );
 }
 

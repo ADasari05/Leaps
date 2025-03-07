@@ -8,7 +8,9 @@ const tripRoutes = require('./routes/trips');
 const passwordResetRoutes = require('./routes/password-reset');
 const friendsRoutes = require('./routes/friends');
 const searchRoutes = require('./routes/search');
-
+const lodgingsRoutes = require('./routes/lodgings');
+const travelRoutes = require('./routes/travel');
+const eventsRoutes = require('./routes/Events');
 
 dotenv.config();
 
@@ -26,6 +28,9 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/friends', friendsRoutes); 
 app.use('/api/search', searchRoutes);
+app.use('/api/lodgings', lodgingsRoutes);
+app.use('/api/travel', travelRoutes);
+app.use('/api/events', eventsRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Leaps' });

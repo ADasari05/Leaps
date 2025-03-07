@@ -21,7 +21,7 @@ const TripDetails = () => {
         const fetchTrip = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+                const response = await fetch(`/api/trips/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -155,7 +155,7 @@ const TripDetails = () => {
 
     const handleSaveTrip = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+            const response = await fetch(`/api/trips/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ const TripDetails = () => {
         const confirmed = window.confirm('Are you sure you want to delete this trip?');
         if (confirmed) {
             try {
-                const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+                const response = await fetch(`/api/trips/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -200,6 +200,194 @@ const TripDetails = () => {
             }
         }
     };
+
+    const handleDeleteItem = async (tripId, itemType, itemId) => {
+        if (window.confirm('Are you sure you want to remove this item from the trip?')) {
+          try {
+            console.log(`Attempting to delete: tripId=${tripId}, itemType=${itemType}, itemId=${itemId}`);
+            
+            const url = `/api/trips/items/${tripId}/${itemType}/${itemId}`;
+            console.log('Delete request URL:', url);
+            
+            const response = await fetch(url, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              console.error('Server response:', response.status, errorData);
+              throw new Error(`Failed to delete item: ${response.status}`);
+            }
+            
+            // Update local state to reflect the deletion
+            setTrip(prevTrip => ({
+              ...prevTrip,
+              items: prevTrip.items.filter(item => 
+                !(item.trip_id === tripId && item.item_type === itemType && item.item_id === itemId)
+              )
+            }));
+            
+          } catch (err) {
+            console.error('Error deleting item:', err);
+            setError('Failed to remove item from trip');
+          }
+        }
+    };
+
+
+    const fetchItemDetails = async (type, id) => {
+        console.log(`Fetching details for ${type} with ID: ${id}`);
+        if (type === 'events') {
+          try {
+            navigate(`/viewevent/${id}`);
+          } catch (err) {
+            console.error('Error fetching event details:', err);
+          }
+        } else if (type === 'lodging') {
+            try {
+              // Navigate to lodging page if you have one
+              navigate(`/lodging/${id}`);
+            } catch (err) {
+              console.error('Error navigating to lodging:', err);
+            }
+          } else if (type === 'travel') {
+            try {
+              // Navigate to travel page if you have one
+              navigate(`/travel/${id}`);
+            } catch (err) {
+              console.error('Error navigating to travel:', err);
+            }
+          } else {
+            console.log(`Item type ${type} not supported for viewing details`);
+          }
+    };
+
+    const ItemPreview = ({ type, id }) => {
+        const [preview, setPreview] = useState(null);
+        const [loading, setLoading] = useState(true);
+        
+        useEffect(() => {
+          const fetchPreview = async () => {
+            setLoading(true);
+            try {
+              let endpoint;
+              if (type === 'events') {
+                endpoint = `/api/events/${id}`;
+              } else if (type === 'lodging') {
+                endpoint = `/api/lodging/${id}`;
+              } else if (type === 'travel') {
+                endpoint = `/api/travel/${id}`;
+              }
+              
+              if (endpoint) {
+                const response = await fetch(endpoint, {
+                  headers: { 'Authorization': `Bearer ${token}` },
+                });
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  setPreview(data);
+                }
+              }
+            } catch (err) {
+              console.error(`Error fetching ${type} preview:`, err);
+            } finally {
+              setLoading(false);
+            }
+          };
+          
+          fetchPreview();
+        }, [type, id]);
+        
+        if (loading) return <p>Loading...</p>;
+        
+        if (!preview) return (
+          <div className="preview-placeholder">
+            <p>{type.charAt(0).toUpperCase() + type.slice(1)} item</p>
+            <p className="preview-id">ID: {id.slice(0, 8)}...</p>
+          </div>
+        );
+        
+        // Render different previews based on item type
+        if (type === 'events') {
+          return (
+            <div className="event-preview">
+              {preview.image && (
+                <img src={preview.image} alt={preview.name} className="preview-image" />
+              )}
+              <h5>{preview.name}</h5>
+              <p>{preview.date} | {preview.location}</p>
+            </div>
+          );
+        } else if (type === 'lodging') {
+          return (
+            <div className="lodging-preview">
+              <h5>{preview.name}</h5>
+              <p>{preview.location}</p>
+            </div>
+          );
+        } else if (type === 'travel') {
+          return (
+            <div className="travel-preview">
+              <h5>{preview.type}</h5>
+              <p>{preview.departure_location} → {preview.arrival_location}</p>
+            </div>
+          );
+        }
+        
+        return <p>Unknown item type</p>;
+    };
+
+    
+    const renderTripItems = () => {
+        if (!trip.items || trip.items.length === 0) {
+          return <p>No items added to this trip yet.</p>;
+        }
+      
+        // Group items by type
+        const groupedItems = trip.items.reduce((acc, item) => {
+          const type = item.item_type;
+          if (!acc[type]) {
+            acc[type] = [];
+          }
+          acc[type].push(item);
+          return acc;
+        }, {});
+      
+        return (
+          <div className="trip-items">
+            <h3>Trip Items</h3>
+            
+            {Object.entries(groupedItems).map(([type, items]) => (
+              <div key={type} className="item-type-section">
+                <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+                <div className="items-grid">
+                  {items.map((item) => (
+                    <div key={item.id} className="trip-item-card">
+                      <ItemPreview type={item.item_type} id={item.item_id} />
+                      <button 
+                        onClick={() => fetchItemDetails(item.item_type, item.item_id)}
+                        className="view-details-btn"
+                      >
+                        View Details
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
+                        className="delete-item-btn"
+                      >
+                        Remove
+                        </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      };
 
     if (isLoading) {
         return <div className="trip-details"><p className="loading">Loading trip details...</p></div>;
@@ -250,6 +438,7 @@ const TripDetails = () => {
                             <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
                         </>
                     )}
+                    {renderTripItems()}
                     
                     <div className="add-friend">
                         <h3>Trip Members</h3>
