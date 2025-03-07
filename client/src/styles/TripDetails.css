@@ -1,22 +1,77 @@
 .trip-details {
     padding: 20px;
     padding-top: 60px; /* Add padding to move content below the navbar */
-    text-align: left;
-    max-width: 600px;
+    text-align: center;
     margin: 0 auto;
     background-color: #f9f9f9;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
 
-.trip-details h2 {
+.trip-details h2,
+.trip-details input,
+.trip-details textarea {
     color: #333;
     margin-bottom: 10px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 }
 
 .trip-details p {
     color: #333;
     margin: 5px 0;
+}
+
+.trip-details p:hover,
+.trip-details h2:hover {
+    color: #333;
+    text-decoration: none;
+}
+
+.trip-details ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.trip-details li {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+.add-event-btn,
+.edit-trip-btn,
+.save-trip-btn,
+.delete-trip-btn,
+.remove-event-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.add-event-btn:hover,
+.edit-trip-btn:hover,
+.save-trip-btn:hover {
+    background-color: #0056b3;
+}
+
+.delete-trip-btn,
+.remove-event-btn {
+    background-color: #dc3545;
+}
+
+.delete-trip-btn:hover,
+.remove-event-btn:hover {
+    background-color: #c82333;
 }
 
 .error {

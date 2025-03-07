@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useNavigate} from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import "./Navbar.css"; // Import styles
 import LeapsLogo from "../assets/Leapspng.png";
 
@@ -11,14 +11,12 @@ const Navbar = () => {
 
     return (
         <nav className="navbar">
-            {/*Home button*/}
-            <div className="home">
-                    <Link to="/signup">
-                        <img src={LeapsLogo} alt="Home" className="home"/>
-                    </Link>
-            </div>
+            
             <div className="navbar-container">
-                
+                {/*Home button*/}
+                <Link to="/signup">
+                        <img src={LeapsLogo} alt="Home" className="home"/>
+                </Link>
 
 
                 <div className="nav-links">

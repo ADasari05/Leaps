@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
 import "../styles/Trips.css";
+//import dummyTrips from "../data/dummyTrips.json"; // Import the dummy trips
+
 
 const Trips = () => {
     const [trips, setTrips] = useState([]);
@@ -28,6 +30,7 @@ const Trips = () => {
             } catch (err) {
                 setError('Error loading trips. Please try again later.');
                 console.error('Error fetching trips:', err);
+                //setTrips(dummyTrips); // Use dummy trips if API call fails
             } finally {
                 setIsLoading(false);
             }

@@ -16,7 +16,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:3001'}));
+app.use(cors({ origin: 'http://localhost:3001' }));   // Enable CORS for all routes
 app.use(express.json());  // Parse JSON bodies (for POST requests)
 
 // Routes
