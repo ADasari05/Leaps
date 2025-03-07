@@ -19,7 +19,7 @@ const TripDetails = () => {
         const fetchTrip = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+                const response = await fetch(`/api/trips/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -128,7 +128,7 @@ const TripDetails = () => {
         const confirmed = window.confirm('Are you sure you want to delete this trip?');
         if (confirmed) {
             try {
-                const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+                const response = await fetch(`/api/trips/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -207,6 +207,11 @@ const TripDetails = () => {
                             ))}
                         </select>
                         <button onClick={handleAddFriend} className="add-friend-btn">Add Friend</button>
+                    </div>
+
+                    <div>
+                        <h3>Share by Link</h3>
+                        <p>Link: http://localhost:3001/trips/{id}/share</p>
                     </div>
 
                     <h3>Events</h3>

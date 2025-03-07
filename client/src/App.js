@@ -18,6 +18,7 @@ import ViewEvent from "./pages/ViewEvent";
 import ViewLodging from "./pages/ViewLodging";
 import Events from "./pages/Events";
 import Search from './pages/SearchPage';
+import Share from './pages/Share';
 import './App.css';
 // import AccountPage from "./AccountPage";
 
@@ -33,6 +34,7 @@ function App() {
         <Route path="/createtrip" element={<CreateTrip />} />
         <Route path="/trips" element={<Trips />} />
         <Route path="/trips/:id" element={<TripDetails />} />
+        <Route path="/trips/:id/share" element={<Share />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/users" element={<Users />} />

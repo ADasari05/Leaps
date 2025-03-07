@@ -181,6 +181,7 @@ router.post('/:id/add-friend', auth, async (req, res) => {
         const { friendId } = req.body;
         const tripId = req.params.id;
         const userId = req.user.id; // The authenticated user
+        console.log("add friend");
 
         // Check if the friend is in the user's friends list
         const friendCheck = await db.query(
@@ -222,6 +223,35 @@ router.post('/:id/add-friend', auth, async (req, res) => {
     } catch (err) {
         console.error('Error adding friend to trip:', err);
         res.status(500).json({ message: 'Server error adding friend to trip' });
+    }
+});
+
+//add a friend to a trip by link
+router.post('/:id/share', auth, async (req, res) => {
+    console.log("in route");
+    try {
+        //check if the user is logged in
+        const userId = req.user.id;
+        const tripId = req.params.id;
+        console.log("user: ", userId);
+        console.log("trip: ", tripId)
+
+        const insertResult = await db.query(
+            `INSERT INTO trip_members (trip_id, user_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT DO NOTHING RETURNING *`,
+            [tripId, userId]
+        );
+
+        if (insertResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Link has expired' });
+        }
+
+        res.status(200).json({ message: 'friend added successfully by link' });
+
+    } catch (err) {
+        console.error('Error adding friend to trip by link');
+        res.status(500).json({ message: 'Server error adding friend to trip by link' });
     }
 });
 

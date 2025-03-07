@@ -18,6 +18,10 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors({ origin: 'http://localhost:3001' }));   // Enable CORS for all routes
 app.use(express.json());  // Parse JSON bodies (for POST requests)
+app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.url}`);
+    next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
