@@ -37,7 +37,7 @@ const CreateTrip = () => {
             if (response.ok) {
                 setSuccess("Trip created successfully!");
                 setTimeout(() => {
-                    navigate("/accountpage");
+                    navigate("/trips");
                 }, 1000);
             } else {
                 setError(data.message);
