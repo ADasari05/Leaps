@@ -146,6 +146,9 @@ const Lodgings = () => {
                         <button onClick={() => { setSelectedLodging(lodging); setIsModalOpen(true); }}>
                             Add to Trip
                         </button>
+                        <button onClick={() => window.open('https://www.booking.com', '_blank')}>
+                            Book Lodging
+                        </button>
                     </li>
                 ))}
             </ul>
