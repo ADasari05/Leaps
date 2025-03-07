@@ -270,6 +270,9 @@ router.post('/:id/share', auth, async (req, res) => {
     } catch (err) {
         console.error('Error adding friend to trip by link');
         res.status(500).json({ message: 'Server error adding friend to trip by link' });
+    }
+});
+
 router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
     // if (memberId == userId) {
     //     return res.status(403).json({ message: 'You cannot remove yourself from the trip.' });
