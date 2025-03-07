@@ -154,7 +154,8 @@ router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
     }
 });
 
-router.post('/add-item', async (req, res) => {
+// Add an item (event, travel, lodging) to a trip
+router.post('/add-item', auth, async (req, res) => {
     const { tripId, itemType, itemId } = req.body;
     console.log("Received:", { tripId, itemType, itemId });
     try {
@@ -168,6 +169,7 @@ router.post('/add-item', async (req, res) => {
       res.status(500).json({ error: 'Failed to add item' });
     }
 });
+
 
 router.delete('/items/:tripId/:itemType/:itemId', auth, async (req, res) => {
     const { tripId, itemType, itemId } = req.params;
