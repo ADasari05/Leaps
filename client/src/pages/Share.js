@@ -1,0 +1,49 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import "../styles/Share.css";
+
+const Share = () => {
+    const { id } = useParams();
+    console.log("use params", useParams());
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const token = localStorage.getItem('token');
+
+    const handleAddFriendLink = async () => {
+        setIsLoading(true);
+        try {
+            console.log("before fetch");
+            console.log("token: ", token);
+            console.log("id", id);
+            const response = await fetch(`/api/trips/${id}/share`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });      
+            console.log("after fetch");          
+        } catch (err) {
+            setError('Error loading trip. Please try again later.');
+            console.error('Error fetching trip:', err);
+        } finally {
+            console.log("finally");
+            setIsLoading(false);
+        }
+    };
+
+    useEffect (() => {
+        console.log("loaded");
+        handleAddFriendLink();
+    });
+
+    return (
+        <div className="share-text">
+            <h3>Adding to Trip {id}</h3>
+        </div>
+    );
+
+
+};
+
+export default Share

@@ -277,6 +277,7 @@ router.post('/:id/add-friend', auth, async (req, res) => {
         const { friendId } = req.body;
         const tripId = req.params.id;
         const userId = req.user.id; // The authenticated user
+        console.log("add friend");
 
         // Check if the friend is in the user's friends list
         const friendCheck = await db.query(
@@ -318,6 +319,71 @@ router.post('/:id/add-friend', auth, async (req, res) => {
     } catch (err) {
         console.error('Error adding friend to trip:', err);
         res.status(500).json({ message: 'Server error adding friend to trip' });
+    }
+});
+
+//add a friend to a trip by link
+router.post('/:id/share', auth, async (req, res) => {
+    console.log("in route");
+    try {
+        //check if the user is logged in
+        const userId = req.user.id;
+        const tripId = req.params.id;
+        console.log("user: ", userId);
+        console.log("trip: ", tripId)
+
+        const insertResult = await db.query(
+            `INSERT INTO trip_members (trip_id, user_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT DO NOTHING RETURNING *`,
+            [tripId, userId]
+        );
+
+        if (insertResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Link has expired' });
+        }
+
+        res.status(200).json({ message: 'friend added successfully by link' });
+
+    } catch (err) {
+        console.error('Error adding friend to trip by link');
+        res.status(500).json({ message: 'Server error adding friend to trip by link' });
+    }
+});
+
+router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
+    // if (memberId == userId) {
+    //     return res.status(403).json({ message: 'You cannot remove yourself from the trip.' });
+    // }
+    
+    try {
+        const { tripId, memberId } = req.params;
+        const userId = req.user.id; // Authenticated user
+
+        // Check if the user is the creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+
+        if (tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the trip creator can remove members' });
+        }
+
+        // Remove the member from the trip
+        await db.query(
+            'DELETE FROM trip_members WHERE trip_id = $1 AND user_id = $2',
+            [tripId, memberId]
+        );
+
+        res.json({ message: 'Member removed successfully' });
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Server error removing member' });
     }
 });
 

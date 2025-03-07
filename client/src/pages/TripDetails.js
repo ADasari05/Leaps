@@ -477,6 +477,11 @@ const TripDetails = () => {
                         <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
                     </div>
 
+                    <div>
+                        <h3>Share by Link</h3>
+                        <p>Link: http://localhost:3001/trips/{id}/share</p>
+                    </div>
+
                     <h3>Events</h3>
                     <ul>
                         {events.length > 0 ? (
