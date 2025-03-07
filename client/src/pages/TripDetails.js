@@ -6,12 +6,16 @@ import "../styles/TripDetails.css";
 const TripDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [friends, setFriends] = useState([]);
+    const [selectedFriend, setSelectedFriend] = useState("");
     const [trip, setTrip] = useState(null);
     const [events, setEvents] = useState([]);
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [tripMembers, setTripMembers] = useState([]);
     const token = localStorage.getItem('token');
+    const userId = JSON.parse(atob(token.split('.')[1])).id;
 
     useEffect(() => {
         const fetchTrip = async () => {
@@ -28,6 +32,8 @@ const TripDetails = () => {
                 const data = await response.json();
                 setTrip(data);
                 setEvents(data.events || []); // Assuming events are part of the trip data
+                setTripMembers(data.members || []); // Ensure members are stored
+                console.log("Trip Members:", data.members); // Debugging log
             } catch (err) {
                 setError('Error loading trip. Please try again later.');
                 console.error('Error fetching trip:', err);
@@ -39,8 +45,104 @@ const TripDetails = () => {
             }
         };
 
+        const fetchFriends = async () => {
+            try {
+                const response = await fetch(`http://localhost:3000/api/friends/list`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+        
+                if (!response.ok) throw new Error("Failed to fetch friends");
+        
+                const data = await response.json();
+                setFriends(data);
+            } catch (err) {
+                console.error("Error fetching friends:", err);
+            }
+        };
         fetchTrip();
+        fetchFriends();    
     }, [id, token]);
+
+    const fetchTripMembers = async () => {
+        try {
+            const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+    
+            if (!response.ok) throw new Error("Failed to fetch trip members");
+    
+            const data = await response.json();
+            setTripMembers(data.members || []);
+        } catch (err) {
+            console.error("Error fetching trip members:", err);
+        }
+    };
+    
+
+    const handleRemoveMember = async (memberId) => {
+        if (memberId === userId) {
+            alert("You cannot remove yourself from the trip.");
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:3000/api/trips/${id}/remove-member/${memberId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to remove member');
+            }
+    
+            alert('Member removed successfully');
+            setTripMembers(tripMembers.filter(member => member.id !== memberId));
+        } catch (err) {
+            console.error('Error removing member:', err);
+            alert('Failed to remove member');
+        }
+    };
+
+    const handleAddFriend = async () => {
+        if (!selectedFriend) {
+            console.error("No friend selected");
+            return;
+        }
+    
+        try {
+            const response = await fetch(`http://localhost:3000/api/trips/${id}/add-friend`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ friendId: selectedFriend }),
+            });
+    
+            const data = await response.json();
+            console.log("Add Friend Response:", data);
+    
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to add friend");
+            }
+    
+            alert("Friend added successfully!");
+            setFriends(friends.filter(friend => friend.id !== selectedFriend));
+
+            // Remove added friend from the dropdown list
+            setFriends(friends.filter(friend => friend.id !== selectedFriend));
+
+            // Fetch updated trip members after adding a new friend
+            fetchTripMembers();
+
+            // Reset selection
+            setSelectedFriend("");
+        } catch (err) {
+            console.error("Error adding friend:", err);
+            alert("Failed to add friend.");
+        }
+    };    
 
     const handleAddEvent = () => {
         // TODO Logic to add a new event
@@ -337,6 +439,64 @@ const TripDetails = () => {
                         </>
                     )}
                     {renderTripItems()}
+                    
+                    <div className="add-friend">
+                        <h3>Trip Members</h3>
+                        {/* <ul>
+                            {tripMembers.length > 0 ? (
+                                tripMembers.map(member => (
+                                    <li key={member.id}>
+                                        {member.username} 
+                                    </li>
+                                ))
+                            ) : (
+                                <p>No members in this trip.</p>
+                            )}
+                        </ul> */}
+
+                        <ul>
+                        {tripMembers.map(member => (
+                            <li key={member.id} className={member.id === userId ? "current-user" : ""}>
+                            {member.username} {member.id === userId ? "(me)" : ""}
+                            {trip.creator_id === userId && member.id !== userId && (
+                                <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                            )}
+                            </li>
+                        ))}
+                        </ul>
+
+                        <h3>Add a Friend</h3>
+                        <select onChange={(e) => setSelectedFriend(e.target.value)} value={selectedFriend}>
+                            <option value="">Select a friend</option>
+                            {friends.map((friend) => (
+                                <option key={friend.id} value={friend.id}>
+                                    {friend.username}
+                                </option>
+                            ))}
+                        </select>
+                        <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
+                    </div>
+
+                    <div>
+                        <h3>Share by Link</h3>
+                        <p>Link: http://localhost:3001/trips/{id}/share</p>
+                    </div>
+
+                    <h3>Events</h3>
+                    <ul>
+                        {events.length > 0 ? (
+                            events.map(event => (
+                                <li key={event.id}>
+                                    <p><strong>{event.name}</strong></p>
+                                    <p>{event.description}</p>
+                                    <p><strong>Date:</strong> {event.date}</p>
+                                    <button onClick={() => handleRemoveEvent(event.id)} className="remove-event-btn">Remove Event</button>
+                                </li>
+                            ))
+                        ) : (
+                            <p>No events found.</p>
+                        )}
+                    </ul>
                     <button onClick={handleAddEvent} className="add-event-btn">Add Event</button>
                     <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
                 </>
