@@ -1,0 +1,14 @@
+.events-container{
+    color:black;
+}
+
+.events-container h2{
+    color:black;
+    text-align: center;
+}
+
+.logo img{
+    width: 150px;
+    padding-top: 50px;
+    padding-bottom: 10px;
+}
