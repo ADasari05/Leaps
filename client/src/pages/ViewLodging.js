@@ -1,49 +1,56 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
+import dummyLodging from '../dummyLodging.json';
 
 const ViewLodging = () => {
-    // Initialized to example event based on design document
-    const [name, setName] = useState("Lonely Lodge");
-    const [location, setLocation] = useState("Island, OG");
-    const [description, setDescription] = useState("Secluded Lodge on the outskirts of the island");
-    const [checkIn, setCheckIn] = useState("");
-    const [checkOut, setCheckOut] = useState("");
-    const [price, setPrice] = useState("$96.00 from Marriot"); //Adjust to add variable attribute to price for vendor
-    const [isPublic, setIsPublic] = useState(false);
+    const { id } = useParams();
+    //const [lodging, setLodging] = useState(null);
+    const lodging = dummyLodging.find(lodging => lodging.id === id);
+    const [checkIn, setCheckIn] = useState(lodging ? lodging.checkIn : "");
+    const [checkOut, setCheckOut] = useState(lodging ? lodging.checkOut : "");
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
-    const handleViewEvent = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-        setSuccess(null);
+    useEffect(() => {
+        const fetchEvent = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch(`http://localhost:3000/api/lodging/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-        try {
-            const response = await fetch("http://localhost:3000/api/events", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, location, description, checkIn, checkOut, isPublic }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setSuccess("Event viewed successfully!");
-                setTimeout(() => {
-                    navigate("/accountpage");
-                }, 1000);
-            } else {
-                setError(data.message);
+                if (!response.ok) throw new Error('Failed to fetch lodging');
+                //const data = await response.json();
+                //setLodging(data);
+            } catch (err) {
+                //setError('Error loading lodging. Please try again later.');
+                console.error('Error fetching event:', err);
+                /*const lodging = dummyLodging.find(lodging => lodging.id === id);
+                if (lodging) {
+                    setLodging(lodging);
+                } else {
+                    setError('Error loading lodging. Please try again later.');
+                }*/
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err) {
-            setError("Connection error. Please try again.");
-        } finally {
-            setIsLoading(false);
-        }
+        };
+
+        fetchEvent();
+    }, [id, token]);
+
+    if (isLoading) {
+        return <p className="loading">Loading lodging details...</p>;
+    }
+
+    if (error) {
+        return <p className="error">{error}</p>;
     }
 
     return (
@@ -57,7 +64,7 @@ const ViewLodging = () => {
                     fontWeight: "bold",
                     marginRight: "-650px"
                 }}>
-                    {name}
+                    {lodging.name}
                 </h2>
 
                 <button onClick={() => navigate("/trips")}  // Adjust navigate later
@@ -86,7 +93,7 @@ const ViewLodging = () => {
                         color: "black",
                         fontSize: "25px",
                     }}>
-                        {location}
+                        {lodging.location}
                     </h2>
                 </div>
 
@@ -98,7 +105,7 @@ const ViewLodging = () => {
                     fontSize: "15px",
                     fontWeight: "lighter"
                 }}>
-                    {description}
+                    {lodging.description}
                 </h2>
                 
 
@@ -156,7 +163,7 @@ const ViewLodging = () => {
                         borderRadius: "5px",
                         cursor: "pointer",
                     }}>
-                        {price}
+                        {lodging.price}
                     </button>
                 </div>
 

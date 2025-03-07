@@ -35,7 +35,7 @@ function App() {
         <Route path="/friends" element={<Friends />} />
         <Route path="/users" element={<Users />} />
         <Route path="/viewevent/:id" element={<ViewEvent />} />
-        <Route path="/viewlodging" element={<ViewLodging />} />
+        <Route path="/viewlodging/:id" element={<ViewLodging />} />
       </Routes>
   </Router>
   );
