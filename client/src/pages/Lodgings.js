@@ -9,6 +9,9 @@ const Lodgings = () => {
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
@@ -76,6 +79,24 @@ const Lodgings = () => {
         }
     };
 
+    const filteredLodgings = lodgings.filter(lodging => {
+        const checkInDate = new Date(lodging.check_in_date);
+        const checkOutDate = new Date(lodging.check_out_date);
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+        const matchesSearchQuery = lodging.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (start && end) {
+            return checkInDate >= start && checkOutDate <= end && matchesSearchQuery;
+        } else if (start) {
+            return checkInDate >= start && matchesSearchQuery;
+        } else if (end) {
+            return checkOutDate <= end && matchesSearchQuery;
+        } else {
+            return matchesSearchQuery;
+        }
+    });
+
     if (isLoading) {
         return <div className="lodgings"><p className="loading">Loading lodgings...</p></div>;
     }
@@ -87,12 +108,41 @@ const Lodgings = () => {
     return (
         <div className="lodgings">
             <h2>All Lodgings</h2>
+            <div className="filter">
+                <label>
+                    Start Date:
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                    />
+                </label>
+                <label>
+                    End Date:
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                    />
+                </label>
+                <label>
+                    Search:
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by name"
+                    />
+                </label>
+            </div>
             <ul>
-                {lodgings.map(lodging => (
+                {filteredLodgings.map(lodging => (
                     <li key={lodging.id}>
                         <h3>{lodging.name}</h3>
                         <p>{lodging.location}</p>
                         <p>{lodging.description}</p>
+                        <p><strong>Check-In:</strong> {new Date(lodging.check_in_date).toLocaleDateString()}</p>
+                        <p><strong>Check-Out:</strong> {new Date(lodging.check_out_date).toLocaleDateString()}</p>
                         <button onClick={() => { setSelectedLodging(lodging); setIsModalOpen(true); }}>
                             Add to Trip
                         </button>
