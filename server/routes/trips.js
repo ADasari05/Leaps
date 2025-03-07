@@ -24,10 +24,12 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
     try {
         const tripId = req.params.id;
-        const userId = req.user.id; // From auth middleware
+        const userId = req.user.id;
 
+        // Fetch trip details
         const result = await db.query(
-            'SELECT * FROM trips WHERE id = $1 AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))',
+            `SELECT * FROM trips WHERE id = $1 
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
             [tripId, userId]
         );
 
@@ -35,7 +37,23 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Trip not found' });
         }
 
-        res.json(result.rows[0]);
+        const trip = result.rows[0];
+
+        // Fetch trip members, including the creator
+        const membersResult = await db.query(
+            `SELECT u.id, u.username 
+            FROM users u
+            WHERE u.id IN (
+                SELECT user_id FROM trip_members WHERE trip_id = $1
+                UNION
+                SELECT creator_id FROM trips WHERE id = $1
+            )`,
+            [tripId]
+        );
+
+        trip.members = membersResult.rows; // Add members to the trip object
+
+        res.json(trip);
     } catch (err) {
         console.error('Error fetching trip:', err);
         res.status(500).json({ message: 'Server error fetching trip' });
@@ -252,6 +270,75 @@ router.post('/:id/share', auth, async (req, res) => {
     } catch (err) {
         console.error('Error adding friend to trip by link');
         res.status(500).json({ message: 'Server error adding friend to trip by link' });
+router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
+    // if (memberId == userId) {
+    //     return res.status(403).json({ message: 'You cannot remove yourself from the trip.' });
+    // }
+    
+    try {
+        const { tripId, memberId } = req.params;
+        const userId = req.user.id; // Authenticated user
+
+        // Check if the user is the creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+
+        if (tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the trip creator can remove members' });
+        }
+
+        // Remove the member from the trip
+        await db.query(
+            'DELETE FROM trip_members WHERE trip_id = $1 AND user_id = $2',
+            [tripId, memberId]
+        );
+
+        res.json({ message: 'Member removed successfully' });
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Server error removing member' });
+    }
+});
+
+router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
+    // if (memberId == userId) {
+    //     return res.status(403).json({ message: 'You cannot remove yourself from the trip.' });
+    // }
+    
+    try {
+        const { tripId, memberId } = req.params;
+        const userId = req.user.id; // Authenticated user
+
+        // Check if the user is the creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+
+        if (tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the trip creator can remove members' });
+        }
+
+        // Remove the member from the trip
+        await db.query(
+            'DELETE FROM trip_members WHERE trip_id = $1 AND user_id = $2',
+            [tripId, memberId]
+        );
+
+        res.json({ message: 'Member removed successfully' });
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Server error removing member' });
     }
 });
 
