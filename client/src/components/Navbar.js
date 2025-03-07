@@ -4,6 +4,10 @@ import "./Navbar.css"; // Import styles
 import LeapsLogo from "../assets/Leapspng.png";
 
 const Navbar = () => {
+    const navigate = useNavigate();
+    const [search, setSearch] = React.useState('');
+    const handleSearch = () => navigate(`/search?q=${search}`);
+
 
     return (
         <nav className="navbar">
@@ -19,15 +23,7 @@ const Navbar = () => {
                     <Link to="/trips" className="nav-item">Trips</Link>
                     <Link to="/events" className="nav-item">Events</Link>
                     <Link to="/lodging" className="nav-item">Lodging</Link>
-                </div>
-
-                {/* Search Bar (Centered) */}
-                <div className="search-container">
-                    <input type="text" placeholder="What's the move?" className="search-input" />
-                    <button className="search-button">🔍</button>
-                </div>
-
-                <div className="nav-links">
+                    <Link to="/search" className="nav-item">Search</Link>
                     <Link to="/travel" className="nav-item">Travel</Link>
                     <Link to="/users" className="nav-item">Users</Link>
                     <Link to="/accountpage" className="nav-item">My Account</Link>

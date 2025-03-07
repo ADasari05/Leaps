@@ -12,7 +12,9 @@ const CreateTrip = () => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const token = localStorage.getItem('token');
     const navigate = useNavigate();
+    
 
     const handleCreateTrip = async (e) => {
         e.preventDefault();
@@ -21,9 +23,12 @@ const CreateTrip = () => {
         setSuccess(null);
 
         try {
-            const response = await fetch("http://localhost:3000/api/trips", {
+            const response = await fetch("/api/trips", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },                
                 body: JSON.stringify({ name, description, destination, startDate, endDate, isPublic }),
             });
 

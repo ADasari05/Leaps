@@ -13,8 +13,9 @@ const Trips = () => {
     useEffect(() => {
         const fetchTrips = async () => {
             setIsLoading(true);
+
             try {
-                const response = await fetch("http://localhost:3000/api/trips", {
+                const response = await fetch("/api/trips", {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
