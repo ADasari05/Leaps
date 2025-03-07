@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import "./Navbar.css"; // Import styles
+import "./Navbar.css";
 import LeapsLogo from "../assets/Leapspng.png";
 
 const Navbar = () => {
