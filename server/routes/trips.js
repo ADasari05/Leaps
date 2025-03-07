@@ -146,20 +146,22 @@ router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
     }
 });
 
-router.post('/add-item', async (req, res) => {
+// Add an item (event, travel, lodging) to a trip
+router.post('/add-item', auth, async (req, res) => {
     const { tripId, itemType, itemId } = req.body;
     try {
-      const result = await pool.query(
-        'INSERT INTO trip_items (trip_id, item_type, item_id) VALUES ($1, $2, $3) RETURNING *',
-        [tripId, itemType, itemId]
-      );
-      res.json(result.rows[0]);
+        const result = await db.query(
+            'INSERT INTO trip_items (trip_id, item_type, item_id) VALUES ($1, $2, $3) RETURNING *',
+            [tripId, itemType, itemId]
+        );
+        res.json(result.rows[0]);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to add item' });
+        console.error('Error adding item to trip:', error);
+        res.status(500).json({ error: 'Failed to add item' });
     }
-  });
+});
 
-  // Placeholder for event details (to be replaced with real data source)
+// Placeholder for event details (to be replaced with real data source)
 router.get('/events/:id', auth, async (req, res) => {
     try {
       const eventId = req.params.id;
