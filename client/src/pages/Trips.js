@@ -62,7 +62,7 @@ const Trips = () => {
                                 <p>{trip.description}</p>
                                 <p><strong>Destination:</strong> {trip.destination}</p>
                                 <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                                <ConfirmDelete/>
+                                <ConfirmDelete id={trip.id} token={token}/>
                             </div>
                         ))
                     ) : (
