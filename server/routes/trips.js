@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const auth = require('../middleware/auth');
+const fetch = require('node-fetch');
+
 
 // Get all trips for the authenticated user
 router.get('/', auth, async (req, res) => {
@@ -60,6 +62,89 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+// Update a trip by ID
+router.put('/:id', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id; // From auth middleware
+        const { name, description, destination, startDate, endDate, isPublic } = req.body;
+
+        // Fetch the current value of is_public if not provided
+        let currentIsPublic = isPublic;
+        if (currentIsPublic === undefined) {
+            const currentTrip = await db.query(
+                'SELECT is_public FROM trips WHERE id = $1 AND creator_id = $2',
+                [tripId, userId]
+            );
+            if (currentTrip.rows.length === 0) {
+                return res.status(404).json({ message: 'Trip not found or not authorized to update' });
+            }
+            currentIsPublic = currentTrip.rows[0].is_public;
+        }
+
+        // Ensure the user is the creator of the trip
+        const result = await db.query(
+            'UPDATE trips SET name = $1, description = $2, destination = $3, start_date = $4, end_date = $5, is_public = $6 WHERE id = $7 AND creator_id = $8 RETURNING *',
+            [name, description, destination, startDate, endDate, currentIsPublic, tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or not authorized to update' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating trip:', err);
+        res.status(500).json({ message: 'Server error updating trip' });
+    }
+});
+
+// Delete a trip by ID
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id; // From auth middleware
+
+        // Ensure the user is the creator of the trip
+        const result = await db.query(
+            'DELETE FROM trips WHERE id = $1 AND creator_id = $2 RETURNING *',
+            [tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or not authorized to delete' });
+        }
+
+        res.json({ message: 'Trip deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting trip:', err);
+        res.status(500).json({ message: 'Server error deleting trip' });
+    }
+});
+
+// fully delete an event
+// TODO - fix when event is implemented
+router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
+    try {
+        const { tripId, eventId } = req.params;
+        const userId = req.user.id; // From auth middleware
+
+        // Ensure the user is the creator of the trip
+        const result = await db.query(
+            'DELETE FROM events WHERE id = $1 AND trip_id = $2 AND creator_id = $3 RETURNING *',
+            [eventId, tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Event not found or not authorized to delete' });
+        }
+
+        res.json({ message: 'Event deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting event:', err);
+        res.status(500).json({ message: 'Server error deleting event' });
+    }
+});
 
 router.post('/add-item', async (req, res) => {
     const { tripId, itemType, itemId } = req.body;
@@ -74,4 +159,34 @@ router.post('/add-item', async (req, res) => {
     }
   });
 
+  // Placeholder for event details (to be replaced with real data source)
+router.get('/events/:id', auth, async (req, res) => {
+    try {
+      const eventId = req.params.id;
+      // TODO: Fetch from Ticketmaster or a local events table
+      // For now, return a mock event based on trip_items
+      const eventResult = await db.query(
+        'SELECT * FROM trip_items WHERE item_type = $1 AND item_id = $2',
+        ['events', eventId]
+      );
+      if (eventResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Event not found in trips' });
+      }
+      // Mock event data (replace with real fetch later)
+      res.json({
+        id: eventId,
+        name: `Event ${eventId}`,
+        location: 'Unknown',
+        date: '2025-03-10',
+        time: '19:00',
+        description: 'Sample event description',
+        price: '$50',
+        url: 'https://www.ticketmaster.com',
+      });
+    } catch (err) {
+      console.error('Error fetching event:', err);
+      res.status(500).json({ message: 'Server error fetching event' });
+    }
+  });
+  
 module.exports = router;

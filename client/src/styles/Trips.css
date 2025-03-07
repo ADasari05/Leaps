@@ -45,8 +45,8 @@
 }
 
 .error:hover {
-    color: red; /* Ensure the color does not change on hover */
-    text-decoration: none; /* Ensure no underline on hover */
+    color: red;
+    text-decoration: none;
 }
 
 .loading {
@@ -56,6 +56,6 @@
 }
 
 .loading:hover {
-    color: blue; /* Ensure the color does not change on hover */
-    text-decoration: none; /* Ensure no underline on hover */
+    color: blue;
+    text-decoration: none;
 }
