@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { Link } from "react-router-dom";
 import "./Navbar.css"; // Import styles
 import LeapsLogo from "../assets/Leapspng.png";
@@ -10,13 +11,17 @@ const Navbar = () => {
 
 
     return (
+        
+        
         <nav className="navbar">
-            
-            <div className="navbar-container">
-                {/*Home button*/}
+            {/*Home button*/}
+            <div className="home">
                 <Link to="/signup">
-                        <img src={LeapsLogo} alt="Home" className="home"/>
+                <img src={LeapsLogo} alt="Home" className="home"/>
                 </Link>
+            </div>
+            <div className="navbar-container">
+                
 
 
                 <div className="nav-links">

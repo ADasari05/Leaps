@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
 import "../styles/Trips.css";
+import "../components/DeleteTripConfirmation.css"
+import ConfirmDelete from "../components/DeleteTripConfirmation";
 
 const Trips = () => {
     const [trips, setTrips] = useState([]);
@@ -9,6 +11,9 @@ const Trips = () => {
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
+
+    /*Setup for the delete trip popup window*/
+
 
     useEffect(() => {
         const fetchTrips = async () => {
@@ -56,6 +61,7 @@ const Trips = () => {
                                 <p>{trip.description}</p>
                                 <p><strong>Destination:</strong> {trip.destination}</p>
                                 <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
+                                <ConfirmDelete/>
                             </div>
                         ))
                     ) : (

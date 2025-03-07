@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.4.7",
+    "node-fetch": "^3.3.2",
+    "react-modal": "^3.16.3"
+  }
+}
