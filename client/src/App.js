@@ -17,6 +17,7 @@ import Users from './pages/Users';
 import ViewEvent from "./pages/ViewEvent";
 import ViewLodging from "./pages/ViewLodging";
 import Events from "./pages/Events";
+import Search from './pages/SearchPage';
 import './App.css';
 // import AccountPage from "./AccountPage";
 
@@ -38,6 +39,8 @@ function App() {
         <Route path="/viewevent/:id" element={<ViewEvent />} />
         <Route path="/viewlodging/:id" element={<ViewLodging />} />
         <Route path="/events" element={<Events/>} />
+        <Route path="/users" element={<Users />} /> 
+        <Route path="/search" element={<Search />} />
       </Routes>
   </Router>
   );
