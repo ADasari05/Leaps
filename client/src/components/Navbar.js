@@ -4,11 +4,6 @@ import "./Navbar.css"; // Import styles
 import LeapsLogo from "../assets/Leapspng.png";
 
 const Navbar = () => {
-    const navigate = useNavigate();
-    const [search, setSearch] = React.useState('');
-    const handleSearch = () => navigate(`/search?q=${search}`);
-
-
     return (
         <nav className="navbar">
             
