@@ -51,14 +51,14 @@ button:hover {
     background-color: #eee;
 }
 
-p {
+.auth-container p {
     color: white;
     margin-top: 10px;
     cursor: pointer;
     transition: color 0.3s ease, text-decoration 0.3s ease;
 }
 
-p:hover {
+.auth-container p:hover {
     color: #ffd700;
     text-decoration: underline;
 }

@@ -48,7 +48,7 @@ const SearchResults = ({ results, onAddToTrip }) => {
           )
         ))
       ) : (
-        <p>No results found. Try a different query or location.</p>
+        <div>No results found. Try a different query or location.</div>
       )}
       {selected && !navigate.pathname?.includes('/event') && (
         <div style={{ marginTop: '20px' }}>

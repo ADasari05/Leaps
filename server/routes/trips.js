@@ -4,7 +4,6 @@ const db = require('../config/db');
 const auth = require('../middleware/auth');
 const fetch = require('node-fetch');
 
-
 // Get all trips for the authenticated user
 router.get('/', auth, async (req, res) => {
     try {
@@ -37,7 +36,16 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Trip not found' });
         }
 
-        res.json(result.rows[0]);
+        const trip = result.rows[0];
+
+        const itemsResult = await db.query(
+            'SELECT * FROM trip_items WHERE trip_id = $1 ORDER BY created_at DESC',
+            [tripId]
+        );
+        
+        trip.items = itemsResult.rows;
+
+        res.json(trip);
     } catch (err) {
         console.error('Error fetching trip:', err);
         res.status(500).json({ message: 'Server error fetching trip' });
@@ -149,19 +157,55 @@ router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
 // Add an item (event, travel, lodging) to a trip
 router.post('/add-item', auth, async (req, res) => {
     const { tripId, itemType, itemId } = req.body;
+    console.log("Received:", { tripId, itemType, itemId });
     try {
-        const result = await db.query(
-            'INSERT INTO trip_items (trip_id, item_type, item_id) VALUES ($1, $2, $3) RETURNING *',
-            [tripId, itemType, itemId]
-        );
-        res.json(result.rows[0]);
+      const result = await db.query(
+        'INSERT INTO trip_items (trip_id, item_type, item_id) VALUES ($1, $2, $3) RETURNING *',
+        [tripId, itemType, itemId]
+      );
+      res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error adding item to trip:', error);
-        res.status(500).json({ error: 'Failed to add item' });
+      console.error('Error adding item to trip:', error);
+      res.status(500).json({ error: 'Failed to add item' });
     }
 });
 
-// Placeholder for event details (to be replaced with real data source)
+
+router.delete('/items/:tripId/:itemType/:itemId', auth, async (req, res) => {
+    const { tripId, itemType, itemId } = req.params;
+    console.log("Deleting item:", { tripId, itemType, itemId });
+    
+    try {
+      // First verify the user has access to this trip
+      const userId = req.user.id;
+      const tripCheck = await db.query(
+        'SELECT * FROM trips WHERE id = $1 AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))',
+        [tripId, userId]
+      );
+      
+      if (tripCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Not authorized to modify this trip' });
+      }
+      
+      // Delete the item
+      const result = await db.query(
+        'DELETE FROM trip_items WHERE trip_id = $1 AND item_type = $2 AND item_id = $3 RETURNING *',
+        [tripId, itemType, itemId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Item not found in trip' });
+      }
+      
+      res.json({ message: 'Item deleted successfully', item: result.rows[0] });
+    } catch (error) {
+      console.error('Error deleting item from trip:', error);
+      res.status(500).json({ error: 'Failed to delete item' });
+    }
+  });
+
+  /*
+  // Placeholder for event details (to be replaced with real data source)
 router.get('/events/:id', auth, async (req, res) => {
     try {
       const eventId = req.params.id;
@@ -188,7 +232,7 @@ router.get('/events/:id', auth, async (req, res) => {
     } catch (err) {
       console.error('Error fetching event:', err);
       res.status(500).json({ message: 'Server error fetching event' });
-    }
-  });
+    } 
+  }); */
   
 module.exports = router;
