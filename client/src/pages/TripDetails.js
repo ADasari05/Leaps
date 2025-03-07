@@ -13,6 +13,7 @@ const TripDetails = () => {
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [tripMembers, setTripMembers] = useState([]);
     const token = localStorage.getItem('token');
 
     useEffect(() => {
@@ -30,6 +31,8 @@ const TripDetails = () => {
                 const data = await response.json();
                 setTrip(data);
                 setEvents(data.events || []); // Assuming events are part of the trip data
+                setTripMembers(data.members || []); // Ensure members are stored
+                console.log("Trip Members:", data.members); // Debugging log
             } catch (err) {
                 setError('Error loading trip. Please try again later.');
                 console.error('Error fetching trip:', err);
@@ -83,6 +86,10 @@ const TripDetails = () => {
             }
     
             alert("Friend added successfully!");
+            setFriends(friends.filter(friend => friend.id !== selectedFriend));
+
+            // Reset selection
+            setSelectedFriend("");
         } catch (err) {
             console.error("Error adding friend:", err);
             alert("Failed to add friend.");
@@ -195,8 +202,21 @@ const TripDetails = () => {
                             <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
                         </>
                     )}
-
+                    
                     <div className="add-friend">
+                        <h3>Trip Members</h3>
+                        <ul>
+                            {tripMembers.length > 0 ? (
+                                tripMembers.map(member => (
+                                    <li key={member.id}>
+                                        {member.username} 
+                                    </li>
+                                ))
+                            ) : (
+                                <p>No members in this trip.</p>
+                            )}
+                        </ul>
+
                         <h3>Add a Friend</h3>
                         <select onChange={(e) => setSelectedFriend(e.target.value)} value={selectedFriend}>
                             <option value="">Select a friend</option>
@@ -206,7 +226,7 @@ const TripDetails = () => {
                                 </option>
                             ))}
                         </select>
-                        <button onClick={handleAddFriend} className="add-friend-btn">Add Friend</button>
+                        <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
                     </div>
 
                     <h3>Events</h3>

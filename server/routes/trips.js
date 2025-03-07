@@ -24,10 +24,12 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
     try {
         const tripId = req.params.id;
-        const userId = req.user.id; // From auth middleware
+        const userId = req.user.id;
 
+        // Fetch trip details
         const result = await db.query(
-            'SELECT * FROM trips WHERE id = $1 AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))',
+            `SELECT * FROM trips WHERE id = $1 
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
             [tripId, userId]
         );
 
@@ -35,7 +37,20 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Trip not found' });
         }
 
-        res.json(result.rows[0]);
+        const trip = result.rows[0];
+
+        // Fetch trip members
+        const membersResult = await db.query(
+            `SELECT u.id, u.username 
+             FROM users u
+             JOIN trip_members tm ON u.id = tm.user_id
+             WHERE tm.trip_id = $1`,
+            [tripId]
+        );
+
+        trip.members = membersResult.rows; // Add members to the trip object
+
+        res.json(trip);
     } catch (err) {
         console.error('Error fetching trip:', err);
         res.status(500).json({ message: 'Server error fetching trip' });
