@@ -1,4 +1,4 @@
-.lodgings {
+.travel {
     padding: 20px;
     padding-top: 60px; /* Add padding to move content below the navbar */
     text-align: center;
@@ -8,9 +8,9 @@
     border-radius: 5px;
 }
 
-.lodgings h2,
-.lodgings input,
-.lodgings textarea {
+.travel h2,
+.travel input,
+.travel textarea {
     color: #333;
     margin-bottom: 10px;
     width: 100%;
@@ -19,23 +19,23 @@
     border-radius: 5px;
 }
 
-.lodgings p {
+.travel p {
     color: #333;
     margin: 5px 0;
 }
 
-.lodgings p:hover,
-.lodgings h2:hover {
+.travel p:hover,
+.travel h2:hover {
     color: #333;
     text-decoration: none;
 }
 
-.lodgings ul {
+.travel ul {
     list-style-type: none;
     padding: 0;
 }
 
-.lodgings li {
+.travel li {
     margin-bottom: 10px;
     padding: 10px;
     border: 1px solid #ccc;
@@ -121,7 +121,7 @@
     border-radius: 5px;
 }
 
-.book-lodging-btn {
+.book-travel-btn {
     margin-top: 10px;
     padding: 10px 20px;
     background-color: #28a745;
@@ -131,6 +131,6 @@
     cursor: pointer;
 }
 
-.book-lodging-btn:hover {
+.book-travel-btn:hover {
     background-color: #218838;
 }
