@@ -1,11 +1,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./Navbar.css"; // Import styles
+import LeapsLogo from "../assets/Leapspng.png";
 
 const Navbar = () => {
     return (
         <nav className="navbar">
+            {/*Home button*/}
+            <div className="home">
+                    <Link to="/signup">
+                        <img src={LeapsLogo} alt="Home" className="home"/>
+                    </Link>
+            </div>
             <div className="navbar-container">
+                
+
+
                 <div className="nav-links">
                     <Link to="/trips" className="nav-item">Trips</Link>
                     <Link to="/events" className="nav-item">Events</Link>
