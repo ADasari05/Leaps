@@ -1,49 +1,62 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
+import dummyEvents from '../dummyEvents.json';
 
 const ViewEvent = () => {
     // Initialized to example event based on design document
-    const [name, setName] = useState("Banana Bar Crawl");
+    const { id } = useParams();
+    //const [event, setEvent] = useState(null);
+    const event = dummyEvents.find(event => event.id === id);
+    /*const [name, setName] = useState("");
     const [location, setLocation] = useState("West Lafayette, IN");
     const [description, setDescription] = useState("Bar crawl event for popular West Lafayette bars");
     const [date, setDate] = useState("4/20/2025");
     const [time, setTime] = useState("7:00pm");
     const [price, setPrice] = useState("$42.00 from TicketMaster"); //Adjust to add variable attribute to price for vendor
-    const [isPublic, setIsPublic] = useState(false);
+    const [isPublic, setIsPublic] = useState(false); */
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
-    const handleViewEvent = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-        setSuccess(null);
+    useEffect(() => {
+        const fetchEvent = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch(`http://localhost:3000/api/events/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-        try {
-            const response = await fetch("http://localhost:3000/api/events", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, location, description, date, time, isPublic }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setSuccess("Event viewed successfully!");
-                setTimeout(() => {
-                    navigate("/accountpage");
-                }, 1000);
-            } else {
-                setError(data.message);
+                if (!response.ok) throw new Error('Failed to fetch event');
+                //const data = await response.json();
+                //setEvent(data);
+            } catch (err) {
+                //setError('Error loading event. Please try again later.');
+                console.error('Error fetching event:', err);
+                /*const event = dummyEvents.find(event => event.id === id);
+                if (event) {
+                    setEvent(event);
+                } else {
+                    setError('Error loading event. Please try again later.');
+                }*/
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err) {
-            setError("Connection error. Please try again.");
-        } finally {
-            setIsLoading(false);
-        }
+        };
+
+        fetchEvent();
+    }, [id, token]);
+
+    if (isLoading) {
+        return <p className="loading">Loading event details...</p>;
+    }
+
+    if (error) {
+        return <p className="error">{error}</p>;
     }
 
     return (
@@ -57,7 +70,7 @@ const ViewEvent = () => {
                     fontWeight: "bold",
                     marginRight: "-650px"
                 }}>
-                    {name}
+                    {event.name}
                 </h2>
 
                 <button onClick={() => navigate("/trips")}  // Adjust navigate later
@@ -86,7 +99,7 @@ const ViewEvent = () => {
                         color: "black",
                         fontSize: "25px",
                     }}>
-                        {location}
+                        {event.location}
                     </h2>
 
                     <h2 style={{
@@ -95,7 +108,7 @@ const ViewEvent = () => {
                         color: "black",
                         fontSize: "25px",
                     }}>
-                        {date} | {time}
+                        {event.date} | {event.time}
                     </h2>
                 </div>
 
@@ -107,7 +120,7 @@ const ViewEvent = () => {
                     fontSize: "15px",
                     fontWeight: "lighter"
                 }}>
-                    {description}
+                    {event.description}
                 </h2>
 
                 <h2 style={{
@@ -151,7 +164,7 @@ const ViewEvent = () => {
                         borderRadius: "5px",
                         cursor: "pointer",
                     }}>
-                        {price}
+                        {event.price}
                     </button>
                 </div>
 

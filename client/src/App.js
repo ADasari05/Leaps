@@ -34,7 +34,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/users" element={<Users />} />
-        <Route path="/viewevent" element={<ViewEvent />} />
+        <Route path="/viewevent/:id" element={<ViewEvent />} />
         <Route path="/viewlodging" element={<ViewLodging />} />
       </Routes>
   </Router>
