@@ -1,0 +1,20 @@
+const express = require('express');
+const router = express.Router();
+const apiService = require('../services/api-service');
+
+router.get('/', async (req, res) => {
+  const { q, location, eventType } = req.query;
+  try {
+    const results = { events: [], travel: [], lodging: [] };
+    if (q || location || eventType) {
+      const externalResults = await apiService.fetchExternalData(q, location, eventType);
+      results.events = externalResults.events;
+    }
+    res.json(results);
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+module.exports = router;

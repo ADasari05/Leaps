@@ -46,6 +46,19 @@ CREATE TABLE trip_members (
     UNIQUE(trip_id, user_id)
 );
 
+-- Events Table 
+CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    price DOUBLE PRECISION,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Travel Table
 CREATE TABLE travel (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -59,3 +72,35 @@ CREATE TABLE travel (
     -- this doesn't work in psql need to create  trigger
     -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Lodging Table 
+CREATE TABLE lodging (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL, 
+    location VARCHAR(255) NOT NULL,
+    price_per_night DOUBLE PRECISION NOT NULL,
+    check_in_date DATE,
+    check_out_date DATE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE trip_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'travel', 'lodging')),
+    item_id UUID NOT NULL, -- References id from events, travel, or lodging
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(trip_id, item_type, item_id)
+);
+
+
+CREATE INDEX idx_events_name ON events(name);
+CREATE INDEX idx_events_location ON events(location);
+CREATE INDEX idx_events_type ON events(type);
+CREATE INDEX idx_travel_departure_location ON travel(departure_location);
+CREATE INDEX idx_travel_arrival_location ON travel(arrival_location);
+CREATE INDEX idx_lodging_name ON lodging(name);
+CREATE INDEX idx_lodging_location ON lodging(location);

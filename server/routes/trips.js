@@ -144,4 +144,17 @@ router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
     }
 });
 
+router.post('/add-item', async (req, res) => {
+    const { tripId, itemType, itemId } = req.body;
+    try {
+      const result = await pool.query(
+        'INSERT INTO trip_items (trip_id, item_type, item_id) VALUES ($1, $2, $3) RETURNING *',
+        [tripId, itemType, itemId]
+      );
+      res.json(result.rows[0]);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to add item' });
+    }
+  });
+
 module.exports = router;

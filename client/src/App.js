@@ -14,6 +14,10 @@ import TripDetails from "./pages/TripDetails";
 import ResetPassword from "./pages/ResetPassword";
 import Friends from './pages/Friends';
 import Users from './pages/Users';
+import ViewEvent from "./pages/ViewEvent";
+import ViewLodging from "./pages/ViewLodging";
+import Events from "./pages/Events";
+import Search from './pages/SearchPage';
 import './App.css';
 // import AccountPage from "./AccountPage";
 
@@ -31,7 +35,12 @@ function App() {
         <Route path="/trips/:id" element={<TripDetails />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/friends" element={<Friends />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/viewevent/:id" element={<ViewEvent />} />
+        <Route path="/viewlodging/:id" element={<ViewLodging />} />
+        <Route path="/events" element={<Events/>} />
         <Route path="/users" element={<Users />} /> 
+        <Route path="/search" element={<Search />} />
       </Routes>
   </Router>
   );
