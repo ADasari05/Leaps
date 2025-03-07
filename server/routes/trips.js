@@ -60,4 +60,88 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+// Update a trip by ID
+router.put('/:id', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id; // From auth middleware
+        const { name, description, destination, startDate, endDate, isPublic } = req.body;
+
+        // Fetch the current value of is_public if not provided
+        let currentIsPublic = isPublic;
+        if (currentIsPublic === undefined) {
+            const currentTrip = await db.query(
+                'SELECT is_public FROM trips WHERE id = $1 AND creator_id = $2',
+                [tripId, userId]
+            );
+            if (currentTrip.rows.length === 0) {
+                return res.status(404).json({ message: 'Trip not found or not authorized to update' });
+            }
+            currentIsPublic = currentTrip.rows[0].is_public;
+        }
+
+        // Ensure the user is the creator of the trip
+        const result = await db.query(
+            'UPDATE trips SET name = $1, description = $2, destination = $3, start_date = $4, end_date = $5, is_public = $6 WHERE id = $7 AND creator_id = $8 RETURNING *',
+            [name, description, destination, startDate, endDate, currentIsPublic, tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or not authorized to update' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating trip:', err);
+        res.status(500).json({ message: 'Server error updating trip' });
+    }
+});
+
+// Delete a trip by ID
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id; // From auth middleware
+
+        // Ensure the user is the creator of the trip
+        const result = await db.query(
+            'DELETE FROM trips WHERE id = $1 AND creator_id = $2 RETURNING *',
+            [tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or not authorized to delete' });
+        }
+
+        res.json({ message: 'Trip deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting trip:', err);
+        res.status(500).json({ message: 'Server error deleting trip' });
+    }
+});
+
+// fully delete an event
+// TODO - fix when event is implemented
+router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
+    try {
+        const { tripId, eventId } = req.params;
+        const userId = req.user.id; // From auth middleware
+
+        // Ensure the user is the creator of the trip
+        const result = await db.query(
+            'DELETE FROM events WHERE id = $1 AND trip_id = $2 AND creator_id = $3 RETURNING *',
+            [eventId, tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Event not found or not authorized to delete' });
+        }
+
+        res.json({ message: 'Event deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting event:', err);
+        res.status(500).json({ message: 'Server error deleting event' });
+    }
+});
+
 module.exports = router;
