@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const auth = require('../middleware/auth');
+const fetch = require('node-fetch');
+
 
 // Get all trips for the authenticated user
 router.get('/', auth, async (req, res) => {
@@ -157,4 +159,34 @@ router.post('/add-item', async (req, res) => {
     }
   });
 
+  // Placeholder for event details (to be replaced with real data source)
+router.get('/events/:id', auth, async (req, res) => {
+    try {
+      const eventId = req.params.id;
+      // TODO: Fetch from Ticketmaster or a local events table
+      // For now, return a mock event based on trip_items
+      const eventResult = await db.query(
+        'SELECT * FROM trip_items WHERE item_type = $1 AND item_id = $2',
+        ['events', eventId]
+      );
+      if (eventResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Event not found in trips' });
+      }
+      // Mock event data (replace with real fetch later)
+      res.json({
+        id: eventId,
+        name: `Event ${eventId}`,
+        location: 'Unknown',
+        date: '2025-03-10',
+        time: '19:00',
+        description: 'Sample event description',
+        price: '$50',
+        url: 'https://www.ticketmaster.com',
+      });
+    } catch (err) {
+      console.error('Error fetching event:', err);
+      res.status(500).json({ message: 'Server error fetching event' });
+    }
+  });
+  
 module.exports = router;

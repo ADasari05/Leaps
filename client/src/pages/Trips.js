@@ -26,7 +26,7 @@ const Trips = () => {
                 if (!response.ok) throw new Error('Failed to fetch trips');
 
                 const data = await response.json();
-                setTrips(data);
+                setTrips(Array.isArray(data) ? data : []); // Ensure array
             } catch (err) {
                 setError('Error loading trips. Please try again later.');
                 console.error('Error fetching trips:', err);
