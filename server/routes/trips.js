@@ -39,12 +39,15 @@ router.get('/:id', auth, async (req, res) => {
 
         const trip = result.rows[0];
 
-        // Fetch trip members
+        // Fetch trip members, including the creator
         const membersResult = await db.query(
             `SELECT u.id, u.username 
-             FROM users u
-             JOIN trip_members tm ON u.id = tm.user_id
-             WHERE tm.trip_id = $1`,
+            FROM users u
+            WHERE u.id IN (
+                SELECT user_id FROM trip_members WHERE trip_id = $1
+                UNION
+                SELECT creator_id FROM trips WHERE id = $1
+            )`,
             [tripId]
         );
 
@@ -237,6 +240,42 @@ router.post('/:id/add-friend', auth, async (req, res) => {
     } catch (err) {
         console.error('Error adding friend to trip:', err);
         res.status(500).json({ message: 'Server error adding friend to trip' });
+    }
+});
+
+router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
+    // if (memberId == userId) {
+    //     return res.status(403).json({ message: 'You cannot remove yourself from the trip.' });
+    // }
+    
+    try {
+        const { tripId, memberId } = req.params;
+        const userId = req.user.id; // Authenticated user
+
+        // Check if the user is the creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+
+        if (tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the trip creator can remove members' });
+        }
+
+        // Remove the member from the trip
+        await db.query(
+            'DELETE FROM trip_members WHERE trip_id = $1 AND user_id = $2',
+            [tripId, memberId]
+        );
+
+        res.json({ message: 'Member removed successfully' });
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Server error removing member' });
     }
 });
 
