@@ -6,6 +6,8 @@ import "../styles/TripDetails.css";
 const TripDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [friends, setFriends] = useState([]);
+    const [selectedFriend, setSelectedFriend] = useState("");
     const [trip, setTrip] = useState(null);
     const [events, setEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -39,8 +41,53 @@ const TripDetails = () => {
             }
         };
 
+        const fetchFriends = async () => {
+            try {
+                const response = await fetch(`http://localhost:3000/api/friends/list`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+        
+                if (!response.ok) throw new Error("Failed to fetch friends");
+        
+                const data = await response.json();
+                setFriends(data);
+            } catch (err) {
+                console.error("Error fetching friends:", err);
+            }
+        };
         fetchTrip();
+        fetchFriends();    
     }, [id, token]);
+
+    const handleAddFriend = async () => {
+        if (!selectedFriend) {
+            console.error("No friend selected");
+            return;
+        }
+    
+        try {
+            const response = await fetch(`http://localhost:3000/api/trips/${id}/add-friend`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ friendId: selectedFriend }),
+            });
+    
+            const data = await response.json();
+            console.log("Add Friend Response:", data);
+    
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to add friend");
+            }
+    
+            alert("Friend added successfully!");
+        } catch (err) {
+            console.error("Error adding friend:", err);
+            alert("Failed to add friend.");
+        }
+    };    
 
     const handleAddEvent = () => {
         // TODO Logic to add a new event
@@ -148,6 +195,20 @@ const TripDetails = () => {
                             <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
                         </>
                     )}
+
+                    <div className="add-friend">
+                        <h3>Add a Friend</h3>
+                        <select onChange={(e) => setSelectedFriend(e.target.value)} value={selectedFriend}>
+                            <option value="">Select a friend</option>
+                            {friends.map((friend) => (
+                                <option key={friend.id} value={friend.id}>
+                                    {friend.username}
+                                </option>
+                            ))}
+                        </select>
+                        <button onClick={handleAddFriend} className="add-friend-btn">Add Friend</button>
+                    </div>
+
                     <h3>Events</h3>
                     <ul>
                         {events.length > 0 ? (

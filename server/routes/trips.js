@@ -155,6 +155,74 @@ router.post('/add-item', async (req, res) => {
     } catch (error) {
       res.status(500).json({ error: 'Failed to add item' });
     }
-  });
+});
+
+router.get('/friends', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const friends = await db.query(
+            `SELECT u.id, u.username FROM users u
+             JOIN friends f ON (f.user_id1 = $1 AND f.user_id2 = u.id)
+             OR (f.user_id2 = $1 AND f.user_id1 = u.id)`,
+            [userId]
+        );
+
+        res.json(friends.rows);
+    } catch (err) {
+        console.error('Error fetching friends:', err);
+        res.status(500).json({ message: 'Server error fetching friends' });
+    }
+});
+
+// Add a friend to a trip
+router.post('/:id/add-friend', auth, async (req, res) => {
+    try {
+        const { friendId } = req.body;
+        const tripId = req.params.id;
+        const userId = req.user.id; // The authenticated user
+
+        // Check if the friend is in the user's friends list
+        const friendCheck = await db.query(
+            `SELECT 1 FROM friendships 
+             WHERE (user1_id = $1 AND user2_id = $2) 
+                OR (user1_id = $2 AND user2_id = $1)`,
+            [userId, friendId]
+        );
+
+        if (friendCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'User is not your friend' });
+        }
+
+        // Ensure the trip exists and the user has access to it
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips 
+             WHERE id = $1 
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or access denied' });
+        }
+
+        // Add friend to the trip if not already in it
+        const insertResult = await db.query(
+            `INSERT INTO trip_members (trip_id, user_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT DO NOTHING RETURNING *`,
+            [tripId, friendId]
+        );
+
+        if (insertResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Friend is already in the trip' });
+        }
+
+        res.status(200).json({ message: 'Friend added successfully to the trip' });
+    } catch (err) {
+        console.error('Error adding friend to trip:', err);
+        res.status(500).json({ message: 'Server error adding friend to trip' });
+    }
+});
 
 module.exports = router;
