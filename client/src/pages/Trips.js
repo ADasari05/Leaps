@@ -66,6 +66,16 @@ const Trips = () => {
             <button onClick={() => navigate("/createtrip")} className="create-trip-btn">
                 Create New Trip
             </button>
+
+            <button // Placeholder button for viewing event from trips page
+                onClick={() => navigate("/viewevent")} style={{ display: "block", background: "red", color: "white" }}>
+                View Event
+            </button>
+
+            <button // Placeholder button for viewing event from trips page
+                onClick={() => navigate("/viewlodging")} style={{ display: "block", background: "red", color: "white" }}>
+                View Lodging
+            </button> 
         </div>
     );
 };

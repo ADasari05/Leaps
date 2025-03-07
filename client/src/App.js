@@ -14,6 +14,8 @@ import TripDetails from "./pages/TripDetails";
 import ResetPassword from "./pages/ResetPassword";
 import Friends from './pages/Friends';
 import Users from './pages/Users';
+import ViewEvent from "./pages/ViewEvent";
+import ViewLodging from "./pages/ViewLodging";
 import './App.css';
 // import AccountPage from "./AccountPage";
 
@@ -31,7 +33,9 @@ function App() {
         <Route path="/trips/:id" element={<TripDetails />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/friends" element={<Friends />} />
-        <Route path="/users" element={<Users />} /> 
+        <Route path="/users" element={<Users />} />
+        <Route path="/viewevent" element={<ViewEvent />} />
+        <Route path="/viewlodging" element={<ViewLodging />} />
       </Routes>
   </Router>
   );
