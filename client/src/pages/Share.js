@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "../styles/Share.css";
 
 const Share = () => {
@@ -8,6 +8,7 @@ const Share = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const token = localStorage.getItem('token');
+    const navigate = useNavigate();
 
     const handleAddFriendLink = async () => {
         setIsLoading(true);
@@ -35,6 +36,7 @@ const Share = () => {
     useEffect (() => {
         console.log("loaded");
         handleAddFriendLink();
+        navigate("/trips");
     });
 
     return (
