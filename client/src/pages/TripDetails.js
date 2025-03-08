@@ -214,8 +214,11 @@ const TripDetails = () => {
             if (!response.ok) throw new Error('Failed to save trip');
 
             const data = await response.json();
-            setTrip(data);
-            setIsEditing(false);
+            setTrip({
+                ...data,
+                startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
+                endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
+            });            setIsEditing(false);
         } catch (err) {
             console.error('Error saving trip:', err);
             setError('Error saving trip. Please try again later.');
@@ -296,14 +299,16 @@ const TripDetails = () => {
         } else if (type === 'lodging') {
             try {
               // Navigate to lodging page if you have one
-              navigate(`/lodging/${id}`);
+              navigate('/lodgings');
+              //navigate(`/lodging/${id}`);
             } catch (err) {
               console.error('Error navigating to lodging:', err);
             }
           } else if (type === 'travel') {
             try {
               // Navigate to travel page if you have one
-              navigate(`/travel/${id}`);
+              navigate('/travel');
+              //navigate(`/travel/${id}`);
             } catch (err) {
               console.error('Error navigating to travel:', err);
             }
