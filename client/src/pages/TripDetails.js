@@ -30,7 +30,11 @@ const TripDetails = () => {
                 if (!response.ok) throw new Error('Failed to fetch trip');
 
                 const data = await response.json();
-                setTrip(data);
+                setTrip({
+                    ...data,
+                    startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
+                    endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
+                });
                 setEvents(data.events || []); // Assuming events are part of the trip data
                 setTripMembers(data.members || []); // Ensure members are stored
                 console.log("Trip Members:", data.members); // Debugging log
