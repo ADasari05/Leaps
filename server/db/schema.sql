@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
-DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, travel, lodging, trip_items CASCADE;
+DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, travel, lodging, trip_items, trip_cancellation_votes CASCADE;
 DROP INDEX IF EXISTS idx_events_name, idx_events_location, idx_events_type, idx_travel_departure_location, idx_travel_arrival_location, idx_lodging_name, idx_lodging_location;
 
 
@@ -99,6 +99,15 @@ CREATE TABLE trip_items (
     item_id VARCHAR(255) NOT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, item_type, item_id)
+);
+
+-- Trip Cancellation Votes Table
+CREATE TABLE trip_cancellation_votes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(trip_id, user_id)
 );
 
 
