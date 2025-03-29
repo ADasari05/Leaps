@@ -61,7 +61,10 @@ const Trips = () => {
                                 </Link>
                                 <p>{trip.description}</p>
                                 <p><strong>Destination:</strong> {trip.destination}</p>
-                                <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
+                                <p><strong>Dates:</strong> 
+                                    {trip.start_date ? new Date(trip.start_date).toISOString().split('T')[0] : ''} to 
+                                    {trip.end_date ? new Date(trip.end_date).toISOString().split('T')[0] : ''}
+                                </p>
                                 <ConfirmDelete id={trip.id} token={token}/>
                             </div>
                         ))
