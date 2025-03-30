@@ -16,6 +16,7 @@ const TripDetails = () => {
     const [tripMembers, setTripMembers] = useState([]);
     const [cancelVotes, setCancelVotes] = useState(0);
     const [hasVotedToCancel, setHasVotedToCancel] = useState(false);
+    const [isTripCancelled, setIsTripCancelled] = useState(false);
     const token = localStorage.getItem('token');
     const userId = JSON.parse(atob(token.split('.')[1])).id;
 
@@ -66,7 +67,14 @@ const TripDetails = () => {
             }
         };
 
+        fetchTrip();
+        fetchFriends();
+    }, [id, token, userId]);
+
+    useEffect(() => {
         const fetchCancelVotes = async () => {
+            if (tripMembers.length === 0) return; // Ensure tripMembers is loaded before fetching votes
+
             try {
                 const response = await fetch(`/api/trips/${id}/cancellation-status`, {
                     headers: {
@@ -90,15 +98,17 @@ const TripDetails = () => {
 
                 const userVoteData = await userVoteResponse.json();
                 setHasVotedToCancel(userVoteData.hasVoted);
+
+                // Determine if the trip is cancelled
+                const totalMembers = tripMembers.length;
+                setIsTripCancelled(data.cancel_votes > totalMembers / 2);
             } catch (err) {
                 console.error('Error fetching cancellation votes or user vote status:', err);
             }
         };
 
-        fetchTrip();
-        fetchFriends();    
         fetchCancelVotes();
-    }, [id, token, userId]);
+    }, [tripMembers]); // Run fetchCancelVotes only after tripMembers is updated
 
     const fetchTripMembers = async () => {
         try {
@@ -440,6 +450,7 @@ const TripDetails = () => {
 
             setCancelVotes(cancelVotes + 1);
             setHasVotedToCancel(true);
+            window.location.reload(); // Force refresh
         } catch (err) {
             console.error('Error voting to cancel trip:', err);
         }
@@ -458,6 +469,7 @@ const TripDetails = () => {
 
             setCancelVotes(cancelVotes - 1);
             setHasVotedToCancel(false);
+            window.location.reload(); // Force refresh
         } catch (err) {
             console.error('Error rescinding vote:', err);
         }
@@ -474,7 +486,8 @@ const TripDetails = () => {
 
             if (!response.ok) throw new Error('Failed to restore trip');
 
-            navigate('/trips'); // Redirect to trips page after restoring
+            setCancelVotes(0);
+            setIsTripCancelled(false);
         } catch (err) {
             console.error('Error restoring trip:', err);
         }
@@ -490,6 +503,17 @@ const TripDetails = () => {
 
     return (
         <div className="trip-details">
+            {isTripCancelled && (
+                <div className="cancelled-sidebar">
+                    <h3>Trip Cancelled</h3>
+                    <p>This trip has been cancelled as more than half of the members have voted to cancel.</p>
+                    {trip?.creator_id === userId && (
+                        <button onClick={restoreTrip} className="restore-trip-btn">
+                            Restore Trip
+                        </button>
+                    )}
+                </div>
+            )}
             {trip ? (
                 <>
                     {isEditing ? (
