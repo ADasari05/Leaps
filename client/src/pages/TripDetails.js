@@ -78,9 +78,20 @@ const TripDetails = () => {
 
                 const data = await response.json();
                 setCancelVotes(data.cancel_votes || 0);
-                setHasVotedToCancel(data.voters?.some(voter => voter.user_id === userId));
+
+                // Check if the user has already voted to cancel
+                const userVoteResponse = await fetch(`/api/trips/${id}/user-vote`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userVoteResponse.ok) throw new Error('Failed to fetch user vote status');
+
+                const userVoteData = await userVoteResponse.json();
+                setHasVotedToCancel(userVoteData.hasVoted);
             } catch (err) {
-                console.error('Error fetching cancellation votes:', err);
+                console.error('Error fetching cancellation votes or user vote status:', err);
             }
         };
 

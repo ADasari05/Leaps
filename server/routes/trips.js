@@ -460,6 +460,25 @@ router.post('/:id/vote-cancel', auth, async (req, res) => {
     }
 });
 
+// Check if the user has voted to cancel the trip
+router.get('/:id/user-vote', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        const voteCheck = await db.query(
+            `SELECT 1 FROM trip_cancellation_votes 
+             WHERE trip_id = $1 AND user_id = $2`,
+            [tripId, userId]
+        );
+
+        res.json({ hasVoted: voteCheck.rows.length > 0 });
+    } catch (err) {
+        console.error('Error checking user vote:', err);
+        res.status(500).json({ message: 'Server error checking user vote' });
+    }
+});
+
 // Rescind a vote to cancel a trip
 router.delete('/:id/rescind-vote', auth, async (req, res) => {
     try {
