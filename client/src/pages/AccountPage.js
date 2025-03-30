@@ -7,7 +7,8 @@ function AccountPage() {
     const [userInfo, setUserInfo] = useState({
         username: '',
         email: '',
-        password: ''
+        password: '',
+        pic: ''
     });
 
     const [isEditing, setIsEditing] = useState(false);
@@ -39,7 +40,8 @@ function AccountPage() {
             setUserInfo({
                 username: userData.username || '',
                 email: userData.email || '',
-                password: '' // Don't populate password for security
+                password: '', // Don't populate password for security
+                pic: userData.profile_pic || ''
             });
         } catch (err) {
             setError('Error loading your account information. Please try again later.');
@@ -173,7 +175,14 @@ function AccountPage() {
         <div className="account-container">
             {/* Profile Section */}
             <div className="profile-section">
-                <div className="profile-picture"></div>
+                <div id="pic-container" className="profile-picture">
+                    <img 
+                        src={userInfo.pic} 
+                        alt="Profile Picture" 
+                        className="profile-picture"
+                    />
+                </div>
+                
                 <h2 className="username-title">{userInfo.username}</h2>
                 
                 {!isEditing ? (

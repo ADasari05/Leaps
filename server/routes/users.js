@@ -10,7 +10,7 @@ router.get('/profile', auth, async (req, res) => {
         const id = req.user.id; // From auth middleware
 
         const result = await db.query(
-            'SELECT id, username, email FROM users WHERE id = $1',
+            'SELECT id, username, email, profile_pic FROM users WHERE id = $1',
             [id]
         );
 
