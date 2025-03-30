@@ -115,3 +115,20 @@
     color: #666;
     margin-top: 20px;
 }
+
+.users-list .remove-btn {
+    margin-left: 10px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+.users-list .remove-btn:hover {
+    background-color: #c0392b;
+  }  
+  
