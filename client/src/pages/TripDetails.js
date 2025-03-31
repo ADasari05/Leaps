@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import ChatWindow from "../components/ChatWindow";
 import "../styles/TripDetails.css";
-//import dummyTrips from "../data/dummyTrips.json"; // Import the dummy trips
+
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -512,6 +513,7 @@ const TripDetails = () => {
             ) : (
                 <p className="error">Trip not found.</p>
             )}
+            <ChatWindow tripId={id} userId={userId} />
         </div>
     );
 };
