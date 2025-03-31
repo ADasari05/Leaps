@@ -99,7 +99,11 @@ const Users = () => {
                 <ul className="users-list">
                     {users.map(user => (
                         <li key={user.id}>
-                            <span className="user-info">{user.username} ({user.email})</span>
+                            <span className="user-info">
+                                <img src={user.profile_pic} className='profile-pic'/>
+                                {user.username}
+                                ({user.email})
+                            </span>
                             {friends.some(friend => friend.id === user.id) ? (
                                 <span className="friend-status">Friend</span>
                             ) : (

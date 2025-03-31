@@ -133,7 +133,7 @@ router.get('/search', auth, async (req, res) => {
         const searchTerm = `%${query.toLowerCase()}%`;
 
         const results = await db.query(
-            `SELECT id, username, email
+            `SELECT id, username, email, profile_pic
              FROM users
              WHERE LOWER(username) LIKE $1`,
             [searchTerm]
