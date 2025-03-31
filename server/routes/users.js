@@ -29,7 +29,7 @@ router.get('/profile', auth, async (req, res) => {
 router.put('/update', auth, async (req, res) => {
     try {
         const id = req.user.id; // From auth middleware
-        const { username, email, password } = req.body;
+        const { username, email, password, pic } = req.body;
         
         // Start building the query
         let updateFields = [];
@@ -69,6 +69,12 @@ router.put('/update', auth, async (req, res) => {
             queryParams.push(hashedPassword);
             paramCounter++;
         }
+
+        if (pic) {
+            updateFields.push(`profile_pic = $${paramCounter}`);
+            queryParams.push(pic);
+            paramCounter++;
+        }
         
         // If no fields to update
         if (updateFields.length === 0) {
@@ -80,7 +86,7 @@ router.put('/update', auth, async (req, res) => {
             UPDATE users 
             SET ${updateFields.join(', ')} 
             WHERE id = $${paramCounter} 
-            RETURNING id, username, email
+            RETURNING id, username, email, profile_pic
         `;
         
         // Add the user ID as the last parameter

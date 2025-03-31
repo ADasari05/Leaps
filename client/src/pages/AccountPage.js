@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import '../styles/AccountPage.css';
+import UploadImage from '../components/UploadProfilePicture';
 
 function AccountPage() {
 
@@ -79,6 +80,11 @@ function AccountPage() {
         }));
     };
 
+    const imageChange = (base64String) => {
+        userInfo.pic = base64String;
+        console.log("image changed");
+    };
+
     const handleSaveChanges = async () => {
         setIsLoading(true);
         setError(null);
@@ -90,6 +96,7 @@ function AccountPage() {
             if (userInfo.username) updatedFields.username = userInfo.username;
             if (userInfo.email) updatedFields.email = userInfo.email;
             if (userInfo.password) updatedFields.password = userInfo.password;
+            if (userInfo.pic) updatedFields.pic = userInfo.pic;
             
             const response = await fetch(`/api/users/update`, {
                 method: 'PUT',
@@ -194,19 +201,24 @@ function AccountPage() {
                         Edit
                     </button>
                 ) : (
-                    <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
-                        <button 
-                            onClick={handleSaveChanges}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Saving..." : "Save"}
-                        </button>
-                        <button 
-                            onClick={handleCancelEdit}
-                            disabled={isLoading}
-                        >
-                            Cancel
-                        </button>
+                    <div>
+                        <div>
+                            <UploadImage updateImage={imageChange}></UploadImage>
+                        </div>
+                        <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
+                            <button 
+                                onClick={handleSaveChanges}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Saving..." : "Save"}
+                            </button>
+                            <button 
+                                onClick={handleCancelEdit}
+                                disabled={isLoading}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
