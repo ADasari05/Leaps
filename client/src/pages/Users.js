@@ -12,6 +12,11 @@ const Users = () => {
     const [messageType, setMessageType] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
 
+    //REQUESTING
+    const [pendingRequests, setPendingRequests] = useState([]); // incoming
+    const [outgoingRequests, setOutgoingRequests] = useState([]); // you sent
+
+
     const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
@@ -45,8 +50,35 @@ const Users = () => {
             console.error('Error fetching friends:', err);
           }
         };
+
+        const fetchRequests = async () => {
+          try {
+            const res = await fetch('/api/friends/requests', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setPendingRequests(data);
+          } catch (err) {
+            console.error('Error fetching incoming requests:', err);
+          }
+        };
+        
+        const fetchOutgoingRequests = async () => {
+          try {
+            const res = await fetch('/api/friends/outgoing', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setOutgoingRequests(data);
+          } catch (err) {
+            console.error('Error fetching outgoing requests:', err);
+          }
+        };
+
         fetchProfile();
         fetchFriends();
+        fetchRequests();
+        fetchOutgoingRequests();
     }, [token, navigate]);
     
     const handleSearch = async (e) => {
@@ -137,7 +169,60 @@ const Users = () => {
           setIsLoading(false);
         }
     };
-      
+
+    const handleSendRequest = async (receiverId) => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/friends/request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ receiver_id: receiverId })
+        });
+    
+        const data = await res.json();
+        setMessage(data.message);
+        setMessageType(res.ok ? 'success' : 'error');
+    
+        if (res.ok) {
+          setOutgoingRequests(prev => [...prev, { receiver_id: receiverId }]);
+        }
+      } catch (err) {
+        console.error('Error sending request:', err);
+        setMessage('Error sending request');
+        setMessageType('error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    const respondToRequest = async (requestId, action) => {
+      try {
+        const res = await fetch('/api/friends/respond', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ request_id: requestId, action })
+        });
+    
+        const data = await res.json();
+        setMessage(data.message);
+        setMessageType(res.ok ? 'success' : 'error');
+    
+        if (res.ok) {
+          // Remove from pending, refresh friend list if accepted
+          setPendingRequests(prev => prev.filter(r => r.id !== requestId));
+          if (action === 'accept') fetchFriends();
+        }
+      } catch (err) {
+        console.error('Error responding to request:', err);
+      }
+    };
+    
 
   return (
     <div className="users-container">
@@ -161,26 +246,52 @@ const Users = () => {
         {message && <p className={messageType === 'success' ? 'success-message' : 'message'}>{message}</p>}
         {searchResults.length > 0 && (
           <ul className="users-list">
-            {searchResults.filter(user => user.id !== currentUserId)
-            .map(user => (
-              <li key={user.id}>
-                <span className="user-info">{user.username} ({user.email})</span>
-                {friends.some(friend => friend.id === user.id) ? (
-                  <span className="friend-status">Friend</span>
-                ) : (
-                  <button
-                    onClick={() => handleAddFriend(user.id)}
-                    disabled={isLoading}
-                    className="add-btn"
-                  >
-                    Add Friend
-                  </button>
-                )}
+            {searchResults
+            .filter(user => user.id !== currentUserId)
+            .map(user => {
+              const isFriend = friends.some(f => f.id === user.id);
+              const isPending = outgoingRequests.some(r => r.receiver_id === user.id);
+
+              return (
+                <li key={user.id}>
+                  <span className="user-info">{user.username} ({user.email})</span>
+                  {isFriend ? (
+                    <span className="friend-status">Friend</span>
+                  ) : isPending ? (
+                    <span className="pending-status">Pending</span>
+                  ) : (
+                    <button
+                      onClick={() => handleSendRequest(user.id)}
+                      disabled={isLoading}
+                      className="add-btn"
+                    >
+                      Add Friend
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+      
+      <section>
+        <h3>Friend Requests</h3>
+        {pendingRequests.length === 0 ? (
+          <p>No incoming requests</p>
+        ) : (
+          <ul className="users-list">
+            {pendingRequests.map(req => (
+              <li key={req.id}>
+                <span className="user-info">{req.username} ({req.email})</span>
+                <button onClick={() => respondToRequest(req.id, 'accept')} className="add-btn">Accept</button>
+                <button onClick={() => respondToRequest(req.id, 'reject')} className="remove-btn">Reject</button>
               </li>
             ))}
           </ul>
         )}
       </section>
+
 
       {/* Friends List Section */}
       <section>

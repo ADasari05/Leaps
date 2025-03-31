@@ -28,6 +28,15 @@ CREATE TABLE friendships (
     CHECK (user1_id < user2_id)
 );
 
+-- Friend Requests Table
+CREATE TABLE friend_requests (
+  id SERIAL PRIMARY KEY,
+  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(sender_id, receiver_id)
+);
+
 -- Trips Table
 CREATE TABLE trips (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
