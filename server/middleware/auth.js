@@ -5,9 +5,15 @@ const authMiddleware = async (req, res, next) => {
         // Get token from header
         const token = req.header('Authorization').replace('Bearer ', '');
         
+
         if (!token) {
+            // Instead of returning error, check if route allows guest access
+            if (req.allowGuest) {
+              req.user = { id: 'guest', isGuest: true };
+              return next();
+            }
             return res.status(401).json({ message: 'No token, authorization denied' });
-        }
+          }
 
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);

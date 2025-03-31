@@ -29,24 +29,39 @@ function App() {
     <Router>
       <Navbar />
       <Routes>
+
         <Route path="/" element={<Navigate to="/signup" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/accountpage" element={<AccountPage />} />
-        <Route path="/createtrip" element={<CreateTrip />} />
-        <Route path="/trips" element={<Trips />} />
-        <Route path="/trips/:id" element={<TripDetails />} />
-        <Route path="/trips/:id/share" element={<Share />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/viewevent/:id" element={<ViewEvent />} />
-        <Route path="/viewlodging/:id" element={<ViewLodging />} />
+
+        {/* Public routes that allow guest access */}
         <Route path="/events" element={<Events />} />
-        <Route path="/users" element={<Users />} /> 
-        <Route path="/search" element={<Search />} />
         <Route path="/lodgings" element={<Lodgings />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/travel" element={<Travel />} />
+        <Route path="/users" element={<Users />} /> 
+        <Route path="/viewevent/:id" element={<ViewEvent />} />
+
+        {/* Protected routes */}
+        <Route path="/accountpage" element={
+          isAuthenticated() ? <AccountPage /> : <Navigate to="/login" />
+        } />
+        <Route path="/createtrip" element={
+          isAuthenticated() ? <CreateTrip /> : <Navigate to="/login" />
+        } />
+        <Route path="/trips" element={
+          isAuthenticated() ? <Trips /> : <Navigate to="/login" />
+        } />
+        <Route path="/trips/:id" element={
+          isAuthenticated() ? <TripDetails /> : <Navigate to="/login" />
+        } />
+        <Route path="/trips/:id/share" element={
+          isAuthenticated() ? <Share /> : <Navigate to="/login" />
+        } />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/friends" element={
+          isAuthenticated() ? <Friends /> : <Navigate to="/login" />
+        } />
       </Routes>
     </Router>
   );
