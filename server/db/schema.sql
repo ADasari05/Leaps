@@ -31,8 +31,8 @@ CREATE TABLE friendships (
 -- Friend Requests Table
 CREATE TABLE friend_requests (
   id SERIAL PRIMARY KEY,
-  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id UUID REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(sender_id, receiver_id)
 );

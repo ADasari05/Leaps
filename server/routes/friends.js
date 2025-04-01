@@ -169,6 +169,95 @@ router.post('/request', auth, async (req, res) => {
       console.error(err);
       res.status(500).json({ message: 'Error responding to friend request' });
     }
-  });  
+  });
 
+  router.get('/outgoing', auth, async (req, res) => {
+    const sender_id = req.user.id;
+  
+    try {
+      const result = await db.query(
+        `SELECT fr.receiver_id, u.username, u.email
+         FROM friend_requests fr
+         JOIN users u ON fr.receiver_id = u.id
+         WHERE fr.sender_id = $1`,
+        [sender_id]
+      );
+  
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching outgoing friend requests:', err);
+      res.status(500).json({ message: 'Server error fetching outgoing requests' });
+    }
+  });
+
+  router.delete('/request', auth, async (req, res) => {
+    const sender_id = req.user.id;
+    const { receiver_id } = req.body;
+  
+    try {
+      const result = await db.query(
+        `DELETE FROM friend_requests
+         WHERE sender_id = $1 AND receiver_id = $2
+         RETURNING *`,
+        [sender_id, receiver_id]
+      );
+  
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'No pending request to cancel' });
+      }
+  
+      res.json({ message: 'Friend request canceled' });
+    } catch (err) {
+      console.error('Error canceling request:', err);
+      res.status(500).json({ message: 'Server error while canceling request' });
+    }
+  });
+
+  router.get('/suggestions', auth, async (req, res) => {
+    const user_id = req.user.id;
+  
+    try {
+      const result = await db.query(
+        `
+        WITH user_friends AS (
+          SELECT CASE 
+            WHEN user1_id = $1 THEN user2_id
+            ELSE user1_id
+          END AS friend_id
+          FROM friendships
+          WHERE user1_id = $1 OR user2_id = $1
+        ),
+        friends_of_friends_raw AS (
+          SELECT
+            CASE 
+              WHEN f.user1_id = uf.friend_id THEN f.user2_id
+              ELSE f.user1_id
+            END AS suggested_id
+          FROM friendships f
+          JOIN user_friends uf ON f.user1_id = uf.friend_id OR f.user2_id = uf.friend_id
+          WHERE NOT (f.user1_id = $1 OR f.user2_id = $1)
+        ),
+        suggestions_with_count AS (
+          SELECT suggested_id, COUNT(*) AS mutual_count
+          FROM friends_of_friends_raw
+          WHERE suggested_id != $1
+          AND suggested_id NOT IN (SELECT friend_id FROM user_friends)
+          GROUP BY suggested_id
+        )
+        SELECT u.id, u.username, u.email, s.mutual_count
+        FROM suggestions_with_count s
+        JOIN users u ON u.id = s.suggested_id
+        ORDER BY s.mutual_count DESC
+        LIMIT 10;
+        `,
+        [user_id]
+      );
+  
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error generating friend suggestions:', err);
+      res.status(500).json({ message: 'Server error generating suggestions' });
+    }
+  });
+  
 module.exports = router;
