@@ -110,6 +110,16 @@ CREATE TABLE trip_cancellation_votes (
     UNIQUE(trip_id, user_id)
 );
 
+CREATE TABLE messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_messages_trip_id ON messages(trip_id);
+CREATE INDEX idx_messages_sender_id ON messages(sender_id);
 
 CREATE INDEX idx_events_name ON events(name);
 CREATE INDEX idx_events_location ON events(location);
