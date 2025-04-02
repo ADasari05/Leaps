@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Travel.css";
+import { isAuthenticated, isGuest } from "../services/authService";
+import AuthPrompt from "../components/AuthPrompt";
 
 const Travel = () => {
     const [travelItems, setTravelItems] = useState([]);
@@ -13,6 +15,7 @@ const Travel = () => {
     const [departureLocation, setDepartureLocation] = useState('');
     const [destination, setDestination] = useState('');
     const token = localStorage.getItem('token');
+    const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -20,9 +23,9 @@ const Travel = () => {
             setIsLoading(true);
             try {
                 const response = await fetch('http://localhost:3000/api/travel', {
-                    headers: {
+                    headers: isAuthenticated() ? {
                         'Authorization': `Bearer ${token}`
-                    }
+                    } : {} 
                 });
 
                 if (!response.ok) throw new Error('Failed to fetch travel items');
@@ -38,25 +41,36 @@ const Travel = () => {
         };
 
         const fetchTrips = async () => {
-            try {
-                const response = await fetch('http://localhost:3000/api/trips', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+            if (isAuthenticated()) {
+                try {
+                    const response = await fetch('http://localhost:3000/api/trips', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
 
-                if (!response.ok) throw new Error('Failed to fetch trips');
+                    if (!response.ok) throw new Error('Failed to fetch trips');
 
-                const data = await response.json();
-                setTrips(data);
-            } catch (err) {
-                console.error('Error fetching trips:', err);
+                    const data = await response.json();
+                    setTrips(data);
+                } catch (err) {
+                    console.error('Error fetching trips:', err);
+                }
             }
         };
 
         fetchTravelItems();
         fetchTrips();
     }, [token]);
+
+    const handleAddToTripClick = (travel) => {
+        if (!isAuthenticated()) {
+            setShowAuthPrompt(true);
+        } else {
+            setSelectedTravel(travel);
+            setIsModalOpen(true);
+        }
+    };
 
     const handleAddTravelToTrip = async (tripId) => {
         try {
@@ -96,6 +110,11 @@ const Travel = () => {
 
     return (
         <div className="travel">
+            {isGuest() && (
+                <div className="guest-banner">
+                    <p>You're browsing as a guest. <a href="/login">Log in</a> or <a href="/signup">sign up</a> to add travel to trips.</p>
+                </div>
+            )}
             <h2>All Travel Items</h2>
             <div className="filter">
                 <label>
@@ -133,7 +152,7 @@ const Travel = () => {
                         <p>{travel.departure_location} to {travel.arrival_location}</p>
                         <p><strong>Departure:</strong> {new Date(travel.departure).toLocaleDateString()}</p>
                         <p><strong>Arrival:</strong> {new Date(travel.arrival).toLocaleDateString()}</p>
-                        <button onClick={() => { setSelectedTravel(travel); setIsModalOpen(true); }}>
+                        <button onClick={() => { handleAddToTripClick(travel); }}>
                             Add to Trip
                         </button>
                         <button onClick={() => window.open('https://www.booking.com', '_blank')}>
@@ -159,6 +178,12 @@ const Travel = () => {
                         <button onClick={() => setIsModalOpen(false)}>Close</button>
                     </div>
                 </div>
+            )}
+            {showAuthPrompt && (
+                <AuthPrompt 
+                    message="Please log in or create an account to add travel to trips."
+                    onClose={() => setShowAuthPrompt(false)}
+                />
             )}
         </div>
     );

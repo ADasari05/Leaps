@@ -21,18 +21,22 @@ import Search from './pages/SearchPage';
 import Share from './pages/Share';
 import Lodgings from "./pages/Lodgings";
 import Travel from "./pages/Travel";
+import { isAuthenticated } from "./services/authService"; 
+import { useState } from "react";
 import './App.css';
 // import AccountPage from "./AccountPage";
 
 function App() {
+  const [auth, setAuth] = useState(isAuthenticated());
+
   return (
     <Router>
       <Navbar />
       <Routes>
 
         <Route path="/" element={<Navigate to="/signup" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login setAuth={setAuth} />} />
+        <Route path="/signup" element={<SignUp setAuth={setAuth} />} />
 
         {/* Public routes that allow guest access */}
         <Route path="/events" element={<Events />} />
@@ -44,23 +48,23 @@ function App() {
 
         {/* Protected routes */}
         <Route path="/accountpage" element={
-          isAuthenticated() ? <AccountPage /> : <Navigate to="/login" />
+          auth ? <AccountPage /> : <Navigate to="/login" />
         } />
         <Route path="/createtrip" element={
-          isAuthenticated() ? <CreateTrip /> : <Navigate to="/login" />
+          auth ? <CreateTrip /> : <Navigate to="/login" />
         } />
         <Route path="/trips" element={
-          isAuthenticated() ? <Trips /> : <Navigate to="/login" />
+          auth ? <Trips /> : <Navigate to="/login" />
         } />
         <Route path="/trips/:id" element={
-          isAuthenticated() ? <TripDetails /> : <Navigate to="/login" />
+          auth ? <TripDetails /> : <Navigate to="/login" />
         } />
         <Route path="/trips/:id/share" element={
-          isAuthenticated() ? <Share /> : <Navigate to="/login" />
+          auth ? <Share /> : <Navigate to="/login" />
         } />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/friends" element={
-          isAuthenticated() ? <Friends /> : <Navigate to="/login" />
+          auth ? <Friends /> : <Navigate to="/login" />
         } />
       </Routes>
     </Router>

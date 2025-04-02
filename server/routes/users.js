@@ -119,7 +119,10 @@ router.delete('/delete', auth, async (req, res) => {
     }
 });
 
-router.get('/search', auth, async (req, res) => {
+router.get('/search', (req, res, next) => {
+    req.allowGuest = true;
+    next();
+}, auth, async (req, res) => {
     try {
         const { query } = req.query;
         if (!query) return res.status(400).json({ message: 'Search query required' });

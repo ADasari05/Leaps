@@ -3,8 +3,11 @@ const router = express.Router();
 const db = require('../config/db');
 const auth = require('../middleware/auth');
 
-// Get all travel items
-router.get('/', auth, async (req, res) => {
+
+router.get('/', (req, res, next) => {
+    req.allowGuest = true;
+    next();
+  }, auth, async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM travel');
         res.json(result.rows);

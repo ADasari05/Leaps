@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
 import "../styles/auth.css";
+import { isAuthenticated } from "../services/authService";
 
-const Login = () => {
+const Login = ({ setAuth }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
@@ -34,8 +35,10 @@ const Login = () => {
                 setSuccess("Login successful!");
                 localStorage.setItem("token", data.token);
                 setTimeout(() => {
+                    setAuth(true);
                     navigate("/accountpage");
                 }, 1000);
+            
                 //navigate("/accountpage");  // Change to your main page after login
             } else {
                 localStorage.removeItem("token");

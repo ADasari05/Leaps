@@ -77,3 +77,33 @@
     width: 50px;
     text-align: left; 
 }
+
+.guest-label {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: inherit;
+    color: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.login-link, .signup-link {
+    font-weight: bold;
+}
+
+.login-link {
+    color: #4285f4;
+}
+
+.signup-link {
+    color: #34a853;
+}

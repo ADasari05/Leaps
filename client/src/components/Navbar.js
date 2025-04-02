@@ -7,6 +7,13 @@ import { isAuthenticated, isGuest, logout } from '../services/authService';
 
 
 const Navbar = () => {
+    const navigate = useNavigate();
+    
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     return (
         
         
@@ -23,9 +30,8 @@ const Navbar = () => {
 
             <div className="nav-links">
                     <Link to="/trips" className="nav-item">Trips</Link>
-                    <Link to="/events" className="nav-item">Events</Link>
                     <Link to="/lodgings" className="nav-item">Lodging</Link>
-                    <Link to="/search" className="nav-item">Search</Link>
+                    <Link to="/search" className="nav-item">Events</Link>
                     <Link to="/travel" className="nav-item">Travel</Link>
                     <Link to="/users" className="nav-item">Users</Link>
                     
