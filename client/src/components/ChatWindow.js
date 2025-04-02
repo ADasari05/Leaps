@@ -12,6 +12,7 @@ function ChatWindow({ tripId, userId }) {
   const [typingUsers, setTypingUsers] = useState([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const messagesEndRef = useRef(null);
+
   
  useEffect(() => {
     const newSocket = io(ENDPOINT);
@@ -179,25 +180,30 @@ function ChatWindow({ tripId, userId }) {
       <div className={`chat-window ${isChatOpen ? '' : 'hidden'}`}>
         <div className="chat-header">
           <h3>Trip Chat</h3>
-          <button className="close-chat" onClick={toggleChat} aria-label="Close chat">×</button>
+          <button className="close-chat" onClick={toggleChat}>×</button>
         </div>
         
         <div className="messages-container">
           {Array.isArray(messages) && messages.length > 0 ? (
-            messages.map((message, index) => (
-              <div 
-                key={index} 
-                className={`message ${message.sender_id === userId ? 'sent' : 'received'}`}
-              >
-                {message.sender_id !== userId && (
-                  <div className="sender-name">{message.sender_name}</div>
-                )}
-                <div className="message-content">{message.content}</div>
-                <div className="message-timestamp">
-                  {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            ))
+            messages.map((message, index) => {
+              const isSent = message.sender_id === userId;
+              const messageColor = isSent ? '#7691ff' : '#f0f0f0';
+              return (
+                  <div
+                      key={index}
+                      className={`message ${isSent ? 'sent' : 'received'}`}
+                      style={{ backgroundColor: messageColor }}
+                  >
+                      {message.sender_id !== userId && (
+                          <div className="sender-name">{message.sender_name}</div>
+                      )}
+                      <div className="message-content">{message.content}</div>
+                      <div className="message-timestamp">
+                          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                  </div>
+              );
+            })
           ) : (
             <div className="no-messages">No messages yet. Start the conversation!</div>
           )}
