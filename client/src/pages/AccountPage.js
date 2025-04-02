@@ -162,11 +162,7 @@ function AccountPage() {
     };
 
     if (!token) {
-        return <div className="account-container">Please log in to view your account.</div>;
-    }
-
-    if (isLoading && !userInfo.username) {
-        return <div className="account-container">Loading your account information...</div>;
+        return <div className="account-container">Please login to view your account.</div>;
     }
     
     return (
