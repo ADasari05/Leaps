@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const apiService = require('../services/api-service');
+const auth = require('../middleware/auth'); 
 
-router.get('/', async (req, res) => {
+router.get('/', (req, res, next) => {
+  req.allowGuest = true;
+  next();
+}, auth, async (req, res) => {
   const { q, location, eventType } = req.query;
   try {
     const results = { events: [], travel: [], lodging: [] };

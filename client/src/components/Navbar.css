@@ -3,8 +3,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #7691ff; /* Match mockup color */
-    padding: 10px 50px;
+    background-color: #7691ff;
+    padding: 10px 10px;
     color: white;
     position: fixed;
     top: 0;
@@ -16,15 +16,18 @@
 /* Flex container for equal spacing */
 .navbar-container {
     display: flex;
-    width: 100%;
-    justify-content: space-evenly;  /* Equal spacing */
+    width: 100%; 
     align-items: center;
+    justify-content: space-between; /* Keep space between left and right sections */
 }
 
 /* Navigation Links */
 .nav-links {
+    flex: 1; /* Take up available space */
     display: flex;
+    justify-content: center;
     gap: 30px; /* Controls spacing between links */
+    padding-left: 17%; /* Adjust this percentage as needed */
 }
 
 /* Individual Nav Items */
@@ -60,7 +63,7 @@
 }
 
 .search-input:focus {
-    width: 300px; /* Expanded width */
+    width: 300px;
 }
 
 .search-button {
@@ -71,11 +74,29 @@
     border-radius: 0 20px 20px 0;
 }
 
+.auth-links {
+    display: flex;
+    gap: 30px; 
+    padding: 0 30px;
+}
+
 /*Home button*/
 .home {
-    padding-top: 5px;
-    width: 50px;
-    text-align: left; 
+    display: flex;
+    width: 60px;
+}
+
+.guest-label {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+
+.login-link {
+    align-items: right; 
 }
 
 /* Dropdown */
@@ -110,4 +131,7 @@
 
 .dropdown-toggle {
     cursor: pointer;
+}
+.signup-link {
+    align-items: right; 
 }

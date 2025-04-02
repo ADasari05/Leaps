@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import ChatWindow from "../components/ChatWindow";
 import "../styles/TripDetails.css";
-//import dummyTrips from "../data/dummyTrips.json"; // Import the dummy trips
+
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -16,6 +17,7 @@ const TripDetails = () => {
     const [tripMembers, setTripMembers] = useState([]);
     const [cancelVotes, setCancelVotes] = useState(0);
     const [hasVotedToCancel, setHasVotedToCancel] = useState(false);
+    const [isTripCancelled, setIsTripCancelled] = useState(false);
     const token = localStorage.getItem('token');
     const userId = JSON.parse(atob(token.split('.')[1])).id;
 
@@ -66,7 +68,14 @@ const TripDetails = () => {
             }
         };
 
+        fetchTrip();
+        fetchFriends();
+    }, [id, token, userId]);
+
+    useEffect(() => {
         const fetchCancelVotes = async () => {
+            if (tripMembers.length === 0) return; // Ensure tripMembers is loaded before fetching votes
+
             try {
                 const response = await fetch(`/api/trips/${id}/cancellation-status`, {
                     headers: {
@@ -78,16 +87,29 @@ const TripDetails = () => {
 
                 const data = await response.json();
                 setCancelVotes(data.cancel_votes || 0);
-                setHasVotedToCancel(data.voters?.some(voter => voter.user_id === userId));
+
+                // Check if the user has already voted to cancel
+                const userVoteResponse = await fetch(`/api/trips/${id}/user-vote`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userVoteResponse.ok) throw new Error('Failed to fetch user vote status');
+
+                const userVoteData = await userVoteResponse.json();
+                setHasVotedToCancel(userVoteData.hasVoted);
+
+                // Determine if the trip is cancelled
+                const totalMembers = tripMembers.length;
+                setIsTripCancelled(data.cancel_votes > totalMembers / 2);
             } catch (err) {
-                console.error('Error fetching cancellation votes:', err);
+                console.error('Error fetching cancellation votes or user vote status:', err);
             }
         };
 
-        fetchTrip();
-        fetchFriends();    
         fetchCancelVotes();
-    }, [id, token, userId]);
+    }, [tripMembers]); // Run fetchCancelVotes only after tripMembers is updated
 
     const fetchTripMembers = async () => {
         try {
@@ -193,8 +215,11 @@ const TripDetails = () => {
             if (!response.ok) throw new Error('Failed to save trip');
 
             const data = await response.json();
-            setTrip(data);
-            setIsEditing(false);
+            setTrip({
+                ...data,
+                startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
+                endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
+            });            setIsEditing(false);
         } catch (err) {
             console.error('Error saving trip:', err);
             setError('Error saving trip. Please try again later.');
@@ -275,14 +300,16 @@ const TripDetails = () => {
         } else if (type === 'lodging') {
             try {
               // Navigate to lodging page if you have one
-              navigate(`/lodging/${id}`);
+              navigate('/lodgings');
+              //navigate(`/lodging/${id}`);
             } catch (err) {
               console.error('Error navigating to lodging:', err);
             }
           } else if (type === 'travel') {
             try {
               // Navigate to travel page if you have one
-              navigate(`/travel/${id}`);
+              navigate('/travel');
+              //navigate(`/travel/${id}`);
             } catch (err) {
               console.error('Error navigating to travel:', err);
             }
@@ -429,6 +456,7 @@ const TripDetails = () => {
 
             setCancelVotes(cancelVotes + 1);
             setHasVotedToCancel(true);
+            window.location.reload(); // Force refresh
         } catch (err) {
             console.error('Error voting to cancel trip:', err);
         }
@@ -447,6 +475,7 @@ const TripDetails = () => {
 
             setCancelVotes(cancelVotes - 1);
             setHasVotedToCancel(false);
+            window.location.reload(); // Force refresh
         } catch (err) {
             console.error('Error rescinding vote:', err);
         }
@@ -463,7 +492,8 @@ const TripDetails = () => {
 
             if (!response.ok) throw new Error('Failed to restore trip');
 
-            navigate('/trips'); // Redirect to trips page after restoring
+            setCancelVotes(0);
+            setIsTripCancelled(false);
         } catch (err) {
             console.error('Error restoring trip:', err);
         }
@@ -479,6 +509,17 @@ const TripDetails = () => {
 
     return (
         <div className="trip-details">
+            {isTripCancelled && (
+                <div className="cancelled-sidebar">
+                    <h3>Trip Cancelled</h3>
+                    <p>This trip has been cancelled as more than half of the members have voted to cancel.</p>
+                    {trip?.creator_id === userId && (
+                        <button onClick={restoreTrip} className="restore-trip-btn">
+                            Restore Trip
+                        </button>
+                    )}
+                </div>
+            )}
             {trip ? (
                 <>
                     {isEditing ? (
@@ -602,6 +643,7 @@ const TripDetails = () => {
             ) : (
                 <p className="error">Trip not found.</p>
             )}
+            <ChatWindow tripId={id} userId={userId} />
         </div>
     );
 };

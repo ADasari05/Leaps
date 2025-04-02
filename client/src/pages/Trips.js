@@ -42,6 +42,9 @@ const Trips = () => {
         fetchTrips();
     }, [token]);
 
+    if (!token) {
+        return <div className="text-container">Please login to view your trips.</div>;
+    }
     return (
         <div className="trips-container">
             <img src={LeapsLogo} alt="Leaps Logo" className="logo" />
