@@ -99,6 +99,39 @@
     align-items: right; 
 }
 
+/* Dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    position: absolute;
+    background-color: #f6f1f1;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    padding: 10px 0;
+    top: 100%;
+    left: 0;
+    min-width: 120px;
+    z-index: 100;
+    font-size: 14px;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 6px 12px;
+    color: black;
+    text-decoration: none;
+}
+
+.dropdown-item:hover {
+    background-color: #7691ff;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+}
 .signup-link {
     align-items: right; 
 }

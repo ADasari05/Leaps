@@ -5,6 +5,27 @@ const auth = require('../middleware/auth');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// Create a new event
+router.post('/', auth, async (req, res) => {
+    try {
+        const { name, description, location, start_time, price, type } = req.body;
+        const creatorId = req.user.id; // From auth middleware
+        if (!name || !description || !location || !start_time || !price || !type) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        // Insert event data into the database
+        const result = await db.query(
+            'INSERT INTO events (name, description, location, start_time, price, type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [name, description, location, start_time, price, type]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error creating event:', err);
+        res.status(500).json({ message: 'Server error creating event' });
+    }
+});
+
 // Get a single event by ID
 router.get('/:id', (req, res, next) => {
     req.allowGuest = true; 

@@ -423,4 +423,136 @@ router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
     }
 });
 
+// Vote to cancel a trip
+router.post('/:id/vote-cancel', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        // Ensure the user is a member of the trip
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips 
+             WHERE id = $1 
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'Not authorized to vote on this trip' });
+        }
+
+        // Insert the vote if it doesn't already exist
+        const result = await db.query(
+            `INSERT INTO trip_cancellation_votes (trip_id, user_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT DO NOTHING RETURNING *`,
+            [tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ message: 'You have already voted to cancel this trip' });
+        }
+
+        res.json({ message: 'Vote recorded', vote: result.rows[0] });
+    } catch (err) {
+        console.error('Error voting to cancel trip:', err);
+        res.status(500).json({ message: 'Server error voting to cancel trip' });
+    }
+});
+
+// Check if the user has voted to cancel the trip
+router.get('/:id/user-vote', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        const voteCheck = await db.query(
+            `SELECT 1 FROM trip_cancellation_votes 
+             WHERE trip_id = $1 AND user_id = $2`,
+            [tripId, userId]
+        );
+
+        res.json({ hasVoted: voteCheck.rows.length > 0 });
+    } catch (err) {
+        console.error('Error checking user vote:', err);
+        res.status(500).json({ message: 'Server error checking user vote' });
+    }
+});
+
+// Rescind a vote to cancel a trip
+router.delete('/:id/rescind-vote', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        // Ensure the user has voted to cancel the trip
+        const voteCheck = await db.query(
+            `SELECT 1 FROM trip_cancellation_votes 
+             WHERE trip_id = $1 AND user_id = $2`,
+            [tripId, userId]
+        );
+
+        if (voteCheck.rows.length === 0) {
+            return res.status(400).json({ message: 'You have not voted to cancel this trip' });
+        }
+
+        // Delete the user's vote
+        await db.query(
+            `DELETE FROM trip_cancellation_votes 
+             WHERE trip_id = $1 AND user_id = $2`,
+            [tripId, userId]
+        );
+
+        res.json({ message: 'Vote rescinded successfully' });
+    } catch (err) {
+        console.error('Error rescinding vote:', err);
+        res.status(500).json({ message: 'Server error rescinding vote' });
+    }
+});
+
+// Check cancellation votes
+router.get('/:id/cancellation-status', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+
+        const votes = await db.query(
+            `SELECT COUNT(*) AS cancel_votes 
+             FROM trip_cancellation_votes 
+             WHERE trip_id = $1`,
+            [tripId]
+        );
+
+        res.json(votes.rows[0]);
+    } catch (err) {
+        console.error('Error fetching cancellation votes:', err);
+        res.status(500).json({ message: 'Server error fetching cancellation votes' });
+    }
+});
+
+// Restore a cancelled trip
+router.post('/:id/restore', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        // Ensure the user is the creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0 || tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the creator can restore the trip' });
+        }
+
+        // Restore the trip by deleting all cancellation votes
+        await db.query('DELETE FROM trip_cancellation_votes WHERE trip_id = $1', [tripId]);
+
+        res.json({ message: 'Trip restored successfully' });
+    } catch (err) {
+        console.error('Error restoring trip:', err);
+        res.status(500).json({ message: 'Server error restoring trip' });
+    }
+});
+
 module.exports = router;

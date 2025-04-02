@@ -64,7 +64,10 @@ const Trips = () => {
                                 </Link>
                                 <p>{trip.description}</p>
                                 <p><strong>Destination:</strong> {trip.destination}</p>
-                                <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
+                                <p><strong>Dates:</strong> 
+                                    {trip.start_date ? new Date(trip.start_date).toISOString().split('T')[0] : ''} to 
+                                    {trip.end_date ? new Date(trip.end_date).toISOString().split('T')[0] : ''}
+                                </p>
                                 <ConfirmDelete id={trip.id} token={token}/>
                             </div>
                         ))
@@ -77,16 +80,6 @@ const Trips = () => {
             <button onClick={() => navigate("/createtrip")} className="create-trip-btn">
                 Create New Trip
             </button>
-
-            <button // Placeholder button for viewing event from trips page
-                onClick={() => navigate("/viewevent")} style={{ display: "block", background: "red", color: "white" }}>
-                View Event
-            </button>
-
-            <button // Placeholder button for viewing event from trips page
-                onClick={() => navigate("/viewlodging")} style={{ display: "block", background: "red", color: "white" }}>
-                View Lodging
-            </button> 
         </div>
     );
 };

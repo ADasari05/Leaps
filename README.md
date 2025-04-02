@@ -40,6 +40,7 @@ Navigate to the server directory and install dependencies:
    
    ```
    npm install nodemailer
+   npm install socket.io
    ```
 Create a .env file in the server directory with:
 
@@ -59,6 +60,8 @@ The server will run on http://localhost:3000.
 Navigate to the client directory and install dependencies:
 
     npm install
+    npm install socket.io-client
+
 Start the React development server:
 
     npm start

@@ -17,6 +17,8 @@ import Users from './pages/Users';
 import ViewEvent from "./pages/ViewEvent";
 import ViewLodging from "./pages/ViewLodging";
 import Events from "./pages/Events";
+import CustomEvents from "./pages/CustomEvents";
+import CreateNewEvent from "./pages/CreateNewEvent";
 import Search from './pages/SearchPage';
 import Share from './pages/Share';
 import Lodgings from "./pages/Lodgings";
@@ -40,6 +42,10 @@ function App() {
 
         {/* Public routes that allow guest access */}
         <Route path="/events" element={<Events />} />
+        <Route path="/customevents" element={<CustomEvents />} />
+        <Route path="/create-event" element={<CreateNewEvent />} />
+        <Route path="/users" element={<Users />} /> 
+        <Route path="/search" element={<Search />} />
         <Route path="/lodgings" element={<Lodgings />} />
         <Route path="/search" element={<Search />} />
         <Route path="/travel" element={<Travel />} />
