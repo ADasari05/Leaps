@@ -97,10 +97,6 @@ const Lodgings = () => {
         }
     });
 
-    if (isLoading) {
-        return <div className="lodgings"><p className="loading">Loading lodgings...</p></div>;
-    }
-
     if (error) {
         return <div className="lodgings"><p className="error">{error}</p></div>;
     }

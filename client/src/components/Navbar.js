@@ -8,8 +8,14 @@ import { isAuthenticated, isGuest, logout } from '../services/authService';
 
 const Navbar = () => {
     const navigate = useNavigate();
-    
+    const [auth, setAuth] = useState(isAuthenticated());
+
+    useEffect(() => {
+        setAuth(isAuthenticated());  
+    }, []);
+
     const handleLogout = () => {
+        setAuth(false);
         logout();
         navigate('/login');
     };
@@ -25,31 +31,27 @@ const Navbar = () => {
                 </Link>
             </div>
             <div className="navbar-container">
-                
 
 
-            <div className="nav-links">
+                <div className="nav-links">
                     <Link to="/trips" className="nav-item">Trips</Link>
                     <Link to="/lodgings" className="nav-item">Lodging</Link>
                     <Link to="/search" className="nav-item">Events</Link>
                     <Link to="/travel" className="nav-item">Travel</Link>
                     <Link to="/users" className="nav-item">Users</Link>
-                    
+                    <Link to="/accountpage" className="nav-item">My Account</Link>
+                </div>  
+
+                <div className="auth-links">
                     {isAuthenticated() ? (
                         <>
-                            <Link to="/accountpage" className="nav-item">My Account</Link>
-                            <button onClick={handleLogout} className="logout-btn nav-item">Logout</button>
-                        </>
-                    ) : isGuest() ? (
-                        <>
-                            <span className="guest-label nav-item">Guest Mode</span>
-                            <Link to="/login" className="login-link nav-item">Login</Link>
-                            <Link to="/signup" className="signup-link nav-item">Sign Up</Link>
+                            <Link onClick={handleLogout} className="nav-item">Logout</Link>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="nav-item">Login</Link>
-                            <Link to="/signup" className="nav-item">Sign Up</Link>
+                            <span className="guest-label">Guest Mode</span>
+                            <Link to="/login" className="login-link nav-item">Login</Link>
+                            <Link to="/signup" className="signup-link nav-item">Sign Up</Link>
                         </>
                     )}
                 </div>

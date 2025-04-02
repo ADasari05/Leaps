@@ -100,9 +100,6 @@ const Travel = () => {
         return matchesMethod && matchesDeparture && matchesDestination;
     });
 
-    if (isLoading) {
-        return <div className="travel"><p className="loading">Loading travel items...</p></div>;
-    }
 
     if (error) {
         return <div className="travel"><p className="error">{error}</p></div>;

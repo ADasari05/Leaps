@@ -48,13 +48,13 @@ function App() {
 
         {/* Protected routes */}
         <Route path="/accountpage" element={
-          auth ? <AccountPage /> : <Navigate to="/login" />
+          <AccountPage />
         } />
         <Route path="/createtrip" element={
           auth ? <CreateTrip /> : <Navigate to="/login" />
         } />
         <Route path="/trips" element={
-          auth ? <Trips /> : <Navigate to="/login" />
+          <Trips />
         } />
         <Route path="/trips/:id" element={
           auth ? <TripDetails /> : <Navigate to="/login" />
