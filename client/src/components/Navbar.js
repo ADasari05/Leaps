@@ -5,8 +5,9 @@ import "./Navbar.css";
 import LeapsLogo from "../assets/Leapspng.png";
 
 const Navbar = () => {
+    const [hoverEvent, setHoverEvent] = useState(false);
+
     return (
-        
         
         <nav className="navbar">
             {/*Home button*/}
@@ -21,7 +22,17 @@ const Navbar = () => {
 
                 <div className="nav-links">
                     <Link to="/trips" className="nav-item">Trips</Link>
-                    <Link to="/events" className="nav-item">Events</Link>
+                    <div className="nav-item dropdown" 
+                         onMouseEnter={() => setHoverEvent(true)} 
+                         onMouseLeave={() => setHoverEvent(false)}>
+                        <span className="dropdown-toggle">Events</span>
+                        {hoverEvent && (
+                            <div className="dropdown-menu">
+                                <Link to="/events" className="dropdown-item">Public Events</Link>
+                                <Link to="/customevents" className="dropdown-item">Custom Events</Link>
+                            </div>
+                        )}
+                    </div>
                     <Link to="/lodgings" className="nav-item">Lodging</Link>
                     <Link to="/search" className="nav-item">Search</Link>
                     <Link to="/travel" className="nav-item">Travel</Link>

@@ -15,6 +15,9 @@ const TripDetails = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [tripMembers, setTripMembers] = useState([]);
+    const [cancelVotes, setCancelVotes] = useState(0);
+    const [hasVotedToCancel, setHasVotedToCancel] = useState(false);
+    const [isTripCancelled, setIsTripCancelled] = useState(false);
     const token = localStorage.getItem('token');
     const userId = JSON.parse(atob(token.split('.')[1])).id;
 
@@ -64,9 +67,49 @@ const TripDetails = () => {
                 console.error("Error fetching friends:", err);
             }
         };
+
         fetchTrip();
-        fetchFriends();    
-    }, [id, token]);
+        fetchFriends();
+    }, [id, token, userId]);
+
+    useEffect(() => {
+        const fetchCancelVotes = async () => {
+            if (tripMembers.length === 0) return; // Ensure tripMembers is loaded before fetching votes
+
+            try {
+                const response = await fetch(`/api/trips/${id}/cancellation-status`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch cancellation votes');
+
+                const data = await response.json();
+                setCancelVotes(data.cancel_votes || 0);
+
+                // Check if the user has already voted to cancel
+                const userVoteResponse = await fetch(`/api/trips/${id}/user-vote`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userVoteResponse.ok) throw new Error('Failed to fetch user vote status');
+
+                const userVoteData = await userVoteResponse.json();
+                setHasVotedToCancel(userVoteData.hasVoted);
+
+                // Determine if the trip is cancelled
+                const totalMembers = tripMembers.length;
+                setIsTripCancelled(data.cancel_votes > totalMembers / 2);
+            } catch (err) {
+                console.error('Error fetching cancellation votes or user vote status:', err);
+            }
+        };
+
+        fetchCancelVotes();
+    }, [tripMembers]); // Run fetchCancelVotes only after tripMembers is updated
 
     const fetchTripMembers = async () => {
         try {
@@ -399,6 +442,63 @@ const TripDetails = () => {
         );
       };
 
+    const voteToCancel = async () => {
+        try {
+            const response = await fetch(`/api/trips/${id}/vote-cancel`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to vote for cancellation');
+
+            setCancelVotes(cancelVotes + 1);
+            setHasVotedToCancel(true);
+            window.location.reload(); // Force refresh
+        } catch (err) {
+            console.error('Error voting to cancel trip:', err);
+        }
+    };
+
+    const rescindVote = async () => {
+        try {
+            const response = await fetch(`/api/trips/${id}/rescind-vote`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to rescind vote');
+
+            setCancelVotes(cancelVotes - 1);
+            setHasVotedToCancel(false);
+            window.location.reload(); // Force refresh
+        } catch (err) {
+            console.error('Error rescinding vote:', err);
+        }
+    };
+
+    const restoreTrip = async () => {
+        try {
+            const response = await fetch(`/api/trips/${id}/restore`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to restore trip');
+
+            setCancelVotes(0);
+            setIsTripCancelled(false);
+        } catch (err) {
+            console.error('Error restoring trip:', err);
+        }
+    };
+
     if (isLoading) {
         return <div className="trip-details"><p className="loading">Loading trip details...</p></div>;
     }
@@ -409,6 +509,17 @@ const TripDetails = () => {
 
     return (
         <div className="trip-details">
+            {isTripCancelled && (
+                <div className="cancelled-sidebar">
+                    <h3>Trip Cancelled</h3>
+                    <p>This trip has been cancelled as more than half of the members have voted to cancel.</p>
+                    {trip?.creator_id === userId && (
+                        <button onClick={restoreTrip} className="restore-trip-btn">
+                            Restore Trip
+                        </button>
+                    )}
+                </div>
+            )}
             {trip ? (
                 <>
                     {isEditing ? (
@@ -509,6 +620,25 @@ const TripDetails = () => {
                     </ul>
                     <button onClick={handleAddEvent} className="add-event-btn">Add Event</button>
                     <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
+
+                    <div className="trip-cancellation">
+                        <h3>Cancel Votes</h3>
+                        <p><strong>Cancel Votes:</strong> {cancelVotes}</p>
+                        {hasVotedToCancel ? (
+                            <button onClick={rescindVote} className="rescind-vote-btn">
+                                Rescind Cancellation Vote
+                            </button>
+                        ) : (
+                            <button onClick={voteToCancel} className="cancel-vote-btn">
+                                Vote to Cancel Trip
+                            </button>
+                        )}
+                        {trip.isCancelled && (
+                            <button onClick={restoreTrip} className="restore-trip-btn">
+                                Restore Trip
+                            </button>
+                        )}
+                    </div>
                 </>
             ) : (
                 <p className="error">Trip not found.</p>

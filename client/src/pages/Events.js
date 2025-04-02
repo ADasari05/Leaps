@@ -10,12 +10,13 @@ function Events() {
             <div className="logo">
                 <img src={LeapsLogo} alt="Leaps Logo" />
             </div>
+            {/*
             <div className="events-container">
                 <h2>
                     Custom Events
                 </h2>
             </div>
-
+            */}
             <div className="events-container">
                 <h2>
                     Public Events
