@@ -25,6 +25,27 @@ router.get('/profile', auth, async (req, res) => {
     }
 });
 
+//route specifically for getting user data by the client, not by the user
+router.get('/picture/:id', auth, async (req, res) => {
+    try {
+        const searchedId = req.params.id;
+        const result = await db.query(
+            'SELECT profile_pic FROM USERS WHERE username = $1',
+            [searchedId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User does not exist' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error visiting profile:', err);
+        res.status(500).json({ message: 'Server error visiting profile' });
+    }
+
+});
+
 // Unified update route 
 router.put('/update', auth, async (req, res) => {
     try {
