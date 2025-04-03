@@ -16,7 +16,22 @@ const Navbar = () => {
         setAuth(isAuthenticated());  
     }, []);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+        // Save current theme to backend
+        try {
+          await fetch('/api/users/update', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ theme_preference: theme })
+          });
+        } catch (err) {
+          console.error('Error saving theme preference on logout:', err);
+        }
         setAuth(false);
         logout();
         navigate('/login');

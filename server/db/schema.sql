@@ -15,6 +15,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reset_token VARCHAR(255),
     reset_token_expiry TIMESTAMP,
+    theme_preference VARCHAR(10) DEFAULT 'light',
     profile_pic TEXT
      -- this doesn't work in psql need to create  trigger
      -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

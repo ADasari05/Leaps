@@ -10,7 +10,7 @@ router.get('/profile', auth, async (req, res) => {
         const id = req.user.id; // From auth middleware
 
         const result = await db.query(
-            'SELECT id, username, email, profile_pic FROM users WHERE id = $1',
+            'SELECT id, username, email, profile_pic, theme_preference FROM users WHERE id = $1',
             [id]
         );
 
@@ -96,6 +96,12 @@ router.put('/update', auth, async (req, res) => {
             queryParams.push(pic);
             paramCounter++;
         }
+
+        if (req.body.theme_preference) {
+            updateFields.push(`theme_preference = $${paramCounter}`);
+            queryParams.push(req.body.theme_preference);
+            paramCounter++;
+        }  
         
         // If no fields to update
         if (updateFields.length === 0) {
