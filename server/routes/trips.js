@@ -252,6 +252,72 @@ router.get('/events/:id', auth, async (req, res) => {
     } 
   }); */
   
+// Vote on a trip item
+router.post('/items/:tripId/vote', auth, async (req, res) => {
+    const { tripId } = req.params;
+    const { itemId, vote } = req.body;
+    const userId = req.user.id;
+
+    try {
+        // Ensure the user has access to the trip
+        const tripCheck = await db.query(
+            'SELECT * FROM trips WHERE id = $1 AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))',
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Not authorized to vote on this trip' });
+        }
+
+        // Insert or update the vote
+        const result = await db.query(
+            `INSERT INTO trip_item_votes (trip_item_id, user_id, vote) 
+             VALUES ($1, $2, $3) 
+             ON CONFLICT (trip_item_id, user_id) 
+             DO UPDATE SET vote = $3 RETURNING *`,
+            [itemId, userId, vote]
+        );
+
+        // Fetch updated vote counts
+        const votes = await db.query(
+            `SELECT trip_item_id, 
+                    COALESCE(SUM(CASE WHEN vote THEN 1 ELSE 0 END), 0) AS upVotes, 
+                    COALESCE(SUM(CASE WHEN NOT vote THEN 1 ELSE 0 END), 0) AS downVotes 
+             FROM trip_item_votes 
+             WHERE trip_item_id = $1
+             GROUP BY trip_item_id`,
+            [itemId]
+        );
+
+        res.json({ message: 'Vote recorded', vote: result.rows[0], counts: votes.rows[0] });
+    } catch (error) {
+        console.error('Error voting on trip item:', error);
+        res.status(500).json({ error: 'Failed to record vote' });
+    }
+});
+
+// Fetch vote counts for a trip item
+router.get('/items/:tripId/votes', auth, async (req, res) => {
+    const { tripId } = req.params;
+
+    try {
+        const votes = await db.query(
+            `SELECT trip_item_id, 
+                    COALESCE(SUM(CASE WHEN vote THEN 1 ELSE 0 END), 0)::INTEGER AS upVotes, 
+                    COALESCE(SUM(CASE WHEN NOT vote THEN 1 ELSE 0 END), 0)::INTEGER AS downVotes 
+             FROM trip_item_votes 
+             WHERE trip_item_id IN (SELECT id FROM trip_items WHERE trip_id = $1)
+             GROUP BY trip_item_id`,
+            [tripId]
+        );
+
+        res.json(votes.rows);
+    } catch (error) {
+        console.error('Error fetching vote counts:', error);
+        res.status(500).json({ error: 'Failed to fetch vote counts' });
+    }
+});
+
 
 router.get('/friends', auth, async (req, res) => {
     try {

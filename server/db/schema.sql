@@ -120,6 +120,15 @@ CREATE TABLE trip_cancellation_votes (
     UNIQUE(trip_id, user_id)
 );
 
+CREATE TABLE trip_item_votes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_item_id UUID REFERENCES trip_items(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    vote BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(trip_item_id, user_id)
+);
+
 CREATE TABLE messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
