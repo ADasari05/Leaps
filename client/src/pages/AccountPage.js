@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import '../styles/AccountPage.css';
+import UploadImage from '../components/UploadProfilePicture';
 
 function AccountPage() {
 
     const [userInfo, setUserInfo] = useState({
         username: '',
         email: '',
-        password: ''
+        password: '',
+        pic: ''
     });
 
     const [isEditing, setIsEditing] = useState(false);
@@ -39,7 +41,8 @@ function AccountPage() {
             setUserInfo({
                 username: userData.username || '',
                 email: userData.email || '',
-                password: '' // Don't populate password for security
+                password: '', // Don't populate password for security
+                pic: userData.profile_pic || ''
             });
         } catch (err) {
             setError('Error loading your account information. Please try again later.');
@@ -77,6 +80,11 @@ function AccountPage() {
         }));
     };
 
+    const imageChange = (base64String) => {
+        userInfo.pic = base64String;
+        console.log("image changed");
+    };
+
     const handleSaveChanges = async () => {
         setIsLoading(true);
         setError(null);
@@ -88,6 +96,7 @@ function AccountPage() {
             if (userInfo.username) updatedFields.username = userInfo.username;
             if (userInfo.email) updatedFields.email = userInfo.email;
             if (userInfo.password) updatedFields.password = userInfo.password;
+            if (userInfo.pic) updatedFields.pic = userInfo.pic;
             
             const response = await fetch(`/api/users/update`, {
                 method: 'PUT',
@@ -169,7 +178,14 @@ function AccountPage() {
         <div className="account-container">
             {/* Profile Section */}
             <div className="profile-section">
-                <div className="profile-picture"></div>
+                <div id="pic-container" className="profile-picture">
+                    <img 
+                        src={userInfo.pic} 
+                        alt="Profile Picture" 
+                        className="profile-picture"
+                    />
+                </div>
+                
                 <h2 className="username-title">{userInfo.username}</h2>
                 
                 {!isEditing ? (
@@ -181,19 +197,24 @@ function AccountPage() {
                         Edit
                     </button>
                 ) : (
-                    <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
-                        <button 
-                            onClick={handleSaveChanges}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Saving..." : "Save"}
-                        </button>
-                        <button 
-                            onClick={handleCancelEdit}
-                            disabled={isLoading}
-                        >
-                            Cancel
-                        </button>
+                    <div>
+                        <div>
+                            <UploadImage updateImage={imageChange}></UploadImage>
+                        </div>
+                        <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
+                            <button 
+                                onClick={handleSaveChanges}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Saving..." : "Save"}
+                            </button>
+                            <button 
+                                onClick={handleCancelEdit}
+                                disabled={isLoading}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

@@ -578,10 +578,15 @@ const TripDetails = () => {
                         <ul>
                         {tripMembers.map(member => (
                             <li key={member.id} className={member.id === userId ? "current-user" : ""}>
-                            {member.username} {member.id === userId ? "(me)" : ""}
-                            {trip.creator_id === userId && member.id !== userId && (
-                                <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
-                            )}
+                              <img
+                                src={member.profile_pic}
+                                className="profile-pic"
+                              />
+                              {member.username}
+                              {member.id === userId ? "(me)" : ""}
+                              {trip.creator_id === userId && member.id !== userId && (
+                                  <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                              )}
                             </li>
                         ))}
                         </ul>

@@ -284,3 +284,13 @@
 .cancelled-sidebar .restore-trip-btn:hover {
     background-color: #0056b3;
 }
+
+  .profile-pic {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #d3d3d3;
+    box-shadow: 0 2px 4px rgba(118,145,255,0.3);
+    margin-right: 10px;
+    margin-bottom: -10px;
+}

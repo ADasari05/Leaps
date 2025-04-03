@@ -50,7 +50,7 @@ router.get('/:id', auth, async (req, res) => {
 
         // Fetch trip members, including the creator
         const membersResult = await db.query(
-            `SELECT u.id, u.username 
+            `SELECT u.id, u.username, u.profile_pic 
             FROM users u
             WHERE u.id IN (
                 SELECT user_id FROM trip_members WHERE trip_id = $1
