@@ -80,9 +80,12 @@ function AccountPage() {
         }));
     };
 
-    const imageChange = (base64String) => {
+    const imageChange = async (base64String) => {
         userInfo.pic = base64String;
         console.log("image changed");
+        await handleSaveChanges();
+        setIsEditing(true);
+        console.log("editing status: %b", isEditing);
     };
 
     const handleSaveChanges = async () => {
@@ -122,6 +125,7 @@ function AccountPage() {
             // Refresh user data
             fetchUserData();
             setIsEditing(false);
+            console.log("finished saving");
 
         } catch (err) {
             setError('Error updating your profile. Please try again.');
