@@ -92,8 +92,7 @@ router.put('/:id', auth, async (req, res) => {
     try {
         const tripId = req.params.id;
         const userId = req.user.id; // From auth middleware
-        const { name, description, destination, startDate, endDate, isPublic } = req.body;
-
+        const { name, description, destination, startDate, endDate, isPublic, current } = req.body;
         // Fetch the current value of is_public if not provided
         let currentIsPublic = isPublic;
         if (currentIsPublic === undefined) {
@@ -106,11 +105,10 @@ router.put('/:id', auth, async (req, res) => {
             }
             currentIsPublic = currentTrip.rows[0].is_public;
         }
-
         // Ensure the user is the creator of the trip
         const result = await db.query(
-            'UPDATE trips SET name = $1, description = $2, destination = $3, start_date = $4, end_date = $5, is_public = $6 WHERE id = $7 AND creator_id = $8 RETURNING *',
-            [name, description, destination, startDate, endDate, currentIsPublic, tripId, userId]
+            'UPDATE trips SET name = $1, description = $2, destination = $3, start_date = $4, end_date = $5, is_public = $6, current = $7 WHERE id = $8 AND creator_id = $9 RETURNING *',
+            [name, description, destination, startDate, endDate, currentIsPublic, current, tripId, userId]
         );
 
         if (result.rows.length === 0) {
@@ -121,6 +119,30 @@ router.put('/:id', auth, async (req, res) => {
     } catch (err) {
         console.error('Error updating trip:', err);
         res.status(500).json({ message: 'Server error updating trip' });
+    }
+});
+
+router.put('/complete/:id', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const tripId = req.params.id;
+
+        //complete the trip
+        const result = await db.query(
+            'UPDATE trips SET current = false WHERE id = $1 AND creator_id = $2 RETURNING *',
+            [tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or not authorized to update' });
+        }
+
+        res.json(result.rows[0]);
+
+    }
+    catch (err) {
+        console.error('Error completing trip:', err);
+        res.status(500).json({ message: 'Server error completing trip' });
     }
 });
 

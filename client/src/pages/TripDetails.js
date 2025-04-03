@@ -224,6 +224,7 @@ const TripDetails = () => {
 
     const handleSaveTrip = async () => {
         try {
+            console.log(JSON.stringify(trip));
             const response = await fetch(`/api/trips/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -601,7 +602,7 @@ const TripDetails = () => {
                             <p>{trip.description}</p>
                             <p><strong>Destination:</strong> {trip.destination}</p>
                             <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                            <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
+                            {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
                         </>
                     )}
                     {renderTripItems()}
