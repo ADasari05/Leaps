@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import '../styles/AccountPage.css';
 import UploadImage from '../components/UploadProfilePicture';
 
-function AccountPage() {
+function AccountPage({ theme, setTheme }) {
 
     const [userInfo, setUserInfo] = useState({
         username: '',
@@ -41,16 +41,17 @@ function AccountPage() {
             setUserInfo({
                 username: userData.username || '',
                 email: userData.email || '',
-                password: '', // Don't populate password for security
+                password: '',
                 pic: userData.profile_pic || ''
-            });
+              });
+              setTheme(userData.theme_preference || 'light'); // <- this sets it              
         } catch (err) {
             setError('Error loading your account information. Please try again later.');
             console.error('Error fetching user data:', err);
         } finally {
             setIsLoading(false);
         }
-    }, [token]);
+    }, [token, setTheme]);
 
     useEffect(() => {
         if (token) {
@@ -171,7 +172,24 @@ function AccountPage() {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('theme');
+        setTheme('light'); // Reset to default
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
         navigate('/login');
+    };
+
+    const toggleTheme = async () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+        await fetch('/api/users/update', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ theme_preference: newTheme })
+        });
     };
 
     if (!token) {
@@ -222,6 +240,17 @@ function AccountPage() {
                     </div>
                 )}
             </div>
+
+            <div className="theme-toggle-container">
+                <label className="switch">
+                    <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} />
+                    <span className="slider round"></span>
+                </label>
+                <span style={{ marginLeft: '10px' }}>
+                    {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+                </span>
+            </div>
+
 
             {/* Display status messages */}
             {error && <div className="error-message">{error}</div>}

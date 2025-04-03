@@ -19,4 +19,8 @@
   export const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('guestMode');
+    localStorage.removeItem('theme');
+
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
   };
