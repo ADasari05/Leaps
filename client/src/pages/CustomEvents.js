@@ -105,7 +105,7 @@ function CustomEvents() {
                             <p><strong>Date:</strong> {new Date(customEvent.start_time).toLocaleDateString()}</p>
                             <p><strong>Time:</strong> {new Date(customEvent.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
                             <p><strong>Price:</strong> {customEvent.price === "N/A" ? "Free" : `$${customEvent.price}`}</p>
-                            <p className="event-description">{customEvent.description}</p>
+                            <div className="event-card-description">{customEvent.description} </div>
 
                             <div className="event-buttons">
                                 <button onClick={() => handleAddToTrip(customEvent)} className="add-to-trip-btn">

@@ -112,9 +112,11 @@ const ViewEvent = () => {
         </div>
 
         <div className="event-actions">
-          <button className="buy-button" onClick={() => window.open(event.url || 'https://www.ticketmaster.com', '_blank')}>
-            Buy Tickets
-          </button>
+          {event.url !== 'N/A' && (
+            <button className="buy-button" onClick={() => window.open(event.url || 'https://www.ticketmaster.com', '_blank')}>
+              Buy Tickets
+            </button>
+          )}
         </div>
       </div>
 

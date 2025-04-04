@@ -150,6 +150,7 @@ router.get('/:id', (req, res, next) => {
                         description: customEvent.description || 'No description available',
                         price: customEvent.price || 'Free',
                         image: customEvent.image || null,
+                        url: 'N/A',
                         eventType: customEvent.type
                     });
                 }
