@@ -1,0 +1,402 @@
+/* src/styles/Comparison.css */
+
+/* Filter and Sort Controls */
+.filter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+  }
+  
+  .filter label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 200px;
+  }
+  
+  .filter input, 
+  .filter select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .sort-options {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  
+  /* Grid Layout for Items */
+  .lodgings-grid,
+  .travel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+  }
+  
+  /* Card Styles */
+  .lodging-card,
+  .travel-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .lodging-card:hover,
+  .travel-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  }
+  
+  /* Travel Card Specific */
+  .travel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .travel-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #3a86ff;
+  }
+  
+  .travel-route {
+    margin-bottom: 15px;
+  }
+  
+  .travel-locations {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .travel-locations .arrow {
+    color: #999;
+  }
+  
+  .travel-times {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+  
+  .travel-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  
+  .detail-item {
+    background-color: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+  
+  /* Lodging Card Specific */
+  .lodging-card h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: #333;
+  }
+  
+  .lodging-type {
+    display: inline-block;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .lodging-location {
+    color: #555;
+    margin-bottom: 5px;
+  }
+  
+  .lodging-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #3a86ff;
+    margin-bottom: 10px;
+  }
+  
+  .lodging-rating {
+    color: #ffc107;
+    margin-bottom: 10px;
+  }
+  
+  .lodging-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .date-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+  
+  .lodging-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 15px;
+  }
+  
+  .amenity-tag {
+    background-color: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+  
+  /* Action Buttons */
+  .lodging-actions,
+  .travel-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+  }
+  
+  .add-to-trip-btn,
+  .compare-btn,
+  .book-btn,
+  .swap-btn,
+  .cancel-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .add-to-trip-btn {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .add-to-trip-btn:hover {
+    background-color: #43a047;
+  }
+  
+  .compare-btn {
+    background-color: #2196f3;
+    color: white;
+  }
+  
+  .compare-btn:hover {
+    background-color: #1e88e5;
+  }
+  
+  .book-btn {
+    background-color: #ff9800;
+    color: white;
+  }
+  
+  .book-btn:hover {
+    background-color: #f57c00;
+  }
+  
+  .swap-btn {
+    background-color: #9c27b0;
+    color: white;
+  }
+  
+  .swap-btn:hover {
+    background-color: #8e24aa;
+  }
+  
+  .cancel-btn {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #e53935;
+  }
+  
+  /* Modal Styles */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 25px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  .modal h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+  }
+  
+  .trip-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .trip-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .trip-option:last-child {
+    border-bottom: none;
+  }
+  
+  .trip-details h4 {
+    margin: 0 0 5px 0;
+  }
+  
+  .trip-details p {
+    margin: 5px 0;
+    color: #666;
+  }
+  
+  /* Comparison Modal */
+  .comparison-modal .modal-content {
+    max-width: 800px;
+  }
+  
+  .selected-item {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .selected-item h4 {
+    margin-top: 0;
+    color: #333;
+  }
+  
+  .similar-items {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+  }
+  
+  .comparison-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid transparent;
+  }
+  
+  .better-deal {
+    border-left: 4px solid #4caf50;
+    background-color: #e8f5e9;
+  }
+  
+  .savings-badge {
+    display: inline-block;
+    background-color: #4caf50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  
+  .comparison-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 120px;
+  }
+  
+  /* Guest Banner */
+  .guest-banner {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .guest-banner a {
+    color: #0056b3;
+    text-decoration: underline;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .lodgings-grid,
+    .travel-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .filter {
+      flex-direction: column;
+    }
+    
+    .comparison-item {
+      flex-direction: column;
+    }
+    
+    .comparison-actions {
+      margin-top: 15px;
+      flex-direction: row;
+    }
+  }
