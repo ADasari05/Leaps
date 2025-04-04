@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Lodgings.css";
 import { findSimilarItems, isBetterDeal, calculateSavings } from "../utils/comparisonUtils";
+import AuthPrompt from "../components/AuthPrompt"
+import { isAuthenticated, isGuest } from "../services/authService"; 
 
 // Dummy lodging data
 const dummyLodgings = [
@@ -116,6 +118,8 @@ const Lodgings = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedType, setSelectedType] = useState("");
     const [priceOrder, setPriceOrder] = useState("price-asc");
+    const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+    
     const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
@@ -149,8 +153,13 @@ const Lodgings = () => {
     }, [token]);
 
     const handleAddToTrip = (lodging) => {
-        setSelectedLodging(lodging);
-        setIsModalOpen(true);
+        if (!isAuthenticated()) {
+                    setShowAuthPrompt(true);
+                } else {
+                    setSelectedLodging(lodging);
+                    setIsModalOpen(true);
+                }
+
     };
 
     const confirmAddToTrip = async (tripId) => {
@@ -410,6 +419,12 @@ const Lodgings = () => {
                         </button>
                     </div>
                 </div>
+            )}
+              {showAuthPrompt && (
+                <AuthPrompt 
+                    message="Please log in or create an account to add travel to trips."
+                    onClose={() => setShowAuthPrompt(false)}
+                />
             )}
         </div>
     );
