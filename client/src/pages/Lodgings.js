@@ -1,10 +1,7 @@
-// src/pages/Lodgings.js
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Lodgings.css";
-import { isAuthenticated, isGuest } from "../services/authService";
-import AuthPrompt from "../components/AuthPrompt";
-import { findSimilarItems, isBetterDeal, sortByPrice, generateComparisonData } from "../utils/comparisonUtils";
+import { findSimilarItems, isBetterDeal, calculateSavings } from "../utils/comparisonUtils";
 
 // Dummy lodging data
 const dummyLodgings = [
@@ -44,130 +41,62 @@ const dummyLodgings = [
         rating: 4.5,
         amenities: ["Free WiFi", "Kitchen", "Laundry"]
     },
-    {
-        id: "1004",
-        name: "Four Seasons Hotel",
-        type: "Hotel",
-        location: "Los Angeles, CA",
-        price_per_night: 400.00,
-        check_in_date: "2025-06-10",
-        check_out_date: "2025-06-15",
-        description: "Luxury hotel in Beverly Hills",
-        rating: 4.9,
-        amenities: ["Free WiFi", "Pool", "Spa", "Fitness Center", "Restaurant", "Bar"]
-    },
-    {
-        id: "1005",
-        name: "Hampton Inn",
-        type: "Hotel",
-        location: "Chicago, IL",
-        price_per_night: 150.00,
-        check_in_date: "2025-07-15",
-        check_out_date: "2025-07-20",
-        description: "Affordable hotel in downtown Chicago",
-        rating: 4.0,
-        amenities: ["Free WiFi", "Fitness Center", "Free Breakfast"]
-    },
-    {
-        id: "1006",
-        name: "Luxury Penthouse",
-        type: "Apartment",
-        location: "Los Angeles, CA",
-        price_per_night: 300.00,
-        check_in_date: "2025-06-10",
-        check_out_date: "2025-06-15",
-        description: "Stunning penthouse with city views",
-        rating: 4.7,
-        amenities: ["Free WiFi", "Kitchen", "Laundry", "Parking", "Pool"]
-    },
-    {
-        id: "1007",
-        name: "Budget Inn Express",
-        type: "Hotel",
-        location: "New York, NY",
-        price_per_night: 120.00,
-        check_in_date: "2025-05-01",
-        check_out_date: "2025-05-07",
-        description: "Affordable option in the city",
-        rating: 3.5,
-        amenities: ["Free WiFi", "Free Breakfast"]
-    },
-    {
-        id: "1008",
-        name: "Luxury Loft",
-        type: "Apartment",
-        location: "New York, NY",
-        price_per_night: 250.00,
-        check_in_date: "2025-05-01",
-        check_out_date: "2025-05-07",
-        description: "Spacious loft in Soho",
-        rating: 4.6,
-        amenities: ["Free WiFi", "Kitchen", "Laundry", "Parking"]
-    }
+    // Additional lodgings...
 ];
 
 const Lodgings = () => {
     const [lodgings, setLodgings] = useState([]);
     const [trips, setTrips] = useState([]);
     const [selectedLodging, setSelectedLodging] = useState(null);
-    const [selectedTripId, setSelectedTripId] = useState(null);
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [sortOrder, setSortOrder] = useState('price_asc');
-    const [selectedType, setSelectedType] = useState('');
-    const [similarLodgings, setSimilarLodgings] = useState([]);
+    const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+    const [similarOptions, setSimilarOptions] = useState([]);
+    const [selectedTripId, setSelectedTripId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedType, setSelectedType] = useState("");
+    const [priceOrder, setPriceOrder] = useState("price-asc");
     const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
+    // Fetch lodgings and trips
     useEffect(() => {
-        const fetchLodgings = async () => {
-            setIsLoading(true);
-            try {
-                // For now use the dummy data instead of API call
-                setLodgings(dummyLodgings);
-            } catch (err) {
-                setError('Error loading lodgings. Please try again later.');
-                console.error('Error fetching lodgings:', err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
+        // Your existing code for fetching data
+        setLodgings(dummyLodgings);
+        setIsLoading(false);
+        
+        // Fetch trips if authenticated
         const fetchTrips = async () => {
-            try {
-                if (!isAuthenticated()) return;
-                
-                const response = await fetch('/api/trips', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
+            if (token) {
+                try {
+                    const response = await fetch('/api/trips', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setTrips(Array.isArray(data) ? data : []);
                     }
-                });
-
-                if (!response.ok) throw new Error('Failed to fetch trips');
-
-                const data = await response.json();
-                setTrips(data);
-            } catch (err) {
-                console.error('Error fetching trips:', err);
+                } catch (err) {
+                    console.error('Error fetching trips:', err);
+                }
             }
         };
-
-        fetchLodgings();
+        
         fetchTrips();
     }, [token]);
 
-    const handleAddLodgingToTrip = async (tripId) => {
-        try {
-            if (!isAuthenticated()) {
-                setIsModalOpen(false);
-                return;
-            }
+    const handleAddToTrip = (lodging) => {
+        setSelectedLodging(lodging);
+        setIsModalOpen(true);
+    };
 
+    const confirmAddToTrip = async (tripId) => {
+        try {
+            // Add to trip API call
             const response = await fetch('/api/trips/add-item', {
                 method: 'POST',
                 headers: {
@@ -178,36 +107,36 @@ const Lodgings = () => {
             });
 
             if (!response.ok) throw new Error('Failed to add lodging to trip');
-
+            
+            setSelectedTripId(tripId);
             setIsModalOpen(false);
-            setSelectedLodging(null);
-            alert('Lodging added to trip successfully!');
+            alert("Lodging added to trip!");
         } catch (err) {
-            console.error('Error adding lodging to trip:', err);
-            setError('Error adding lodging to trip. Please try again later.');
+            setError("Failed to add lodging to trip");
         }
     };
 
     const handleCompare = (lodging) => {
         setSelectedLodging(lodging);
         
-        // Find similar lodgings
+        // Find similar lodgings in the same area
         const similar = findSimilarItems(lodgings, lodging);
-        const sortedSimilar = sortByPrice(similar, 'lodging');
         
-        setSimilarLodgings(sortedSimilar);
-        setIsComparisonModalOpen(true);
+        // Sort by price
+        const sorted = [...similar].sort((a, b) => a.price_per_night - b.price_per_night);
+        
+        setSimilarOptions(sorted);
+        setIsCompareModalOpen(true);
     };
 
-    const handleSwapLodging = async (newLodging) => {
+    const handleSwap = async (newLodging) => {
         if (!selectedTripId) {
-            setError('Please select a trip first');
+            alert("Please add your original selection to a trip first");
+            setIsCompareModalOpen(false);
             return;
         }
-
+        
         try {
-            if (!isAuthenticated()) return;
-
             // First remove the old lodging
             const removeResponse = await fetch(`/api/trips/items/${selectedTripId}/lodging/${selectedLodging.id}`, {
                 method: 'DELETE',
@@ -215,8 +144,6 @@ const Lodgings = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
-            if (!removeResponse.ok) throw new Error('Failed to remove current lodging');
 
             // Then add the new lodging
             const addResponse = await fetch('/api/trips/add-item', {
@@ -227,269 +154,201 @@ const Lodgings = () => {
                 },
                 body: JSON.stringify({ tripId: selectedTripId, itemType: 'lodging', itemId: newLodging.id })
             });
-
-            if (!addResponse.ok) throw new Error('Failed to add new lodging');
-
-            setIsComparisonModalOpen(false);
-            setSelectedLodging(null);
-            alert('Lodging swapped successfully!');
+            
+            alert(`Swapped ${selectedLodging.name} with ${newLodging.name}`);
+            setIsCompareModalOpen(false);
         } catch (err) {
-            console.error('Error swapping lodging:', err);
-            setError('Error swapping lodging. Please try again later.');
+            setError("Failed to swap lodging");
         }
     };
 
+    // Filter and sort lodgings based on user filters
     const filteredLodgings = lodgings.filter(lodging => {
-        const checkInDate = new Date(lodging.check_in_date);
-        const checkOutDate = new Date(lodging.check_out_date);
-        const start = startDate ? new Date(startDate) : null;
-        const end = endDate ? new Date(endDate) : null;
-        const matchesSearchQuery = lodging.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                   lodging.location.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = selectedType ? lodging.type === selectedType : true;
-
-        if (start && end) {
-            return checkInDate >= start && checkOutDate <= end && matchesSearchQuery && matchesType;
-        } else if (start) {
-            return checkInDate >= start && matchesSearchQuery && matchesType;
-        } else if (end) {
-            return checkOutDate <= end && matchesSearchQuery && matchesType;
+        const matchesSearch = searchQuery 
+            ? lodging.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              lodging.location.toLowerCase().includes(searchQuery.toLowerCase())
+            : true;
+        const matchesType = selectedType 
+            ? lodging.type === selectedType 
+            : true;
+            
+        return matchesSearch && matchesType;
+    }).sort((a, b) => {
+        if (priceOrder === "price-asc") {
+            return a.price_per_night - b.price_per_night;
+        } else if (priceOrder === "price-desc") {
+            return b.price_per_night - a.price_per_night;
         } else {
-            return matchesSearchQuery && matchesType;
+            return b.rating - a.rating; // For "rating-desc"
         }
     });
 
-    const sortedLodgings = [...filteredLodgings].sort((a, b) => {
-        switch (sortOrder) {
-            case 'price_asc':
-                return a.price_per_night - b.price_per_night;
-            case 'price_desc':
-                return b.price_per_night - a.price_per_night;
-            case 'rating_desc':
-                return b.rating - a.rating;
-            default:
-                return 0;
-        }
-    });
-
-    if (error) {
-        return <div className="lodgings"><p className="error">{error}</p></div>;
-    }
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div className="error-message">{error}</div>;
 
     return (
-        <div className="lodgings">
-            <h2>Lodging Options</h2>
+        <div className="lodgings-page">
+            <h1>Lodgings</h1>
             
-            <div className="filter-container">
-                <div className="filter">
-                    <label>
-                        Start Date:
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                        />
-                    </label>
-                    <label>
-                        End Date:
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                        />
-                    </label>
-                    <label>
-                        Type:
-                        <select 
-                            value={selectedType} 
-                            onChange={(e) => setSelectedType(e.target.value)}
-                        >
-                            <option value="">All Types</option>
-                            <option value="Hotel">Hotel</option>
-                            <option value="Apartment">Apartment</option>
-                        </select>
-                    </label>
-                    <label>
-                        Search:
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search by name or location"
-                        />
-                    </label>
-                </div>
-                <div className="sort-options">
-                    <label>
-                        Sort by:
-                        <select 
-                            value={sortOrder} 
-                            onChange={(e) => setSortOrder(e.target.value)}
-                        >
-                            <option value="price_asc">Price: Low to High</option>
-                            <option value="price_desc">Price: High to Low</option>
-                            <option value="rating_desc">Highest Rated</option>
-                        </select>
-                    </label>
-                </div>
+            {/* Filter controls */}
+            <div className="filters">
+                <input 
+                    type="text" 
+                    placeholder="Search by name or location" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                >
+                    <option value="">All Types</option>
+                    <option value="Hotel">Hotel</option>
+                    <option value="Apartment">Apartment</option>
+                </select>
+                <select
+                    value={priceOrder}
+                    onChange={(e) => setPriceOrder(e.target.value)}
+                >
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="rating-desc">Highest Rated</option>
+                </select>
             </div>
-
-            {isLoading ? (
-                <p className="loading">Loading lodgings...</p>
-            ) : (
-                <div className="lodgings-grid">
-                    {sortedLodgings.map(lodging => (
-                        <div key={lodging.id} className="lodging-card">
-                            <h3>{lodging.name}</h3>
-                            <div className="lodging-type">{lodging.type}</div>
-                            <div className="lodging-location">{lodging.location}</div>
-                            <div className="lodging-price">${lodging.price_per_night} per night</div>
-                            <div className="lodging-rating">★ {lodging.rating}</div>
-                            <p className="lodging-description">{lodging.description}</p>
-                            <div className="date-range">
-                                <span><strong>Check-In:</strong> {new Date(lodging.check_in_date).toLocaleDateString()}</span>
-                                <span><strong>Check-Out:</strong> {new Date(lodging.check_out_date).toLocaleDateString()}</span>
-                            </div>
-                            <div className="lodging-amenities">
-                                {lodging.amenities && lodging.amenities.map((amenity, index) => (
-                                    <span key={index} className="amenity-tag">{amenity}</span>
-                                ))}
-                            </div>
-                            <div className="lodging-actions">
-                                <button 
-                                    onClick={() => { 
-                                        setSelectedLodging(lodging); 
-                                        setIsModalOpen(true); 
-                                    }}
-                                    className="add-to-trip-btn"
-                                >
-                                    Add to Trip
-                                </button>
-                                <button 
-                                    onClick={() => handleCompare(lodging)}
-                                    className="compare-btn"
-                                >
-                                    Compare Options
-                                </button>
-                                <button 
-                                    onClick={() => window.open('https://www.booking.com', '_blank')}
-                                    className="book-btn"
-                                >
-                                    Book Now
-                                </button>
-                            </div>
+            
+            {/* Lodging List */}
+            <div className="lodgings-list">
+                {filteredLodgings.map(lodging => (
+                    <div key={lodging.id} className="lodging-item">
+                        <div className="lodging-header">
+                            <h3 className="lodging-name">{lodging.name}</h3>
+                            <span className="lodging-type">{lodging.type}</span>
                         </div>
-                    ))}
-                </div>
-            )}
-
+                        
+                        <div className="lodging-details">
+                            <p className="lodging-location"><strong>Location:</strong> {lodging.location}</p>
+                            <p className="lodging-price"><strong>Price:</strong> ${lodging.price_per_night} per night</p>
+                            <p className="lodging-rating"><strong>Rating:</strong> {lodging.rating}/5</p>
+                            <p className="lodging-dates">
+                                <strong>Available:</strong> {new Date(lodging.check_in_date).toLocaleDateString()} to {new Date(lodging.check_out_date).toLocaleDateString()}
+                            </p>
+                            <p className="lodging-description">{lodging.description}</p>
+                            
+                            {lodging.amenities && (
+                                <div className="lodging-amenities">
+                                    <strong>Amenities:</strong>
+                                    <div className="amenities-list">
+                                        {lodging.amenities.map((amenity, idx) => (
+                                            <span key={idx} className="amenity-tag">{amenity}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="lodging-buttons">
+                            <button 
+                                className="add-trip-btn"
+                                onClick={() => handleAddToTrip(lodging)}
+                            >
+                                Add to Trip
+                            </button>
+                            <button 
+                                className="compare-btn"
+                                onClick={() => handleCompare(lodging)}
+                            >
+                                Compare Similar
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            
             {/* Add to Trip Modal */}
             {isModalOpen && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h3>Select a Trip</h3>
-                        {trips.length > 0 ? (
-                            <div className="trip-list">
-                                {trips.map(trip => (
-                                    <div key={trip.id} className="trip-option">
-                                        <div className="trip-details">
-                                            <h4>{trip.name}</h4>
-                                            <p>{trip.destination}</p>
-                                            <p>{new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}</p>
-                                        </div>
+                        <h2>Select a Trip</h2>
+                        <div className="trips-list">
+                            {trips.length > 0 ? (
+                                trips.map(trip => (
+                                    <div key={trip.id} className="trip-item">
+                                        <p className="trip-name"><strong>{trip.name}</strong></p>
+                                        <p className="trip-destination">{trip.destination}</p>
                                         <button 
-                                            onClick={() => {
-                                                setSelectedTripId(trip.id);
-                                                handleAddLodgingToTrip(trip.id);
-                                            }}
+                                            className="select-trip-btn"
+                                            onClick={() => confirmAddToTrip(trip.id)}
                                         >
                                             Select
                                         </button>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p>No trips available. Create a trip first.</p>
-                        )}
-                        <button onClick={() => setIsModalOpen(false)} className="cancel-btn">Close</button>
+                                ))
+                            ) : (
+                                <p className="no-trips-message">No trips found. Create a trip first.</p>
+                            )}
+                        </div>
+                        <button 
+                            className="close-modal-btn"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Close
+                        </button>
                     </div>
                 </div>
             )}
-
+            
             {/* Comparison Modal */}
-            {isComparisonModalOpen && selectedLodging && (
-                <div className="modal comparison-modal">
+            {isCompareModalOpen && selectedLodging && (
+                <div className="modal">
                     <div className="modal-content">
-                        <h3>Compare Lodging Options</h3>
+                        <h2>Similar Lodgings in {selectedLodging.location.split(',')[0]}</h2>
                         
-                        <div className="selected-item">
-                            <h4>Your Selected Lodging</h4>
-                            <div className="item-details">
-                                <h5>{selectedLodging.name}</h5>
-                                <p className="item-type">{selectedLodging.type}</p>
-                                <p className="item-location">{selectedLodging.location}</p>
-                                <p className="item-price">${selectedLodging.price_per_night} per night</p>
-                                <p className="item-rating">★ {selectedLodging.rating}</p>
-                            </div>
+                        <div className="selected-lodging">
+                            <h3>Your Selection</h3>
+                            <p className="selected-name"><strong>{selectedLodging.name}</strong> ({selectedLodging.type})</p>
+                            <p className="selected-price">${selectedLodging.price_per_night} per night</p>
+                            <p className="selected-rating">Rating: {selectedLodging.rating}/5</p>
                         </div>
                         
-                        <h4>Similar Options in {selectedLodging.location.split(',')[0]}</h4>
-                        
-                        {similarLodgings.length > 0 ? (
-                            <div className="similar-items">
-                                {similarLodgings.map(lodging => {
-                                    const comparison = generateComparisonData(lodging, selectedLodging);
-                                    const isBetter = isBetterDeal(lodging, selectedLodging);
+                        <div className="similar-options">
+                            {similarOptions.length > 0 ? (
+                                similarOptions.map(option => {
+                                    const betterDeal = isBetterDeal(option, selectedLodging);
+                                    const savings = calculateSavings(option, selectedLodging);
                                     
                                     return (
                                         <div 
-                                            key={lodging.id} 
-                                            className={`comparison-item ${isBetter ? 'better-deal' : ''}`}
+                                            key={option.id} 
+                                            className={`similar-option ${betterDeal ? 'better-deal' : ''}`}
                                         >
-                                            <div className="item-details">
-                                                <h5>{lodging.name}</h5>
-                                                <p className="item-type">{lodging.type}</p>
-                                                <p className="item-location">{lodging.location}</p>
-                                                <p className="item-price">${lodging.price_per_night} per night</p>
-                                                <p className="item-rating">★ {lodging.rating}</p>
-                                                
-                                                {isBetter && (
-                                                    <div className="savings-badge">
-                                                        {comparison.savings}
-                                                    </div>
+                                            <div className="option-info">
+                                                <p className="option-name"><strong>{option.name}</strong> ({option.type})</p>
+                                                <p className="option-price">${option.price_per_night} per night</p>
+                                                <p className="option-rating">Rating: {option.rating}/5</p>
+                                                {betterDeal && (
+                                                    <p className="savings">{savings}</p>
                                                 )}
                                             </div>
-                                            
-                                            <div className="comparison-actions">
-                                                <button 
-                                                    onClick={() => {
-                                                        if (!selectedTripId) {
-                                                            setError('Please add the original lodging to a trip first');
-                                                            setIsComparisonModalOpen(false);
-                                                            return;
-                                                        }
-                                                        handleSwapLodging(lodging);
-                                                    }}
-                                                    className="swap-btn"
-                                                >
-                                                    Swap Selection
-                                                </button>
-                                                <button 
-                                                    onClick={() => window.open('https://www.booking.com', '_blank')}
-                                                    className="book-btn"
-                                                >
-                                                    Book Instead
-                                                </button>
-                                            </div>
+                                            <button 
+                                                className="swap-btn"
+                                                onClick={() => handleSwap(option)}
+                                            >
+                                                Swap Selection
+                                            </button>
                                         </div>
                                     );
-                                })}
-                            </div>
-                        ) : (
-                            <p>No similar lodging options found in this area.</p>
-                        )}
+                                })
+                            ) : (
+                                <p className="no-options-message">No similar options found</p>
+                            )}
+                        </div>
                         
-                        <button onClick={() => setIsComparisonModalOpen(false)} className="cancel-btn">Close</button>
+                        <button 
+                            className="close-modal-btn"
+                            onClick={() => setIsCompareModalOpen(false)}
+                        >
+                            Close
+                        </button>
                     </div>
                 </div>
             )}

@@ -1,10 +1,7 @@
-// src/pages/Travel.js
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Travel.css";
-import { isAuthenticated, isGuest } from "../services/authService";
-import AuthPrompt from "../components/AuthPrompt";
-import { findSimilarItems, isBetterDeal, sortByPrice, generateComparisonData } from "../utils/comparisonUtils";
+import { findSimilarItems, isBetterDeal, calculateSavings } from "../utils/comparisonUtils";
 
 // Dummy travel data
 const dummyTravelItems = [
@@ -114,77 +111,60 @@ const dummyTravelItems = [
     }
 ];
 
+
 const Travel = () => {
-    const [travelItems, setTravelItems] = useState([]);
+    const [travelOptions, setTravelOptions] = useState([]);
     const [trips, setTrips] = useState([]);
     const [selectedTravel, setSelectedTravel] = useState(null);
-    const [selectedTripId, setSelectedTripId] = useState(null);
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-    const [method, setMethod] = useState('');
-    const [departureLocation, setDepartureLocation] = useState('');
-    const [destination, setDestination] = useState('');
-    const [sortOrder, setSortOrder] = useState('price_asc');
-    const [similarTravelOptions, setSimilarTravelOptions] = useState([]);
-    const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+    const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+    const [similarOptions, setSimilarOptions] = useState([]);
+    const [selectedTripId, setSelectedTripId] = useState(null);
+    const [departureFilter, setDepartureFilter] = useState("");
+    const [destinationFilter, setDestinationFilter] = useState("");
+    const [typeFilter, setTypeFilter] = useState("");
     const token = localStorage.getItem('token');
     const navigate = useNavigate();
 
+    // Fetch travel options and trips
     useEffect(() => {
-        const fetchTravelItems = async () => {
-            setIsLoading(true);
-            try {
-                // Using dummy data instead of API call
-                setTravelItems(dummyTravelItems);
-            } catch (err) {
-                setError('Error loading travel options. Please try again later.');
-                console.error('Error fetching travel items:', err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
+        // Use dummy data for now
+        setTravelOptions(dummyTravelItems);
+        setIsLoading(false);
+        
+        // Fetch trips if authenticated
         const fetchTrips = async () => {
-            if (isAuthenticated()) {
+            if (token) {
                 try {
                     const response = await fetch('/api/trips', {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
                     });
-
-                    if (!response.ok) throw new Error('Failed to fetch trips');
-
-                    const data = await response.json();
-                    setTrips(data);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setTrips(Array.isArray(data) ? data : []);
+                    }
                 } catch (err) {
                     console.error('Error fetching trips:', err);
                 }
             }
         };
-
-        fetchTravelItems();
+        
         fetchTrips();
     }, [token]);
 
-    const handleAddToTripClick = (travel) => {
-        if (!isAuthenticated()) {
-            setShowAuthPrompt(true);
-        } else {
-            setSelectedTravel(travel);
-            setIsModalOpen(true);
-        }
+    const handleAddToTrip = (travel) => {
+        setSelectedTravel(travel);
+        setIsModalOpen(true);
     };
 
-    const handleAddTravelToTrip = async (tripId) => {
+    const confirmAddToTrip = async (tripId) => {
         try {
-            if (!isAuthenticated()) {
-                setIsModalOpen(false);
-                return;
-            }
-
+            // Add to trip API call
             const response = await fetch('/api/trips/add-item', {
                 method: 'POST',
                 headers: {
@@ -195,36 +175,36 @@ const Travel = () => {
             });
 
             if (!response.ok) throw new Error('Failed to add travel to trip');
-
+            
             setSelectedTripId(tripId);
             setIsModalOpen(false);
-            alert('Travel option added to trip successfully!');
+            alert("Travel added to trip!");
         } catch (err) {
-            console.error('Error adding travel to trip:', err);
-            setError('Error adding travel to trip. Please try again later.');
+            setError("Failed to add travel to trip");
         }
     };
 
     const handleCompare = (travel) => {
         setSelectedTravel(travel);
         
-        // Find similar travel options
-        const similar = findSimilarItems(travelItems, travel);
-        const sortedSimilar = sortByPrice(similar, 'travel');
+        // Find similar travel options for the same route
+        const similar = findSimilarItems(travelOptions, travel);
         
-        setSimilarTravelOptions(sortedSimilar);
-        setIsComparisonModalOpen(true);
+        // Sort by price
+        const sorted = [...similar].sort((a, b) => a.price - b.price);
+        
+        setSimilarOptions(sorted);
+        setIsCompareModalOpen(true);
     };
 
-    const handleSwapTravel = async (newTravel) => {
+    const handleSwap = async (newTravel) => {
         if (!selectedTripId) {
-            setError('Please select a trip first');
+            alert("Please add your original selection to a trip first");
+            setIsCompareModalOpen(false);
             return;
         }
-
+        
         try {
-            if (!isAuthenticated()) return;
-
             // First remove the old travel option
             const removeResponse = await fetch(`/api/trips/items/${selectedTripId}/travel/${selectedTravel.id}`, {
                 method: 'DELETE',
@@ -232,8 +212,6 @@ const Travel = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
-            if (!removeResponse.ok) throw new Error('Failed to remove current travel option');
 
             // Then add the new travel option
             const addResponse = await fetch('/api/trips/add-item', {
@@ -244,296 +222,210 @@ const Travel = () => {
                 },
                 body: JSON.stringify({ tripId: selectedTripId, itemType: 'travel', itemId: newTravel.id })
             });
-
-            if (!addResponse.ok) throw new Error('Failed to add new travel option');
-
-            setIsComparisonModalOpen(false);
-            setSelectedTravel(null);
-            alert('Travel option swapped successfully!');
+            
+            alert(`Swapped ${selectedTravel.type} with ${newTravel.type}`);
+            setIsCompareModalOpen(false);
         } catch (err) {
-            console.error('Error swapping travel option:', err);
-            setError('Error swapping travel option. Please try again later.');
+            setError("Failed to swap travel option");
         }
     };
-    
-    const filteredTravelItems = travelItems.filter(travel => {
-        const matchesMethod = method ? travel.type.toLowerCase().includes(method.toLowerCase()) : true;
-        const matchesDeparture = departureLocation ? 
-            travel.departure_location.toLowerCase().includes(departureLocation.toLowerCase()) : true;
-        const matchesDestination = destination ? 
-            travel.arrival_location.toLowerCase().includes(destination.toLowerCase()) : true;
-        return matchesMethod && matchesDeparture && matchesDestination;
-    });
-
-    const sortedTravelItems = [...filteredTravelItems].sort((a, b) => {
-        switch (sortOrder) {
-            case 'price_asc':
-                return a.price - b.price;
-            case 'price_desc':
-                return b.price - a.price;
-            case 'duration_asc':
-                return (a.duration || '').localeCompare(b.duration || '');
-            case 'departure_asc':
-                return new Date(a.departure) - new Date(b.departure);
-            default:
-                return 0;
-        }
-    });
 
     const formatDateTime = (dateTimeStr) => {
         const date = new Date(dateTimeStr);
-        return date.toLocaleString('en-US', {
-            weekday: 'short',
-            month: 'short', 
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
+        return date.toLocaleString();
     };
 
-    if (error) {
-        return <div className="travel"><p className="error">{error}</p></div>;
-    }
+    // Filter travel options based on user input
+    const filteredTravelOptions = travelOptions.filter(travel => {
+        const matchesDeparture = departureFilter 
+            ? travel.departure_location.toLowerCase().includes(departureFilter.toLowerCase()) 
+            : true;
+        const matchesDestination = destinationFilter 
+            ? travel.arrival_location.toLowerCase().includes(destinationFilter.toLowerCase()) 
+            : true;
+        const matchesType = typeFilter 
+            ? travel.type === typeFilter 
+            : true;
+        
+        return matchesDeparture && matchesDestination && matchesType;
+    });
+
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div className="error-message">{error}</div>;
 
     return (
-        <div className="travel">
-            {isGuest() && (
-                <div className="guest-banner">
-                    <p>You're browsing as a guest. <a href="/login">Log in</a> or <a href="/signup">sign up</a> to add travel to trips.</p>
-                </div>
-            )}
+        <div className="travel-page">
+            <h1>Travel Options</h1>
             
-            <h2>Travel Options</h2>
-            
-            <div className="filter-container">
-                <div className="filter">
-                    <label>
-                        Transportation Method:
-                        <input
-                            type="text"
-                            value={method}
-                            onChange={(e) => setMethod(e.target.value)}
-                            placeholder="e.g., flight, train, bus"
-                        />
-                    </label>
-                    <label>
-                        Departure Location:
-                        <input
-                            type="text"
-                            value={departureLocation}
-                            onChange={(e) => setDepartureLocation(e.target.value)}
-                            placeholder="Enter departure location"
-                        />
-                    </label>
-                    <label>
-                        Destination:
-                        <input
-                            type="text"
-                            value={destination}
-                            onChange={(e) => setDestination(e.target.value)}
-                            placeholder="Enter destination"
-                        />
-                    </label>
-                </div>
-                <div className="sort-options">
-                    <label>
-                        Sort by:
-                        <select 
-                            value={sortOrder} 
-                            onChange={(e) => setSortOrder(e.target.value)}
-                        >
-                            <option value="price_asc">Price: Low to High</option>
-                            <option value="price_desc">Price: High to Low</option>
-                            <option value="duration_asc">Duration: Shortest First</option>
-                            <option value="departure_asc">Departure: Earliest First</option>
-                        </select>
-                    </label>
-                </div>
+            {/* Filter controls */}
+            <div className="filters">
+                <input 
+                    type="text" 
+                    placeholder="Enter departure location" 
+                    value={departureFilter}
+                    onChange={(e) => setDepartureFilter(e.target.value)}
+                />
+                <input 
+                    type="text" 
+                    placeholder="Enter destination" 
+                    value={destinationFilter}
+                    onChange={(e) => setDestinationFilter(e.target.value)}
+                />
+                <select 
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                >
+                    <option value="">All Types</option>
+                    <option value="Flight">Flight</option>
+                    <option value="Train">Train</option>
+                    <option value="Bus">Bus</option>
+                </select>
             </div>
-
-            {isLoading ? (
-                <p className="loading">Loading travel options...</p>
-            ) : (
-                <div className="travel-grid">
-                    {sortedTravelItems.map(travel => (
-                        <div key={travel.id} className="travel-card">
-                            <div className="travel-header">
-                                <h3>{travel.type}</h3>
-                                <span className="travel-price">${travel.price}</span>
-                            </div>
-                            
-                            <div className="travel-route">
-                                <div className="travel-locations">
-                                    <span className="from">{travel.departure_location}</span>
-                                    <span className="arrow">→</span>
-                                    <span className="to">{travel.arrival_location}</span>
-                                </div>
-                                
-                                <div className="travel-times">
-                                    <div className="departure">
-                                        <span className="label">Departure:</span>
-                                        <span className="time">{formatDateTime(travel.departure)}</span>
-                                    </div>
-                                    <div className="arrival">
-                                        <span className="label">Arrival:</span>
-                                        <span className="time">{formatDateTime(travel.arrival)}</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="travel-details">
-                                    {travel.airline && <span className="detail-item">Airline: {travel.airline}</span>}
-                                    {travel.flight_number && <span className="detail-item">Flight: {travel.flight_number}</span>}
-                                    {travel.train_company && <span className="detail-item">Company: {travel.train_company}</span>}
-                                    {travel.train_number && <span className="detail-item">Train: {travel.train_number}</span>}
-                                    {travel.bus_company && <span className="detail-item">Company: {travel.bus_company}</span>}
-                                    {travel.bus_number && <span className="detail-item">Bus: {travel.bus_number}</span>}
-                                    {travel.duration && <span className="detail-item">Duration: {travel.duration}</span>}
-                                    <span className="detail-item">Stops: {travel.stops || 0}</span>
-                                </div>
-                            </div>
-                            
-                            <div className="travel-actions">
-                                <button 
-                                    onClick={() => handleAddToTripClick(travel)}
-                                    className="add-to-trip-btn"
-                                >
-                                    Add to Trip
-                                </button>
-                                <button 
-                                    onClick={() => handleCompare(travel)}
-                                    className="compare-btn"
-                                >
-                                    Compare Options
-                                </button>
-                                <button 
-                                    onClick={() => window.open('https://www.expedia.com', '_blank')}
-                                    className="book-btn"
-                                >
-                                    Book Now
-                                </button>
-                            </div>
+            
+            {/* Travel List */}
+            <div className="travel-list">
+                {filteredTravelOptions.map(travel => (
+                    <div key={travel.id} className="travel-item">
+                        <div className="travel-header">
+                            <h3 className="travel-type">{travel.type}</h3>
+                            <p className="travel-price">${travel.price}</p>
                         </div>
-                    ))}
-                </div>
-            )}
-
+                        
+                        <div className="travel-details">
+                            <div className="travel-route">
+                                <p className="from-label">From:</p>
+                                <p className="from-value">{travel.departure_location}</p>
+                                <p className="to-label">To:</p>
+                                <p className="to-value">{travel.arrival_location}</p>
+                            </div>
+                            
+                            <div className="travel-times">
+                                <p className="departure-label">Departure:</p>
+                                <p className="departure-value">{formatDateTime(travel.departure)}</p>
+                                <p className="arrival-label">Arrival:</p>
+                                <p className="arrival-value">{formatDateTime(travel.arrival)}</p>
+                            </div>
+                            
+                            {travel.airline && (
+                                <p className="travel-airline">Airline: {travel.airline}</p>
+                            )}
+                            {travel.train_company && (
+                                <p className="travel-company">Company: {travel.train_company}</p>
+                            )}
+                            {travel.bus_company && (
+                                <p className="travel-company">Company: {travel.bus_company}</p>
+                            )}
+                            {travel.duration && (
+                                <p className="travel-duration">Duration: {travel.duration}</p>
+                            )}
+                        </div>
+                        
+                        <div className="travel-buttons">
+                            <button 
+                                className="add-trip-btn"
+                                onClick={() => handleAddToTrip(travel)}
+                            >
+                                Add to Trip
+                            </button>
+                            <button 
+                                className="compare-btn"
+                                onClick={() => handleCompare(travel)}
+                            >
+                                Compare Similar
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            
             {/* Add to Trip Modal */}
             {isModalOpen && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h3>Select a Trip</h3>
-                        {trips.length > 0 ? (
-                            <div className="trip-list">
-                                {trips.map(trip => (
-                                    <div key={trip.id} className="trip-option">
-                                        <div className="trip-details">
-                                            <h4>{trip.name}</h4>
-                                            <p>{trip.destination}</p>
-                                            <p>{new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}</p>
-                                        </div>
+                        <h2>Select a Trip</h2>
+                        <div className="trips-list">
+                            {trips.length > 0 ? (
+                                trips.map(trip => (
+                                    <div key={trip.id} className="trip-item">
+                                        <p className="trip-name"><strong>{trip.name}</strong></p>
+                                        <p className="trip-destination">{trip.destination}</p>
                                         <button 
-                                            onClick={() => {
-                                                setSelectedTripId(trip.id);
-                                                handleAddTravelToTrip(trip.id);
-                                            }}
+                                            className="select-trip-btn"
+                                            onClick={() => confirmAddToTrip(trip.id)}
                                         >
                                             Select
                                         </button>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p>No trips available. Create a trip first.</p>
-                        )}
-                        <button onClick={() => setIsModalOpen(false)} className="cancel-btn">Close</button>
-                    </div>
-                </div>
-            )}
-
-            {/* Comparison Modal */}
-            {isComparisonModalOpen && selectedTravel && (
-                <div className="modal comparison-modal">
-                    <div className="modal-content">
-                        <h3>Compare Travel Options</h3>
-                        
-                        <div className="selected-item">
-                            <h4>Your Selected Option</h4>
-                            <div className="item-details">
-                                <h5>{selectedTravel.type} - {selectedTravel.departure_location} to {selectedTravel.arrival_location}</h5>
-                                <p className="item-price">${selectedTravel.price}</p>
-                                <p className="item-time">Departure: {formatDateTime(selectedTravel.departure)}</p>
-                                <p className="item-time">Arrival: {formatDateTime(selectedTravel.arrival)}</p>
-                                {selectedTravel.duration && <p className="item-duration">Duration: {selectedTravel.duration}</p>}
-                            </div>
+                                ))
+                            ) : (
+                                <p className="no-trips-message">No trips found. Create a trip first.</p>
+                            )}
                         </div>
-                        
-                        <h4>Similar Options</h4>
-                        
-                        {similarTravelOptions.length > 0 ? (
-                            <div className="similar-items">
-                                {similarTravelOptions.map(travel => {
-                                    const comparison = generateComparisonData(travel, selectedTravel);
-                                    const isBetter = isBetterDeal(travel, selectedTravel);
-                                    
-                                    return (
-                                        <div 
-                                            key={travel.id} 
-                                            className={`comparison-item ${isBetter ? 'better-deal' : ''}`}
-                                        >
-                                            <div className="item-details">
-                                                <h5>{travel.type} - {travel.airline || travel.train_company || travel.bus_company}</h5>
-                                                <p className="item-price">${travel.price}</p>
-                                                <p className="item-time">Departure: {formatDateTime(travel.departure)}</p>
-                                                <p className="item-time">Arrival: {formatDateTime(travel.arrival)}</p>
-                                                {travel.duration && <p className="item-duration">Duration: {travel.duration}</p>}
-                                                
-                                                {isBetter && (
-                                                    <div className="savings-badge">
-                                                        {comparison.savings}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            <div className="comparison-actions">
-                                                <button 
-                                                    onClick={() => {
-                                                        if (!selectedTripId) {
-                                                            setError('Please add the original option to a trip first');
-                                                            setIsComparisonModalOpen(false);
-                                                            return;
-                                                        }
-                                                        handleSwapTravel(travel);
-                                                    }}
-                                                    className="swap-btn"
-                                                >
-                                                    Swap Selection
-                                                </button>
-                                                <button 
-                                                    onClick={() => window.open('https://www.expedia.com', '_blank')}
-                                                    className="book-btn"
-                                                >
-                                                    Book Instead
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <p>No similar travel options found for this route.</p>
-                        )}
-                        
-                        <button onClick={() => setIsComparisonModalOpen(false)} className="cancel-btn">Close</button>
+                        <button 
+                            className="close-modal-btn"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Close
+                        </button>
                     </div>
                 </div>
             )}
             
-            {showAuthPrompt && (
-                <AuthPrompt 
-                    message="Please log in or create an account to add travel to trips."
-                    onClose={() => setShowAuthPrompt(false)}
-                />
+            {/* Comparison Modal */}
+            {isCompareModalOpen && selectedTravel && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>Similar Options</h2>
+                        <p className="compare-route">
+                            <strong>Route:</strong> {selectedTravel.departure_location} to {selectedTravel.arrival_location}
+                        </p>
+                        
+                        <div className="selected-travel">
+                            <h3>Your Selection</h3>
+                            <p className="selected-type-price"><strong>{selectedTravel.type}</strong> - ${selectedTravel.price}</p>
+                            <p className="selected-departure">Departure: {formatDateTime(selectedTravel.departure)}</p>
+                        </div>
+                        
+                        <div className="similar-options">
+                            {similarOptions.length > 0 ? (
+                                similarOptions.map(option => {
+                                    const betterDeal = isBetterDeal(option, selectedTravel);
+                                    const savings = calculateSavings(option, selectedTravel);
+                                    
+                                    return (
+                                        <div 
+                                            key={option.id} 
+                                            className={`similar-option ${betterDeal ? 'better-deal' : ''}`}
+                                        >
+                                            <div className="option-info">
+                                                <p className="option-type-price"><strong>{option.type}</strong> - ${option.price}</p>
+                                                <p className="option-departure">Departure: {formatDateTime(option.departure)}</p>
+                                                {betterDeal && (
+                                                    <p className="savings">{savings}</p>
+                                                )}
+                                            </div>
+                                            <button 
+                                                className="swap-btn"
+                                                onClick={() => handleSwap(option)}
+                                            >
+                                                Swap Selection
+                                            </button>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="no-options-message">No similar options found</p>
+                            )}
+                        </div>
+                        
+                        <button 
+                            className="close-modal-btn"
+                            onClick={() => setIsCompareModalOpen(false)}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
