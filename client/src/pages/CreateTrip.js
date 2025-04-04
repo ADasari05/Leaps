@@ -9,6 +9,7 @@ const CreateTrip = () => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [isPublic, setIsPublic] = useState(false);
+    const [status, setStatus] = useState("Upcoming")
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +30,7 @@ const CreateTrip = () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },                
-                body: JSON.stringify({ name, description, destination, startDate, endDate, isPublic }),
+                body: JSON.stringify({ name, description, destination, startDate, endDate, isPublic, status }),
             });
 
             const data = await response.json();

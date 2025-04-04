@@ -72,12 +72,12 @@ router.get('/:id', auth, async (req, res) => {
 // Create a new trip
 router.post('/', auth, async (req, res) => {
     try {
-        const { name, description, destination, startDate, endDate, isPublic } = req.body;
+        const { name, description, destination, startDate, endDate, isPublic, status} = req.body;
         const creatorId = req.user.id; // From auth middleware
 
         const result = await db.query(
-            'INSERT INTO trips (name, description, creator_id, destination, start_date, end_date, is_public) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, description, creatorId, destination, startDate, endDate, isPublic]
+            'INSERT INTO trips (name, description, creator_id, destination, start_date, end_date, is_public, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [name, description, creatorId, destination, startDate, endDate, isPublic, status]
         );
 
         res.status(201).json(result.rows[0]);
@@ -130,7 +130,8 @@ router.put('/complete/:id', auth, async (req, res) => {
         //complete the trip
         const result = await db.query(
             'UPDATE trips SET current = false WHERE id = $1 AND creator_id = $2 RETURNING *',
-            [tripId, userId]
+            'UPDATE trips SET current = $3 WHERE id = $1 AND creator_id = $2 RETURNING *',
+            [tripId, userId, "Past"]
         );
 
         if (result.rows.length === 0) {

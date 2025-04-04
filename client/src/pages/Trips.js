@@ -8,13 +8,22 @@ import ConfirmDelete from "../components/DeleteTripConfirmation";
 const Trips = () => {
     const [refresh, setRefresh] = useState(false);
     const [trips, setTrips] = useState([]);
-    const [pastTrips, setPastTrips] = useState([]);
     const [error, setError] = useState(null);
+    const [viewMode, setViewMode] = useState('list');
+    const [selectedStatus, setSelectedStatus] = useState("All");
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
 
-    /*Setup for the delete trip popup window*/
+    const toggleViewMode = () => {
+        setViewMode(prevMode => (prevMode === 'list' ? 'grid' : 'list'));
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0];
+    };
 
     const handleComplete = async (trip) => {
         try {
@@ -27,21 +36,19 @@ const Trips = () => {
                 body: JSON.stringify(trip)
             });
 
-            if (!response.ok) throw new Error('Failed to save trip');
+            if (!response.ok) throw new Error('Failed to complete trip');
 
-            const data = await response.json();
-            setRefresh(prev => !prev); // This will trigger a re-render
-
+            await response.json();
+            setRefresh(prev => !prev);
         } catch (err) {
-            console.error('Error saving trip:', err);
-            setError('Error saving trip. Please try again later.');
+            console.error('Error completing trip:', err);
+            setError('Error completing trip. Please try again later.');
         }
-    }
+    };
 
     useEffect(() => {
         const fetchTrips = async () => {
             setIsLoading(true);
-
             try {
                 const response = await fetch("/api/trips", {
                     headers: {
@@ -52,21 +59,10 @@ const Trips = () => {
                 if (!response.ok) throw new Error('Failed to fetch trips');
 
                 const data = await response.json();
-                console.log(data);
-                if (data.length === 0) {
-                    console.log("data is empty");
-                    console.log(data);
-                }
-                console.log("is array? %b", Array.isArray(data));
-                setTrips(Array.isArray(data) ? data : []); // Ensure array
-                if (trips.length === 0) {
-                    console.log("trips array is empty");
-                    console.log(trips);
-                }
+                setTrips(Array.isArray(data) ? data : []);
             } catch (err) {
                 setError('Error loading trips. Please try again later.');
                 console.error('Error fetching trips:', err);
-                //setTrips(dummyTrips); // Use dummy trips if API call fails
             } finally {
                 setIsLoading(false);
             }
@@ -75,43 +71,123 @@ const Trips = () => {
         fetchTrips();
     }, [token, refresh]);
 
+    const filteredTrips = selectedStatus === "all" 
+        ? trips 
+        : trips.filter(trip => trip.status === selectedStatus);
+
+    const renderTrips = (status) => {
+        const filtered = filteredTrips.filter(trip => trip.status === status);
+        if (filtered.length === 0) return <p>No {status.toLowerCase()} trips found.</p>;
+
+        return viewMode === "grid" ? renderGridView(filtered) : renderListView(filtered);
+    };
+
+    const renderGridView = (tripsArray) => (
+        <div className="trips-grid">
+            {tripsArray.map(trip => (
+                <div key={trip.id} className="trip-item grid">
+                    <div>
+                        <Link to={`/trips/${trip.id}`}>
+                            <h3>{trip.name}</h3>
+                        </Link>
+                        <p>{trip.description}</p>
+                        <p className="trip-destination"><strong>Destination:</strong> {trip.destination}</p>
+                        <div className="trip-date">
+                            {formatDate(trip.start_date)} to {formatDate(trip.end_date)}
+                        </div>
+                    </div>
+
+                    <div className="button-group">
+                        {trip.status === "current" && (
+                            <button onClick={() => handleComplete(trip)} className="complete-btn">
+                                Complete
+                            </button>
+                        )}
+                        <div className="delete-btn">
+                            <ConfirmDelete id={trip.id} token={token} />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+
+    const renderListView = (tripsArray) => (
+        <div className="trips-list">
+            {tripsArray.map(trip => (
+                <div key={trip.id} className="trip-item list">
+                    <div className="trip-date">
+                        {formatDate(trip.start_date)} to {formatDate(trip.end_date)}
+                    </div>
+
+                    <div className="trip-info">
+                        <Link to={`/trips/${trip.id}`}>
+                            <h3>{trip.name}</h3>
+                        </Link>
+                        <p>{trip.description}</p>
+                        <p className="trip-destination"><strong>Destination:</strong> {trip.destination}</p>
+                    </div>
+
+                    <div className="trip-actions">
+                        {trip.status === "current" && (
+                            <button onClick={() => handleComplete(trip)} className="complete-btn">
+                                Complete
+                            </button>
+                        )}
+                        <div className="delete-btn">
+                            <ConfirmDelete id={trip.id} token={token} />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+
     if (!token) {
         return <div className="text-container">Please login to view your trips.</div>;
     }
+    
     return (
         <div className="trips-container">
             <img src={LeapsLogo} alt="Leaps Logo" className="logo" />
-            <h1>Your Trips</h1>
+            <h1>My Trips</h1>
 
-            {error && <p className="error">{error}</p>}
+            {error && <div className="error">{error}</div>}
 
             {isLoading ? (
-                <p className="loading">Loading trips...</p>
+                <div className="loading">Loading your trips...</div>
             ) : (
-                <div className="trips-list">
-                    <h2>Upcoming Trips</h2>
-                    {trips.length > 0 ? (
-                        trips.map(trip => (
-                            trip.current && (<div key={trip.id} className="trip-item">
-                                <Link to={`/trips/${trip.id}`}>
-                                    <h3>{trip.name}</h3>
-                                </Link>
-                                <p>{trip.description}</p>
-                                <p><strong>Destination:</strong> {trip.destination}</p>
-                                <p><strong>Dates:</strong> 
-                                    {trip.start_date ? new Date(trip.start_date).toISOString().split('T')[0] : ''} to 
-                                    {trip.end_date ? new Date(trip.end_date).toISOString().split('T')[0] : ''}
-                                </p>
-                                <ConfirmDelete id={trip.id} token={token}/>
-                                <button
-                                    onClick={() => handleComplete(trip)}
-                                >
-                                    Complete
-                                </button>
-                            </div>)
+                <div>
+                    <div className="trips-header">
+                        <button onClick={toggleViewMode} className="toggle-view-btn" data-view={viewMode}>
+                            Switch to {viewMode === 'list' ? 'Grid' : 'List'} View
+                        </button>
+
+                        <select 
+                            className="filter-dropdown"
+                            value={selectedStatus} 
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                        >
+                            <option value="All">All Trips</option>
+                            <option value="Upcoming">Upcoming</option>
+                            <option value="Current">Current</option>
+                            <option value="Past">Past</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                    {selectedStatus === "All" ? (
+                        ["Upcoming", "Current", "Past", "Cancelled"].map(status => (
+                            <div key={status}>
+                                <h2>{status.charAt(0).toUpperCase() + status.slice(1)} Trips</h2>
+                                {renderTrips(status)}
+                            </div>
                         ))
                     ) : (
-                        <p style={{ color: 'black' }}>No trips found.</p>
+                        <div>
+                            <h2>{selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Trips</h2>
+                            {renderTrips(selectedStatus)}
+                        </div>
                     )}
                 </div>
             )}
@@ -119,27 +195,6 @@ const Trips = () => {
             <button onClick={() => navigate("/createtrip")} className="create-trip-btn">
                 Create New Trip
             </button>
-            <div className="trips-list">
-                <h2> Past Trips </h2>
-                {trips.length > 0 ? (
-                        trips.map(trip => (
-                            !trip.current && (<div key={trip.id} className="trip-item">
-                                <Link to={`/trips/${trip.id}`}>
-                                    <h3>{trip.name}</h3>
-                                </Link>
-                                <p>{trip.description}</p>
-                                <p><strong>Destination:</strong> {trip.destination}</p>
-                                <p><strong>Dates:</strong> 
-                                    {trip.start_date ? new Date(trip.start_date).toISOString().split('T')[0] : ''} to 
-                                    {trip.end_date ? new Date(trip.end_date).toISOString().split('T')[0] : ''}
-                                </p>
-                                <ConfirmDelete id={trip.id} token={token}/>
-                            </div>)
-                        ))
-                    ) : (
-                        <p style={{ color: 'black' }}>No trips found.</p>
-                    )}
-            </div>
         </div>
     );
 };

@@ -58,7 +58,8 @@ CREATE TABLE trips (
     end_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_public BOOLEAN DEFAULT false,
-    current BOOLEAN DEFAULT true
+    current BOOLEAN DEFAULT true,
+    status VARCHAR(255) DEFAULT 'Upcoming'
     -- this doesn't work in psql need to create  trigger
     -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
