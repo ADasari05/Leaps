@@ -11,9 +11,19 @@ const Travel = () => {
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDrivingModalOpen, setIsDrivingModalOpen] = useState(false);
     const [method, setMethod] = useState('');
     const [departureLocation, setDepartureLocation] = useState('');
     const [destination, setDestination] = useState('');
+    const [newDriving, setNewDriving] = useState({
+        type: 'Driving',
+        departure_location: '',
+        arrival_location: '',
+        departure: new Date().toISOString().split('T')[0] + 'T08:00',
+        arrival: new Date().toISOString().split('T')[0] + 'T10:00',
+        price: 0,
+        notes: 'Personal vehicle'
+    });
     const token = localStorage.getItem('token');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     const navigate = useNavigate();
@@ -63,6 +73,63 @@ const Travel = () => {
         fetchTrips();
     }, [token]);
 
+    const handleOpenDrivingModal = () => {
+        if (!isAuthenticated()) {
+            setShowAuthPrompt(true);
+        } else {
+            setIsDrivingModalOpen(true);
+        }
+    };
+
+    const handleDrivingInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewDriving({
+            ...newDriving,
+            [name]: value
+        });
+    };
+
+    const handleCreateDriving = async () => {
+        if (!newDriving.departure_location || !newDriving.arrival_location) {
+          alert('Please enter both departure and arrival locations');
+          return;
+        }
+    
+        try {
+          const response = await fetch('http://localhost:3000/api/travel', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(newDriving)
+          });
+          if (!response.ok) {
+            throw new Error('Failed to create driving option');
+          }
+    
+          const createdDriving = await response.json();
+    
+          setTravelItems((prev) => [createdDriving, ...prev]);
+    
+          setIsDrivingModalOpen(false);
+          setNewDriving({
+            type: 'Driving',
+            departure_location: '',
+            arrival_location: '',
+            departure: new Date().toISOString().split('T')[0] + 'T08:00',
+            arrival: new Date().toISOString().split('T')[0] + 'T10:00',
+            price: 0,
+            notes: 'Personal vehicle'
+          });
+    
+          alert('Driving route added successfully!');
+        } catch (err) {
+          console.error('Error creating driving option:', err);
+          setError('Failed to create driving option. Please try again.');
+        }
+      };
+
     const handleAddToTripClick = (travel) => {
         if (!isAuthenticated()) {
             setShowAuthPrompt(true);
@@ -100,6 +167,9 @@ const Travel = () => {
         return matchesMethod && matchesDeparture && matchesDestination;
     });
 
+    const viewDrivingDetails = (travel) => {
+        navigate(`/viewdriving/${travel.id}`);
+    };
 
     if (error) {
         return <div className="travel"><p className="error">{error}</p></div>;
@@ -113,6 +183,12 @@ const Travel = () => {
                 </div>
             )}
             <h2>All Travel Items</h2>
+            <div className="add-driving-section">
+                <button className="add-driving-btn" onClick={handleOpenDrivingModal}>
+                    + Add Driving Route
+                </button>
+                <p>Plan a road trip or calculate driving costs for your trip</p>
+            </div>
             <div className="filter">
                 <label>
                     Transportation Method:
@@ -149,12 +225,24 @@ const Travel = () => {
                         <p>{travel.departure_location} to {travel.arrival_location}</p>
                         <p><strong>Departure:</strong> {new Date(travel.departure).toLocaleDateString()}</p>
                         <p><strong>Arrival:</strong> {new Date(travel.arrival).toLocaleDateString()}</p>
-                        <button onClick={() => { handleAddToTripClick(travel); }}>
-                            Add to Trip
-                        </button>
-                        <button onClick={() => window.open('https://www.booking.com', '_blank')}>
-                            Book Travel
-                        </button>
+                        <div className="travel-actions">
+                            <button onClick={() => { handleAddToTripClick(travel); }}>
+                                Add to Trip
+                            </button>
+                                
+                            {travel.type.toLowerCase() === 'driving' ? (
+                                <button 
+                                    className="view-details-btn"
+                                    onClick={() => viewDrivingDetails(travel)}
+                                >
+                                    View & Calculate Costs
+                                </button>
+                            ) : (
+                                <button onClick={() => window.open('https://www.booking.com', '_blank')}>
+                                    Book Travel
+                                </button>
+                            )}
+                        </div>
                     </li>
                 ))}
             </ul>
@@ -176,6 +264,85 @@ const Travel = () => {
                     </div>
                 </div>
             )}
+
+            {isDrivingModalOpen && (
+                <div className="modal">
+                    <div className="modal-content driving-form">
+                        <h3>Add Driving Route</h3>
+                        <form onSubmit={(e) => { e.preventDefault(); handleCreateDriving(); }}>
+                            <div className="form-group">
+                                <label>Departure Location:</label>
+                                <input
+                                    type="text"
+                                    name="departure_location"
+                                    value={newDriving.departure_location}
+                                    onChange={handleDrivingInputChange}
+                                    placeholder="e.g., New York, NY"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>Arrival Location:</label>
+                                <input
+                                    type="text"
+                                    name="arrival_location"
+                                    value={newDriving.arrival_location}
+                                    onChange={handleDrivingInputChange}
+                                    placeholder="e.g., Boston, MA"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Departure Date/Time:</label>
+                                    <input
+                                        type="datetime-local"
+                                        name="departure"
+                                        value={newDriving.departure}
+                                        onChange={handleDrivingInputChange}
+                                        required
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Arrival Date/Time:</label>
+                                    <input
+                                        type="datetime-local"
+                                        name="arrival"
+                                        value={newDriving.arrival}
+                                        onChange={handleDrivingInputChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>Notes:</label>
+                                <textarea
+                                    name="notes"
+                                    value={newDriving.notes}
+                                    onChange={handleDrivingInputChange}
+                                    placeholder="Any additional information about this driving route"
+                                ></textarea>
+                            </div>
+                            
+                            <div className="form-actions">
+                                <button type="submit" className="submit-btn">Add Driving Route</button>
+                                <button 
+                                    type="button" 
+                                    className="cancel-btn"
+                                    onClick={() => setIsDrivingModalOpen(false)}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {showAuthPrompt && (
                 <AuthPrompt 
                     message="Please log in or create an account to add travel to trips."
