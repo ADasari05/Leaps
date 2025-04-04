@@ -522,6 +522,31 @@ const TripDetails = () => {
         setResults(data);
     };
 
+    const handleCancelTrip = async () => {
+        try {
+            const response = await fetch(`/api/trips/cancel/${trip.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+    
+            if (!response.ok) throw new Error('Failed to cancel trip');
+    
+            await response.json();
+        } catch (err) {
+            console.error('Error cancelling trip:', err);
+            setError('Error cancelling trip. Please try again later.');
+        }
+    };
+    
+    useEffect(() => {
+        if (isTripCancelled) {
+            handleCancelTrip();
+        }
+    }, [isTripCancelled]);
+
     const openAddToTrip = (item) => {
         setSelectedItem(item);
         setDialogOpen(true);

@@ -129,11 +129,9 @@ router.put('/complete/:id', auth, async (req, res) => {
 
         //complete the trip
         const result = await db.query(
-            'UPDATE trips SET current = false WHERE id = $1 AND creator_id = $2 RETURNING *',
-            'UPDATE trips SET current = $3 WHERE id = $1 AND creator_id = $2 RETURNING *',
-            [tripId, userId, "Past"]
+            'UPDATE trips SET current = false, status = $1 WHERE id = $2 AND creator_id = $3 RETURNING *',
+            ['Past', tripId, userId]
         );
-
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Trip not found or not authorized to update' });
         }
@@ -635,13 +633,58 @@ router.post('/:id/restore', auth, async (req, res) => {
         }
 
         // Restore the trip by deleting all cancellation votes
+        await db.query('BEGIN');
         await db.query('DELETE FROM trip_cancellation_votes WHERE trip_id = $1', [tripId]);
+
+        // Update the trip status to 'Upcoming'
+        await db.query('UPDATE trips SET status = $1 WHERE id = $2', ['Upcoming', tripId]);
+        await db.query('COMMIT');
 
         res.json({ message: 'Trip restored successfully' });
     } catch (err) {
         console.error('Error restoring trip:', err);
+        await db.query("ROLLBACK");
         res.status(500).json({ message: 'Server error restoring trip' });
     }
 });
+
+// Mark status of trip as cancelled
+router.put('/cancel/:tripId', async (req, res) => {
+    const { tripId } = req.params;
+
+    try {
+        await db.query('UPDATE trips SET status = $1 WHERE id = $2', ['Cancelled', tripId]);
+        res.json({ message: 'Trip cancelled successfully' });
+    } catch (error) {
+        console.error('Error cancelling trip:', error);
+        res.status(500).json({ error: 'Failed to cancel trip' });
+    }
+});
+
+// Mark status of trip to current
+router.put('/mark-as-current/:tripId', auth, async (req, res) => {
+    const { tripId } = req.params;
+
+    try {
+        const trip = await db.query('SELECT * FROM trips WHERE id = $1', [tripId]);
+        if (trip.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+        // Update the status to 'Current'
+        const updateResponse = await db.query(
+            'UPDATE trips SET status = $1 WHERE id = $2 RETURNING *',
+            ['Current', tripId]
+        );
+        if (updateResponse.rows.length === 0) {
+            return res.status(500).json({ message: 'Failed to update trip status' });
+        }
+
+        res.json({ message: 'Trip status updated to Current successfully' });
+    } catch (err) {
+        console.error('Error marking trip as current:', err);
+        res.status(500).json({ message: 'Server error updating trip status' });
+    }
+});
+
 
 module.exports = router;

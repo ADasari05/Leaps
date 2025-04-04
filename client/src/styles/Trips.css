@@ -461,3 +461,75 @@
     border: 1px solid #ccc;
     cursor: pointer;
 }
+
+/* Common button properties */
+.trip-actions button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 120px;
+}
+
+/* Complete button */
+.complete-btn {
+    background-color: #38a169;
+    box-shadow: 0 2px 6px rgba(56, 161, 105, 0.3);
+}
+
+.complete-btn:hover {
+    background-color: #2f855a;
+    box-shadow: 0 4px 8px rgba(56, 161, 105, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Mark as Current button */
+.mark-current-btn {
+    background-color: #4299e1;
+    box-shadow: 0 2px 6px rgba(66, 153, 225, 0.3);
+}
+
+.mark-current-btn:hover {
+    background-color: #3182ce;
+    box-shadow: 0 4px 8px rgba(66, 153, 225, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Restore button */
+.restore-trip-btn {
+    background-color: #ed8936;
+    box-shadow: 0 2px 6px rgba(237, 137, 54, 0.3);
+}
+
+.restore-trip-btn:hover {
+    background-color: #dd6b20;
+    box-shadow: 0 4px 8px rgba(237, 137, 54, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Container for the buttons */
+.trip-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .trip-actions {
+        justify-content: center;
+    }
+    
+    .trip-actions button {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}

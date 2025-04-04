@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import LeapsLogo from "../assets/Leapspng.png";
 import "../styles/Trips.css";
 import "../components/DeleteTripConfirmation.css"
@@ -10,7 +10,10 @@ const Trips = () => {
     const [trips, setTrips] = useState([]);
     const [error, setError] = useState(null);
     const [viewMode, setViewMode] = useState('list');
-    const [selectedStatus, setSelectedStatus] = useState("All");
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const statusFromURL = queryParams.get("status");
+    const [selectedStatus, setSelectedStatus] = useState(statusFromURL || "All");
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
@@ -46,6 +49,46 @@ const Trips = () => {
         }
     };
 
+    const handleRestore = async (trip) => {
+        try {
+            const response = await fetch(`/api/trips/${trip.id}/restore`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to restore trip');
+
+            await response.json();
+            setRefresh(prev => !prev);
+        } catch (err) {
+            console.error('Error restoring trip:', err);
+            setError('Error restoring trip. Please try again later.');
+        }
+    };
+
+    const handleMarkAsCurrent = async (trip) => {
+        try {
+            const response = await fetch(`/api/trips/mark-as-current/${trip.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to mark trip as current');
+
+            await response.json();
+            setRefresh(prev => !prev);
+        } catch (err) {
+            console.error('Error marking trip as current:', err);
+            setError('Error marking trip as current. Please try again later.');
+        }
+    };
+
     useEffect(() => {
         const fetchTrips = async () => {
             setIsLoading(true);
@@ -76,9 +119,14 @@ const Trips = () => {
         : trips.filter(trip => trip.status === selectedStatus);
 
     const renderTrips = (status) => {
-        const filtered = filteredTrips.filter(trip => trip.status === status);
-        if (filtered.length === 0) return <p>No {status.toLowerCase()} trips found.</p>;
-
+        const filtered = status === "All" ? trips : trips.filter(trip => trip.status === status);
+        if (trips.length === 0) {
+            return <p>No trips found.</p>;
+        }
+        if (filtered.length === 0) {
+            return <p>No {status.toLowerCase()} trips found.</p>;
+        }
+    
         return viewMode === "grid" ? renderGridView(filtered) : renderListView(filtered);
     };
 
@@ -98,9 +146,19 @@ const Trips = () => {
                     </div>
 
                     <div className="button-group">
-                        {trip.status === "current" && (
+                        {trip.status === "Current" && (
                             <button onClick={() => handleComplete(trip)} className="complete-btn">
                                 Complete
+                            </button>
+                        )}
+                        {trip.status === "Upcoming" && (
+                            <button onClick={() => handleMarkAsCurrent(trip)} className="mark-current-btn">
+                                Mark as Current
+                            </button>
+                        )}
+                        {trip.status === "Cancelled" && (
+                            <button onClick={() => handleRestore(trip)} className="restore-trip-btn">
+                                Restore
                             </button>
                         )}
                         <div className="delete-btn">
@@ -129,9 +187,19 @@ const Trips = () => {
                     </div>
 
                     <div className="trip-actions">
-                        {trip.status === "current" && (
+                        {trip.status === "Current" && (
                             <button onClick={() => handleComplete(trip)} className="complete-btn">
                                 Complete
+                            </button>
+                        )}
+                        {trip.status === "Upcoming" && (
+                            <button onClick={() => handleMarkAsCurrent(trip)} className="mark-current-btn">
+                                Mark as Current
+                            </button>
+                        )}
+                        {trip.status === "Cancelled" && (
+                            <button onClick={() => handleRestore(trip)} className="restore-trip-btn">
+                                Restore
                             </button>
                         )}
                         <div className="delete-btn">
@@ -177,12 +245,10 @@ const Trips = () => {
                     </div>
 
                     {selectedStatus === "All" ? (
-                        ["Upcoming", "Current", "Past", "Cancelled"].map(status => (
-                            <div key={status}>
-                                <h2>{status.charAt(0).toUpperCase() + status.slice(1)} Trips</h2>
-                                {renderTrips(status)}
-                            </div>
-                        ))
+                        <div>
+                            <h2>All Trips</h2>
+                            {renderTrips("All")}
+                        </div>
                     ) : (
                         <div>
                             <h2>{selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Trips</h2>

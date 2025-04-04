@@ -292,9 +292,9 @@ function AccountPage({ theme, setTheme }) {
 
             <button 
                 className="manage-friends-btn" 
-                onClick={() => navigate('/trips')}
+                onClick={() => navigate('/trips?status=Past')}
                 disabled={isLoading}>
-                My Trips
+                Past Trips
             </button>
 
             <button     
