@@ -57,13 +57,13 @@ const Navbar = () => {
                         <span className="dropdown-toggle">Events</span>
                         {hoverEvent && (
                             <div className="dropdown-menu">
-                                <Link to="/events" className="dropdown-item">Public Events</Link>
+                                <Link to="/search" className="dropdown-item">Public Events</Link>
                                 <Link to="/customevents" className="dropdown-item">Custom Events</Link>
                             </div>
                         )}
                     </div>
                     <Link to="/lodgings" className="nav-item">Lodging</Link>
-                    <Link to="/search" className="nav-item">Events</Link>
+                    {/*<Link to="/search" className="nav-item">Events</Link>*/}
                     <Link to="/travel" className="nav-item">Travel</Link>
                     <Link to="/users" className="nav-item">Friends</Link>
                     <Link to="/accountpage" className="nav-item">My Account</Link>
