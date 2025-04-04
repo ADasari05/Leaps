@@ -13,6 +13,54 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
   return R * c; // Distance in kilometers
 };
 
+const randomPrice = (event) => {
+  // Default price ranges if event type is unknown
+  let minRange = 35;
+  let maxRange = 85;
+  let variance = 15;
+  
+  // Get the event type (lowercase for consistent comparison)
+  const eventType = (event.eventType || event.classifications?.[0]?.segment?.name || '').toLowerCase();
+  
+  // Adjust price ranges based on event type
+  if (eventType.includes('sport')) {
+    minRange = 45;
+    maxRange = 250;
+    variance = 50;
+  } else if (eventType.includes('music') || eventType.includes('concert')) {
+    minRange = 40;
+    maxRange = 180;
+    variance = 40;
+  } else if (eventType.includes('theater') || eventType.includes('broadway')) {
+    minRange = 60;
+    maxRange = 200;
+    variance = 30;
+  } else if (eventType.includes('family') || eventType.includes('children')) {
+    minRange = 25;
+    maxRange = 65;
+    variance = 10;
+  } else if (eventType.includes('comedy')) {
+    minRange = 35;
+    maxRange = 95;
+    variance = 15;
+  } else if (eventType.includes('festival')) {
+    minRange = 75;
+    maxRange = 350;
+    variance = 75;
+  }
+  
+  const min = Math.max(Math.round(minRange + (Math.random() * variance * 2 - variance)), 5);
+  const priceSpread = Math.round((maxRange - minRange) * (0.5 + Math.random() * 0.5));
+  const max = min + priceSpread;
+  
+  return {
+    min: min,
+    max: max,
+    currency: "USD",
+    type: "standard"
+  };
+};
+
 const fetchExternalData = async (query, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude) => {
   console.log('Received parameters:', { query, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude }); // Debugging log
   const results = { events: [], travel: [], lodging: [] };
@@ -52,7 +100,8 @@ const fetchExternalData = async (query, location, eventType, startDateTime, endD
     const data = await response.json();
     if (data._embedded?.events) {
       results.events = data._embedded.events.map(event => {
-        const price = event.priceRanges?.[0]?.min || null;
+        const priceObj = event.priceRanges?.[0] || randomPrice(event);
+        const price = priceObj ? priceObj.min : null;
         const venue = event._embedded?.venues?.[0];
         const eventLocation = venue ? venue.location : {};
         const eventLat = eventLocation.latitude || 0;
@@ -68,17 +117,18 @@ const fetchExternalData = async (query, location, eventType, startDateTime, endD
           eventType: event.classifications?.[0]?.segment?.name || 'unknown',
           location: venue?.city?.name || normalizedLocation || 'Unknown',
           start_time: event.dates?.start?.dateTime || null,
-          price: price,
-          distance: distance
+          price: price ? `Starting at: $${price}` : 'Price unavailable',
+          distance: distance,
+          min_price: priceObj ? priceObj.min : null
         };
       });
 
       if (priceSort) {
         results.events = results.events.sort((a, b) => {
           if (priceSort === 'ascending') {
-            return (a.price || 0) - (b.price || 0);
+            return (a.min_price || 0) - (b.min_price || 0);
           } else if (priceSort === 'descending') {
-            return (b.price || 0) - (a.price || 0);
+            return (b.min_price || 0) - (a.min_price || 0);
           }
           return 0;
         });

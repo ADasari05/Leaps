@@ -69,6 +69,54 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+const randomPrice = (event) => {
+    // Default price ranges if event type is unknown
+    let minRange = 35;
+    let maxRange = 85;
+    let variance = 15;
+    
+    // Get the event type (lowercase for consistent comparison)
+    const eventType = (event.eventType || event.classifications?.[0]?.segment?.name || '').toLowerCase();
+    
+    // Adjust price ranges based on event type
+    if (eventType.includes('sport')) {
+      minRange = 45;
+      maxRange = 250;
+      variance = 50;
+    } else if (eventType.includes('music') || eventType.includes('concert')) {
+      minRange = 40;
+      maxRange = 180;
+      variance = 40;
+    } else if (eventType.includes('theater') || eventType.includes('broadway')) {
+      minRange = 60;
+      maxRange = 200;
+      variance = 30;
+    } else if (eventType.includes('family') || eventType.includes('children')) {
+      minRange = 25;
+      maxRange = 65;
+      variance = 10;
+    } else if (eventType.includes('comedy')) {
+      minRange = 35;
+      maxRange = 95;
+      variance = 15;
+    } else if (eventType.includes('festival')) {
+      minRange = 75;
+      maxRange = 350;
+      variance = 75;
+    }
+    
+    const min = Math.max(Math.round(minRange + (Math.random() * variance * 2 - variance)), 5);
+    const priceSpread = Math.round((maxRange - minRange) * (0.5 + Math.random() * 0.5));
+    const max = min + priceSpread;
+    
+    return {
+      min: min,
+      max: max,
+      currency: "USD",
+      type: "standard"
+    };
+};
+
 // Get a single event by ID
 router.get('/:id', (req, res, next) => {
     req.allowGuest = true; 
@@ -168,6 +216,7 @@ router.get('/:id', (req, res, next) => {
 
         const tmUrl = `https://app.ticketmaster.com/discovery/v2/events/${eventID}.json?apikey=${tmApiKey}`;
         const response = await fetch(tmUrl);
+        //const response = getEventWithPricing(eventID);
 
         if (!response.ok) {
             console.log(`Ticketmaster API returned error: ${response.status}`);
@@ -175,7 +224,9 @@ router.get('/:id', (req, res, next) => {
         }
 
         const eventData = await response.json();
-        console.log('Raw event data:', eventData.priceRanges);
+        const priceData = eventData.priceRanges?.[0] || randomPrice(eventData);
+
+        //console.log('Raw event data:', eventData.priceRanges);
         // Transform the Ticketmaster data to match your application's format
         const formattedEvent = {
             id: eventData.id,
@@ -184,12 +235,12 @@ router.get('/:id', (req, res, next) => {
             location: eventData._embedded?.venues?.[0]?.city?.name || 'Unknown',
             date: eventData.dates?.start?.localDate || 'TBD',
             time: eventData.dates?.start?.localTime ? 
-                  new Date(`1970-01-01T${eventData.dates?.start?.localTime}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                  new Date(`1970-01-01T${eventData.dates?.start?.localTime}`).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}) 
                   : 'TBD',
             description: eventData.info || eventData.pleaseNote || 'No description available',
-            price: eventData.priceRanges ? 
-                  `$${eventData.priceRanges[0].min} - $${eventData.priceRanges[0].max}` 
-                  : 'Price unavailable',
+            price: priceData
+                ? `$${priceData.min} - $${priceData.max}`
+                : 'Price unavailable',
             url: eventData.url || null,
             image: eventData.images?.[0]?.url || null
         };
