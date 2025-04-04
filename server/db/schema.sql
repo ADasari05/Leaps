@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
-DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, travel, lodging, trip_items, trip_cancellation_votes CASCADE;
+DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, customevents, travel, lodging, trip_items, trip_cancellation_votes CASCADE;
 DROP INDEX IF EXISTS idx_events_name, idx_events_location, idx_events_type, idx_travel_departure_location, idx_travel_arrival_location, idx_lodging_name, idx_lodging_location;
 
 
@@ -76,6 +76,20 @@ CREATE TABLE events (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Custom Events Table 
+CREATE TABLE customevents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    price DOUBLE PRECISION,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Travel Table
 CREATE TABLE travel (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -107,7 +121,7 @@ CREATE TABLE lodging (
 CREATE TABLE trip_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
-    item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'events', 'travel', 'lodging')),
+    item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'events', 'custom-event', 'travel', 'lodging')),
     item_id VARCHAR(255) NOT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, item_type, item_id)

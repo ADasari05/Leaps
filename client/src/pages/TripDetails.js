@@ -332,7 +332,7 @@ const TripDetails = () => {
 
     const fetchItemDetails = async (type, id) => {
         console.log(`Fetching details for ${type} with ID: ${id}`);
-        if (type === 'events') {
+        if (type === 'events' || type == 'custom-event') {
           try {
             navigate(`/viewevent/${id}`);
           } catch (err) {
@@ -368,7 +368,7 @@ const TripDetails = () => {
             setLoading(true);
             try {
               let endpoint;
-              if (type === 'events') {
+              if (type === 'events' || type === 'custom-event') {
                 endpoint = `/api/events/${id}`;
               } else if (type === 'lodging') {
                 endpoint = `/api/lodging/${id}`;
@@ -406,7 +406,7 @@ const TripDetails = () => {
         );
         
         // Render different previews based on item type
-        if (type === 'events') {
+        if (type === 'events' || type === 'custom-event') {
           return (
             <div className="event-preview">
               {preview.image && (

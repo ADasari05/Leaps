@@ -6,7 +6,7 @@ const CreateNewEvent = () => {
     const [name, setName] = useState("");
     const [location, setLocation] = useState("");
     const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
+    const [start_time, setTime] = useState("");
     const [type, setType] = useState("");
     const [price, setPrice] = useState("");
     const [description, setDescription] = useState("");
@@ -22,17 +22,11 @@ const CreateNewEvent = () => {
         setError(null);
         setSuccess(null);
 
-        if (!name && !location && !date && !time) {
-            setError("Please fill in necessary fields before submitting.");
-            setIsLoading(false);
-            return;
-        }
-
         const eventData = {
             name: name || "N/A",
             location: location || "N/A",
             date: date || "N/A",
-            time: time || "N/A",
+            start_time: start_time || "N/A",
             type: type || "N/A",
             price: price || "N/A",
             description: description || "N/A",
@@ -54,7 +48,7 @@ const CreateNewEvent = () => {
                 setSuccess("Event created successfully!");
                 setTimeout(() => {
                     navigate("/customevents");
-                }, 1000);
+                }, 2000);
             } else {
                 setError(data.message);
             }
@@ -101,7 +95,7 @@ const CreateNewEvent = () => {
                 <label>Time</label>
                 <input
                     type="time"
-                    value={time}
+                    value={start_time}
                     onChange={(e) => setTime(e.target.value)}
                     required
                 />
