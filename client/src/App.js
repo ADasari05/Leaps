@@ -1,6 +1,7 @@
 import "./styles/AccountPage.css";
 import "./styles/auth.css";
 import "./index.css";
+import './styles/Comparison.css';
 
 /////////////////////////////////////////
 

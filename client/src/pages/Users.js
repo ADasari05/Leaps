@@ -364,7 +364,9 @@ const Users = () => {
           <ul className="users-list">
             {friends.map(friend => (
                 <li key={friend.id}>
-                    <span className="user-info">{friend.username} ({friend.email})</span>
+                    <span className="user-info">
+                      <img src={friend.profile_pic} className='profile-pic'/>
+                      {friend.username} ({friend.email})</span>
                     <button
                         onClick={() => handleRemoveFriend(friend.id)}
                         disabled={isLoading}
