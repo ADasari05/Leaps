@@ -10,6 +10,9 @@ router.get('/', (req, res, next) => {
   const { q, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude} = req.query; // Use startDateTime and endDateTime
   console.log('Query parameters:', { q, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude }); // Debugging log
 
+  console.log("q = %s", q);
+  console.log("location: %s", location);
+  console.log("event type %s", eventType);
   try {
     const results = { events: [], travel: [], lodging: [] };
     if (q || location || eventType || startDateTime || endDateTime || priceSort || locationSort || latitude || longitude) {

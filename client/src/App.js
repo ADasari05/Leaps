@@ -17,6 +17,7 @@ import Friends from './pages/Friends';
 import Users from './pages/Users';
 import ViewEvent from "./pages/ViewEvent";
 import ViewLodging from "./pages/ViewLodging";
+import ViewDriving from "./pages/ViewDriving";
 import Events from "./pages/Events";
 import CustomEvents from "./pages/CustomEvents";
 import CreateNewEvent from "./pages/CreateNewEvent";
@@ -75,6 +76,7 @@ function App() {
             <Route path="/travel" element={<Travel />} />
             <Route path="/users" element={<Users />} /> 
             <Route path="/viewevent/:id" element={<ViewEvent />} />
+            <Route path="/viewdriving/:id" element={<ViewDriving />} />
 
             {/* Protected routes */}
             <Route path="/accountpage" element={
@@ -100,7 +102,6 @@ function App() {
         </div>
       </Router>
     </div>
-
   );
 }
 

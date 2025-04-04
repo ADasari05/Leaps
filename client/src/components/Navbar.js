@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { Link } from "react-router-dom";
 import "./Navbar.css";
-import LeapsLogo from "../assets/Leapspng.png";
+import LeapsLogo from "../assets/logopng.png";
 import { isAuthenticated, isGuest, logout } from '../services/authService';
 
 

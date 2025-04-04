@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const db = require('./config/db'); 
+const path = require('path');
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const tripRoutes = require('./routes/trips');
@@ -20,6 +21,7 @@ dotenv.config();
 
 
 const app = express();
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 const server = http.createServer(app);
 const io = socketIo(server, {
