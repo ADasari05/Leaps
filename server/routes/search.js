@@ -8,6 +8,9 @@ router.get('/', (req, res, next) => {
   next();
 }, auth, async (req, res) => {
   const { q, location, eventType } = req.query;
+  console.log("q = %s", q);
+  console.log("location: %s", location);
+  console.log("event type %s", eventType);
   try {
     const results = { events: [], travel: [], lodging: [] };
     if (q || location || eventType) {

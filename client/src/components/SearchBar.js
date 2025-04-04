@@ -6,6 +6,7 @@ const SearchBar = ({ onResults }) => {
 
   const handleSearch = async () => {
     const url = `/api/search?q=${query}&location=${filters.location}${filters.eventType ? `&eventType=${filters.eventType}` : ''}`;
+    console.log(url);
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Fetch failed with status: ${res.status}`);
