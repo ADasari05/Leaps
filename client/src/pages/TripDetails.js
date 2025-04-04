@@ -612,15 +612,16 @@ const TripDetails = () => {
                         <ul>
                         {tripMembers.map(member => (
                             <li key={member.id} className={member.id === userId ? "current-user" : ""}>
-                              <img
-                                src={member.profile_pic}
-                                className="profile-pic"
-                              />
-                              {member.username}
-                              {member.id === userId ? "(me)" : ""}
-                              {trip.creator_id === userId && member.id !== userId && (
-                                  <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
-                              )}
+                                    <img
+                                        src={member.profile_pic}
+                                        className="profile-pic"
+                                    />
+                                    {member.username}
+                                    {member.id === userId ? "(me)" : ""}
+                                    {trip.creator_id === userId && member.id !== userId && (
+                                        <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                                    )}
+                            
                             </li>
                         ))}
                         </ul>
@@ -657,12 +658,11 @@ const TripDetails = () => {
                             <p>No events found.</p>
                         )}
                     </ul>
-                    <button onClick={handleAddEvent} className="add-event-btn">Add Event</button>
+                    {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
                     <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
 
-                    <div className="trip-cancellation">
-                        <h3>Cancel Votes</h3>
-                        <p><strong>Cancel Votes:</strong> {cancelVotes}</p>
+                    {trip.current && (<div className="trip-cancellation">
+                        <h3>Cancel Votes</h3><p><strong>Cancel Votes:</strong> {cancelVotes}</p>
                         {hasVotedToCancel ? (
                             <button onClick={rescindVote} className="rescind-vote-btn">
                                 Rescind Cancellation Vote
@@ -677,7 +677,7 @@ const TripDetails = () => {
                                 Restore Trip
                             </button>
                         )}
-                    </div>
+                    </div>)}
                 </>
             ) : (
                 <p className="error">Trip not found.</p>
