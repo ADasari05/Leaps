@@ -8,7 +8,11 @@ const SearchResults = ({ results, onAddToTrip }) => {
 
 
   const renderItem = (item, type) => {
-    if (type === 'events') return `${item.name} (${item.eventType}) - ${item.location}`;
+    if (type === 'events') {
+      const date = new Date(item.start_time).toLocaleDateString();
+      const price = item.price || 'Price unavailable';
+      return `${item.name} (${item.eventType}) - ${item.location} | ${date} | ${price}`;
+    }
     if (type === 'travel') return `${item.type} from ${item.departure_location} to ${item.arrival_location}`;
     if (type === 'lodging') return `${item.name} (${item.type}) - ${item.location}`;
     return null;

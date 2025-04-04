@@ -1,8 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import '../styles/SearchFilter.css';
 
 const SearchBar = ({ onResults }) => {
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({ type: 'events', eventType: '', location: '', startDateTime: '', endDateTime: '' });
+  const [filters, setFilters] = useState({ type: 'events', eventType: '', location: '', startDateTime: '', endDateTime: '', priceSort: '', locationSort: '' });
+  const [isFilterPopupOpen, setFilterPopupOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [isFiltersRemoved, setIsFiltersRemoved] = useState(false);
+
+  useEffect(() => {
+    if (isFiltersRemoved) {
+      handleSearch();
+      setIsFiltersRemoved(false);
+    }
+  }, [isFiltersRemoved]);
+
+
+  // Get user's location using geolocation API
+  const getUserLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const { latitude, longitude } = position.coords;
+            resolve({ latitude, longitude });
+          },
+          error => {
+            reject(error);
+          }
+        );
+      } else {
+        reject(new Error("Geolocation is not supported by this browser"));
+      }
+    });
+  };
 
   const handleSearch = async () => {
     console.log('Filters before formatting:', filters); // Debugging log to verify filters
@@ -15,9 +46,11 @@ const SearchBar = ({ onResults }) => {
       ? `${filters.endDateTime}:59Z` // Add seconds and Z timezone
       : '';
 
-    const url = `/api/search?q=${query}&location=${filters.location}${filters.eventType ? `&eventType=${filters.eventType}` : ''}${formattedStartDateTime ? `&startDateTime=${encodeURIComponent(formattedStartDateTime)}` : ''}${formattedEndDateTime ? `&endDateTime=${encodeURIComponent(formattedEndDateTime)}` : ''}`;
-    console.log('Constructed URL:', url); // Debugging log to verify URL
+    // Fetch user location and include it in the request
+    const locationData = userLocation || await getUserLocation();
+    const { latitude, longitude } = locationData;
 
+    const url = `/api/search?q=${query}&location=${filters.location}${filters.eventType ? `&eventType=${filters.eventType}` : ''}${formattedStartDateTime ? `&startDateTime=${encodeURIComponent(formattedStartDateTime)}` : ''}${formattedEndDateTime ? `&endDateTime=${encodeURIComponent(formattedEndDateTime)}` : ''}${filters.priceSort ? `&priceSort=${filters.priceSort}` : ''}${filters.locationSort ? `&locationSort=${filters.locationSort}` : ''}&latitude=${latitude}&longitude=${longitude}`;
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Fetch failed with status: ${res.status}`);
@@ -28,6 +61,31 @@ const SearchBar = ({ onResults }) => {
       console.error('Search fetch error:', error);
       onResults({ events: [], travel: [], lodging: [] });
     }
+  };
+
+  const handleFilterChange = (e) => {
+    setFilters({
+      ...filters,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const toggleFilterPopup = () => {
+    setFilterPopupOpen(!isFilterPopupOpen);
+  };
+
+  const applyFilters = () => {
+    setFilterPopupOpen(false);
+    handleSearch();
+  };
+
+  const removeFilters = () => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      priceSort: '',
+      locationSort: ''
+    }));
+    setIsFiltersRemoved(true);
   };
 
   return (
@@ -55,7 +113,43 @@ const SearchBar = ({ onResults }) => {
         placeholder="End Date"
         onChange={(e) => setFilters({ ...filters, endDateTime: e.target.value })}
       />
-      <button onClick={handleSearch}>Search</button>
+      <div className='search-container'>
+        <button onClick={handleSearch}>Search</button>
+        <button onClick={toggleFilterPopup}>Filter</button>
+      </div>
+
+      {/* Filter Popup */}
+      {isFilterPopupOpen && (
+        <div className="filter-popup">
+          <h3>Filters</h3>
+          <div>
+            <label>
+              Price:
+              <select name="priceSort" value={filters.priceSort} onChange={handleFilterChange}>
+                <option value="">Sort Price</option>
+                <option value="ascending">Low to High</option>
+                <option value="descending">High to Low</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label>
+              Location:
+              <select name="locationSort" value={filters.locationSort} onChange={handleFilterChange}>
+                <option value="">Sort Location</option>
+                <option value="ascending">Close to Distant</option>
+                <option value="descending">Distant to Close</option>
+              </select>
+            </label>
+          </div>
+          <div className="filter-buttons">
+            <button className="apply" onClick={applyFilters}>Apply Filters</button>
+            <button className="remove-filters" onClick={removeFilters}>Remove Filters</button>
+            <button className="close" onClick={toggleFilterPopup}>Close</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

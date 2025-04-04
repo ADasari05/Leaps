@@ -175,6 +175,7 @@ router.get('/:id', (req, res, next) => {
         }
 
         const eventData = await response.json();
+        console.log('Raw event data:', eventData.priceRanges);
         // Transform the Ticketmaster data to match your application's format
         const formattedEvent = {
             id: eventData.id,

@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
-DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, customevents, travel, lodging, trip_items, trip_cancellation_votes CASCADE;
+DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, customevents, travel, lodging, trip_items, trip_cancellation_votes, friend_requests, trip_item_votes, messages CASCADE;
 DROP INDEX IF EXISTS idx_events_name, idx_events_location, idx_events_type, idx_travel_departure_location, idx_travel_arrival_location, idx_lodging_name, idx_lodging_location;
 
 
