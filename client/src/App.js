@@ -12,6 +12,7 @@ import AccountPage from "./pages/AccountPage";
 import CreateTrip from "./pages/CreateTrip";
 import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
+import RecommendationPage from "./pages/RecommendationPage";
 import ResetPassword from "./pages/ResetPassword";
 import Friends from './pages/Friends';
 import Users from './pages/Users';
@@ -90,6 +91,9 @@ function App() {
             } />
             <Route path="/trips/:id" element={
               auth ? <TripDetails /> : <Navigate to="/login" />
+            } />
+            <Route path="/trips/:id/recommendation" element={
+              auth ? <RecommendationPage /> : <Navigate to="/login" />
             } />
             <Route path="/trips/:id/share" element={
               auth ? <Share /> : <Navigate to="/login" />
