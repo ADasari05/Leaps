@@ -12,6 +12,8 @@ function ChatWindow({ tripId, userId }) {
   const [typingUsers, setTypingUsers] = useState([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const messagesEndRef = useRef(null);
+  const [attachmentUrl, setAttachmentUrl] = useState(null);
+
 
   
  useEffect(() => {
@@ -30,7 +32,7 @@ function ChatWindow({ tripId, userId }) {
           const token = localStorage.getItem('token');
           const res = await fetch(`http://localhost:3000/api/messages/trip/${tripId}`, {
             headers: {
-              'x-auth-token': token
+              Authorization: `Bearer ${token}`,
             }
           });
           const data = await res.json();
@@ -114,16 +116,18 @@ function ChatWindow({ tripId, userId }) {
   // Handle sending a message
   const sendMessage = (e) => {
     e.preventDefault();
-    if (newMessage.trim() === '' || !socket) return;
-    
+    if (!newMessage.trim() && !attachmentUrl) return; 
+
     const messageData = {
       tripId,
       senderId: userId,
-      content: newMessage
+      content: newMessage,
+      attachmentUrl 
     };
     
     socket.emit('send_message', messageData);
     setNewMessage('');
+    setAttachmentUrl(null);
     setIsTyping(false);
   };
   
@@ -163,6 +167,40 @@ function ChatWindow({ tripId, userId }) {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+  
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+  
+      const res = await fetch('http://localhost:3000/api/messages/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Do NOT set 'Content-Type' when using FormData; the browser does it for you
+        },
+        body: formData
+      });
+  
+      if (!res.ok) throw new Error('File upload failed');
+      const data = await res.json();
+      // 'data.url' should be the publicly accessible file URL returned by your server
+      setAttachmentUrl(data.url);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  function linkify(text) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, function(url) {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+  }
+
   return (
     <>
       {/* Chat Button */}
@@ -197,7 +235,19 @@ function ChatWindow({ tripId, userId }) {
                       {message.sender_id !== userId && (
                           <div className="sender-name">{message.sender_name}</div>
                       )}
-                      <div className="message-content">{message.content}</div>
+
+                      {message.attachment_url && (
+                        <div className="attachment">
+                          <a href={message.attachment_url} target="_blank" rel="noopener noreferrer">
+                            View Attachment
+                          </a>
+                        </div>
+                      )}
+                  
+                      <div 
+                        className="message-content"
+                        dangerouslySetInnerHTML={{ __html: linkify(message.content) }}
+                      />
                       <div className="message-timestamp">
                           {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -217,6 +267,15 @@ function ChatWindow({ tripId, userId }) {
         </div>
         
         <form onSubmit={sendMessage} className="message-input-form">
+          <label className="file-attachment-label">
+            <input 
+              type="file"
+              onChange={handleFileChange}
+              style={{ display: 'none' }} 
+            />
+            📎
+          </label>
+
           <input
             type="text"
             value={newMessage}
@@ -224,7 +283,7 @@ function ChatWindow({ tripId, userId }) {
             placeholder="Type a message..."
             className="message-input"
           />
-          <button type="submit" className="send-button" disabled={!newMessage.trim()}>
+          <button type="submit" className="send-button" disabled={!newMessage.trim() && !attachmentUrl}>
             <span>↑</span>
           </button>
         </form>
