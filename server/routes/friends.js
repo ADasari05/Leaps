@@ -29,7 +29,7 @@ router.get('/list', auth, async (req, res) => {
         const user_id = req.user.id;
 
         const friends = await db.query(
-            `SELECT u.id, u.username, u.email
+            `SELECT u.id, u.username, u.email, u.profile_pic
              FROM friendships f
              JOIN users u ON (f.user1_id = u.id OR f.user2_id = u.id)
              WHERE (f.user1_id = $1 OR f.user2_id = $1)
