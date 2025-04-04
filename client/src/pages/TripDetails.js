@@ -564,6 +564,10 @@ const TripDetails = () => {
         }
     };
 
+    const navRecommendations = () => {
+        navigate('./recommendation');
+    }
+
     if (isLoading) {
         return <div className="trip-details"><p className="loading">Loading trip details...</p></div>;
     }
@@ -627,17 +631,11 @@ const TripDetails = () => {
                     {renderTripItems()}
 
                     <div className="event-recommendations">
-                        <h3>Recommended Events</h3>
-                        <EventRecommendationsSearcher onResults={handleResults} location={"New York"} />
-                        <EventRecommendations results={results} onAddToTrip={openAddToTrip} currentTrip={trip} />
-                        {selectedItem && (
-                            <AddRecommendationDialog
-                                open={dialogOpen}
-                                onClose={() => setDialogOpen(false)}
-                                item={selectedItem}
-                                reload={fetchTrip()}
-                            />
-                        )}
+                        {trip.current && (<button
+                            onClick={navRecommendations}
+                        >
+                            View Recommendations
+                        </button>)}
                     </div>
 
                     <div className="add-friend">
