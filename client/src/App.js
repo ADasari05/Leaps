@@ -1,5 +1,6 @@
 import "./styles/AccountPage.css";
 import "./styles/auth.css";
+import "./index.css";
 
 /////////////////////////////////////////
 
@@ -23,36 +24,83 @@ import Search from './pages/SearchPage';
 import Share from './pages/Share';
 import Lodgings from "./pages/Lodgings";
 import Travel from "./pages/Travel";
+import { isAuthenticated } from "./services/authService"; 
+import { useState, useEffect } from "react";
 import './App.css';
 // import AccountPage from "./AccountPage";
 
 function App() {
+  const [auth, setAuth] = useState(isAuthenticated());
+  const [theme, setTheme] = useState("light");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const savedTheme = localStorage.getItem("theme");
+    if (token && savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      setTheme("light"); // fallback default
+    }
+  }, []);  
+
+  useEffect(() => {
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
   return (
-    <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Navigate to="/signup" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/accountpage" element={<AccountPage />} />
-        <Route path="/createtrip" element={<CreateTrip />} />
-        <Route path="/trips" element={<Trips />} />
-        <Route path="/trips/:id" element={<TripDetails />} />
-        <Route path="/trips/:id/share" element={<Share />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/viewevent/:id" element={<ViewEvent />} />
-        <Route path="/viewlodging/:id" element={<ViewLodging />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/customevents" element={<CustomEvents />} />
-        <Route path="/create-event" element={<CreateNewEvent />} />
-        <Route path="/users" element={<Users />} /> 
-        <Route path="/search" element={<Search />} />
-        <Route path="/lodgings" element={<Lodgings />} />
-        <Route path="/travel" element={<Travel />} />
-      </Routes>
-    </Router>
+    <div
+      style={{
+        backgroundColor: "var(--bg-color)",
+        color: "var(--text-color)",
+        minHeight: "100vh",
+      }}
+    >
+      <Router>
+        <Navbar />
+        <div style={{ padding: "1rem" }}>          
+          <Routes>
+            <Route path="/" element={<Navigate to="/signup" />} />
+            <Route path="/login" element={<Login setAuth={setAuth} setTheme={setTheme} />} />
+            <Route path="/signup" element={<SignUp setAuth={setAuth} />} />
+
+            {/* Public routes that allow guest access */}
+            <Route path="/events" element={<Events />} />
+            <Route path="/customevents" element={<CustomEvents />} />
+            <Route path="/create-event" element={<CreateNewEvent />} />
+            <Route path="/users" element={<Users />} /> 
+            <Route path="/search" element={<Search />} />
+            <Route path="/lodgings" element={<Lodgings />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/travel" element={<Travel />} />
+            <Route path="/users" element={<Users />} /> 
+            <Route path="/viewevent/:id" element={<ViewEvent />} />
+
+            {/* Protected routes */}
+            <Route path="/accountpage" element={
+              <AccountPage theme={theme} setTheme={setTheme} />
+            } />
+            <Route path="/createtrip" element={
+              auth ? <CreateTrip /> : <Navigate to="/login" />
+            } />
+            <Route path="/trips" element={
+              <Trips />
+            } />
+            <Route path="/trips/:id" element={
+              auth ? <TripDetails /> : <Navigate to="/login" />
+            } />
+            <Route path="/trips/:id/share" element={
+              auth ? <Share /> : <Navigate to="/login" />
+            } />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/friends" element={
+              auth ? <Friends /> : <Navigate to="/login" />
+            } />
+          </Routes>
+        </div>
+      </Router>
+    </div>
+
   );
 }
 

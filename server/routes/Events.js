@@ -70,7 +70,10 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Get a single event by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', (req, res, next) => {
+    req.allowGuest = true; 
+    next();
+}, auth, async (req, res) => {
     try {
         const eventID = req.params.id;
         console.log(`Fetching event with ID: ${eventID}`);

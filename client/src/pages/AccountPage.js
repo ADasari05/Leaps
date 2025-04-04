@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import '../styles/AccountPage.css';
+import UploadImage from '../components/UploadProfilePicture';
 
-function AccountPage() {
+function AccountPage({ theme, setTheme }) {
 
     const [userInfo, setUserInfo] = useState({
         username: '',
         email: '',
-        password: ''
+        password: '',
+        pic: ''
     });
 
     const [isEditing, setIsEditing] = useState(false);
@@ -39,15 +41,17 @@ function AccountPage() {
             setUserInfo({
                 username: userData.username || '',
                 email: userData.email || '',
-                password: '' // Don't populate password for security
-            });
+                password: '',
+                pic: userData.profile_pic || ''
+              });
+              setTheme(userData.theme_preference || 'light'); // <- this sets it              
         } catch (err) {
             setError('Error loading your account information. Please try again later.');
             console.error('Error fetching user data:', err);
         } finally {
             setIsLoading(false);
         }
-    }, [token]);
+    }, [token, setTheme]);
 
     useEffect(() => {
         if (token) {
@@ -77,6 +81,14 @@ function AccountPage() {
         }));
     };
 
+    const imageChange = async (base64String) => {
+        userInfo.pic = base64String;
+        console.log("image changed");
+        await handleSaveChanges();
+        setIsEditing(true);
+        console.log("editing status: %b", isEditing);
+    };
+
     const handleSaveChanges = async () => {
         setIsLoading(true);
         setError(null);
@@ -88,6 +100,7 @@ function AccountPage() {
             if (userInfo.username) updatedFields.username = userInfo.username;
             if (userInfo.email) updatedFields.email = userInfo.email;
             if (userInfo.password) updatedFields.password = userInfo.password;
+            if (userInfo.pic) updatedFields.pic = userInfo.pic;
             
             const response = await fetch(`/api/users/update`, {
                 method: 'PUT',
@@ -113,6 +126,7 @@ function AccountPage() {
             // Refresh user data
             fetchUserData();
             setIsEditing(false);
+            console.log("finished saving");
 
         } catch (err) {
             setError('Error updating your profile. Please try again.');
@@ -158,22 +172,42 @@ function AccountPage() {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('theme');
+        setTheme('light'); // Reset to default
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
         navigate('/login');
     };
 
-    if (!token) {
-        return <div className="account-container">Please log in to view your account.</div>;
-    }
+    const toggleTheme = async () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+        await fetch('/api/users/update', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ theme_preference: newTheme })
+        });
+    };
 
-    if (isLoading && !userInfo.username) {
-        return <div className="account-container">Loading your account information...</div>;
+    if (!token) {
+        return <div className="account-container">Please login to view your account.</div>;
     }
     
     return (
         <div className="account-container">
             {/* Profile Section */}
             <div className="profile-section">
-                <div className="profile-picture"></div>
+                <div id="pic-container" className="profile-picture">
+                    <img 
+                        src={userInfo.pic} 
+                        alt="Profile Picture" 
+                        className="profile-picture"
+                    />
+                </div>
+                
                 <h2 className="username-title">{userInfo.username}</h2>
                 
                 {!isEditing ? (
@@ -185,22 +219,38 @@ function AccountPage() {
                         Edit
                     </button>
                 ) : (
-                    <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
-                        <button 
-                            onClick={handleSaveChanges}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Saving..." : "Save"}
-                        </button>
-                        <button 
-                            onClick={handleCancelEdit}
-                            disabled={isLoading}
-                        >
-                            Cancel
-                        </button>
+                    <div>
+                        <div>
+                            <UploadImage updateImage={imageChange}></UploadImage>
+                        </div>
+                        <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
+                            <button 
+                                onClick={handleSaveChanges}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Saving..." : "Save"}
+                            </button>
+                            <button 
+                                onClick={handleCancelEdit}
+                                disabled={isLoading}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
+
+            <div className="theme-toggle-container">
+                <label className="switch">
+                    <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} />
+                    <span className="slider round"></span>
+                </label>
+                <span style={{ marginLeft: '10px' }}>
+                    {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+                </span>
+            </div>
+
 
             {/* Display status messages */}
             {error && <div className="error-message">{error}</div>}
@@ -242,9 +292,9 @@ function AccountPage() {
 
             <button 
                 className="manage-friends-btn" 
-                onClick={() => navigate('/friends')}
+                onClick={() => navigate('/trips')}
                 disabled={isLoading}>
-                Manage Friends
+                My Trips
             </button>
 
             <button     

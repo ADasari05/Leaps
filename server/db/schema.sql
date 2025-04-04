@@ -14,7 +14,9 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,                    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reset_token VARCHAR(255),
-    reset_token_expiry TIMESTAMP
+    reset_token_expiry TIMESTAMP,
+    theme_preference VARCHAR(10) DEFAULT 'light',
+    profile_pic TEXT
      -- this doesn't work in psql need to create  trigger
      -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -28,6 +30,15 @@ CREATE TABLE friendships (
     CHECK (user1_id < user2_id)
 );
 
+-- Friend Requests Table
+CREATE TABLE friend_requests (
+  id SERIAL PRIMARY KEY,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(sender_id, receiver_id)
+);
+
 -- Trips Table
 CREATE TABLE trips (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -38,7 +49,8 @@ CREATE TABLE trips (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_public BOOLEAN DEFAULT false
+    is_public BOOLEAN DEFAULT false,
+    current BOOLEAN DEFAULT true
     -- this doesn't work in psql need to create  trigger
     -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
@@ -124,6 +136,25 @@ CREATE TABLE trip_cancellation_votes (
     UNIQUE(trip_id, user_id)
 );
 
+CREATE TABLE trip_item_votes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_item_id UUID REFERENCES trip_items(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    vote BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(trip_item_id, user_id)
+);
+
+CREATE TABLE messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_messages_trip_id ON messages(trip_id);
+CREATE INDEX idx_messages_sender_id ON messages(sender_id);
 
 CREATE INDEX idx_events_name ON events(name);
 CREATE INDEX idx_events_location ON events(location);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import ChatWindow from "../components/ChatWindow";
 import "../styles/TripDetails.css";
-//import dummyTrips from "../data/dummyTrips.json"; // Import the dummy trips
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -16,40 +16,64 @@ const TripDetails = () => {
     const [tripMembers, setTripMembers] = useState([]);
     const [cancelVotes, setCancelVotes] = useState(0);
     const [hasVotedToCancel, setHasVotedToCancel] = useState(false);
+    const [isTripCancelled, setIsTripCancelled] = useState(false);
     const token = localStorage.getItem('token');
     const userId = JSON.parse(atob(token.split('.')[1])).id;
 
+    const fetchTrip = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/trips/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch trip');
+
+            const data = await response.json();
+
+            // Fetch vote counts for trip items
+            const votesResponse = await fetch(`/api/trips/items/${id}/votes`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!votesResponse.ok) throw new Error('Failed to fetch vote counts');
+
+            const votesData = await votesResponse.json();
+
+            // Map vote counts to trip 
+            const itemsWithVotes = data.items.map(item => {
+                // Ensure proper matching of trip_item_id with item.id
+                const vote = votesData.find(v => v.trip_item_id === item.id) || {};
+                return { 
+                    ...item, 
+                    upVotes: vote.upvotes ?? 0, // Correctly use `upvotes` from votesData
+                    downVotes: vote.downvotes ?? 0 // Correctly use `downvotes` from votesData
+                };
+            });
+
+            setTrip({
+                ...data,
+                items: itemsWithVotes,
+                startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
+                endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
+            });
+            setEvents(data.events || []); // Assuming events are part of the trip data
+            setTripMembers(data.members || []); // Ensure members are stored
+            console.log("Trip Members:", data.members); // Debugging log
+        } catch (err) {
+            setError('Error loading trip. Please try again later.');
+            console.error('Error fetching trip:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchTrip = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch(`/api/trips/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) throw new Error('Failed to fetch trip');
-
-                const data = await response.json();
-                setTrip({
-                    ...data,
-                    startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
-                    endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
-                });
-                setEvents(data.events || []); // Assuming events are part of the trip data
-                setTripMembers(data.members || []); // Ensure members are stored
-                console.log("Trip Members:", data.members); // Debugging log
-            } catch (err) {
-                setError('Error loading trip. Please try again later.');
-                console.error('Error fetching trip:', err);
-                //const dummyTrip = dummyTrips.find(trip => trip.id === id); // Use dummy trip if API call fails
-                //setTrip(dummyTrip);
-                //setEvents(dummyTrip ? dummyTrip.events || [] : []); // Use dummy events if available
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        fetchTrip();
 
         const fetchFriends = async () => {
             try {
@@ -66,7 +90,13 @@ const TripDetails = () => {
             }
         };
 
+        fetchFriends();
+    }, [id, token, userId]);
+
+    useEffect(() => {
         const fetchCancelVotes = async () => {
+            if (tripMembers.length === 0) return; // Ensure tripMembers is loaded before fetching votes
+
             try {
                 const response = await fetch(`/api/trips/${id}/cancellation-status`, {
                     headers: {
@@ -78,16 +108,29 @@ const TripDetails = () => {
 
                 const data = await response.json();
                 setCancelVotes(data.cancel_votes || 0);
-                setHasVotedToCancel(data.voters?.some(voter => voter.user_id === userId));
+
+                // Check if the user has already voted to cancel
+                const userVoteResponse = await fetch(`/api/trips/${id}/user-vote`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userVoteResponse.ok) throw new Error('Failed to fetch user vote status');
+
+                const userVoteData = await userVoteResponse.json();
+                setHasVotedToCancel(userVoteData.hasVoted);
+
+                // Determine if the trip is cancelled
+                const totalMembers = tripMembers.length;
+                setIsTripCancelled(data.cancel_votes > totalMembers / 2);
             } catch (err) {
-                console.error('Error fetching cancellation votes:', err);
+                console.error('Error fetching cancellation votes or user vote status:', err);
             }
         };
 
-        fetchTrip();
-        fetchFriends();    
         fetchCancelVotes();
-    }, [id, token, userId]);
+    }, [tripMembers]); // Run fetchCancelVotes only after tripMembers is updated
 
     const fetchTripMembers = async () => {
         try {
@@ -181,6 +224,7 @@ const TripDetails = () => {
 
     const handleSaveTrip = async () => {
         try {
+            console.log(JSON.stringify(trip));
             const response = await fetch(`/api/trips/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -193,8 +237,11 @@ const TripDetails = () => {
             if (!response.ok) throw new Error('Failed to save trip');
 
             const data = await response.json();
-            setTrip(data);
-            setIsEditing(false);
+            setTrip({
+                ...data,
+                startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
+                endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
+            });            setIsEditing(false);
         } catch (err) {
             console.error('Error saving trip:', err);
             setError('Error saving trip. Please try again later.');
@@ -263,6 +310,25 @@ const TripDetails = () => {
         }
     };
 
+    const handleVote = async (itemId, voteType) => {
+        try {
+            const response = await fetch(`/api/trips/items/${id}/vote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ itemId, vote: voteType === 'up' })
+            });
+
+            if (!response.ok) throw new Error('Failed to submit vote');
+
+            // Refresh trip data to update vote counts
+            await fetchTrip();
+        } catch (err) {
+            console.error('Error submitting vote:', err);
+        }
+    };
 
     const fetchItemDetails = async (type, id) => {
         console.log(`Fetching details for ${type} with ID: ${id}`);
@@ -275,14 +341,16 @@ const TripDetails = () => {
         } else if (type === 'lodging') {
             try {
               // Navigate to lodging page if you have one
-              navigate(`/lodging/${id}`);
+              navigate('/lodgings');
+              //navigate(`/lodging/${id}`);
             } catch (err) {
               console.error('Error navigating to lodging:', err);
             }
           } else if (type === 'travel') {
             try {
               // Navigate to travel page if you have one
-              navigate(`/travel/${id}`);
+              navigate('/travel');
+              //navigate(`/travel/${id}`);
             } catch (err) {
               console.error('Error navigating to travel:', err);
             }
@@ -367,53 +435,58 @@ const TripDetails = () => {
         return <p>Unknown item type</p>;
     };
 
-    
     const renderTripItems = () => {
         if (!trip.items || trip.items.length === 0) {
-          return <p>No items added to this trip yet.</p>;
+            return <p>No items added to this trip yet.</p>;
         }
-      
-        // Group items by type
+
         const groupedItems = trip.items.reduce((acc, item) => {
-          const type = item.item_type;
-          if (!acc[type]) {
-            acc[type] = [];
-          }
-          acc[type].push(item);
-          return acc;
+            const type = item.item_type;
+            if (!acc[type]) {
+                acc[type] = [];
+            }
+            acc[type].push(item);
+            return acc;
         }, {});
-      
+
         return (
-          <div className="trip-items">
-            <h3>Trip Items</h3>
-            
-            {Object.entries(groupedItems).map(([type, items]) => (
-              <div key={type} className="item-type-section">
-                <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
-                <div className="items-grid">
-                  {items.map((item) => (
-                    <div key={item.id} className="trip-item-card">
-                      <ItemPreview type={item.item_type} id={item.item_id} />
-                      <button 
-                        onClick={() => fetchItemDetails(item.item_type, item.item_id)}
-                        className="view-details-btn"
-                      >
-                        View Details
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
-                        className="delete-item-btn"
-                      >
-                        Remove
-                        </button>
+            <div className="trip-items">
+                <h3>Trip Items</h3>
+                {Object.entries(groupedItems).map(([type, items]) => (
+                    <div key={type} className="item-type-section">
+                        <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+                        <div className="items-grid">
+                            {items.map((item) => (
+                                <div key={item.id} className="trip-item-card">
+                                    <ItemPreview type={item.item_type} id={item.item_id} />
+                                    <button 
+                                        onClick={() => fetchItemDetails(item.item_type, item.item_id)}
+                                        className="view-details-btn"
+                                    >
+                                        View Details
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
+                                        className="delete-item-btn"
+                                    >
+                                        Remove
+                                    </button>
+                                    <div className="vote-buttons">
+                                        <button onClick={() => handleVote(item.id, 'up')} className="thumbs-up-btn">
+                                            👍 {item.upVotes || 0}
+                                        </button>
+                                        <button onClick={() => handleVote(item.id, 'down')} className="thumbs-down-btn">
+                                            👎 {item.downVotes || 0}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                ))}
+            </div>
         );
-      };
+    };
 
     const voteToCancel = async () => {
         try {
@@ -429,6 +502,7 @@ const TripDetails = () => {
 
             setCancelVotes(cancelVotes + 1);
             setHasVotedToCancel(true);
+            window.location.reload(); // Force refresh
         } catch (err) {
             console.error('Error voting to cancel trip:', err);
         }
@@ -447,6 +521,7 @@ const TripDetails = () => {
 
             setCancelVotes(cancelVotes - 1);
             setHasVotedToCancel(false);
+            window.location.reload(); // Force refresh
         } catch (err) {
             console.error('Error rescinding vote:', err);
         }
@@ -463,7 +538,8 @@ const TripDetails = () => {
 
             if (!response.ok) throw new Error('Failed to restore trip');
 
-            navigate('/trips'); // Redirect to trips page after restoring
+            setCancelVotes(0);
+            setIsTripCancelled(false);
         } catch (err) {
             console.error('Error restoring trip:', err);
         }
@@ -479,6 +555,17 @@ const TripDetails = () => {
 
     return (
         <div className="trip-details">
+            {isTripCancelled && (
+                <div className="cancelled-sidebar">
+                    <h3>Trip Cancelled</h3>
+                    <p>This trip has been cancelled as more than half of the members have voted to cancel.</p>
+                    {trip?.creator_id === userId && (
+                        <button onClick={restoreTrip} className="restore-trip-btn">
+                            Restore Trip
+                        </button>
+                    )}
+                </div>
+            )}
             {trip ? (
                 <>
                     {isEditing ? (
@@ -515,32 +602,25 @@ const TripDetails = () => {
                             <p>{trip.description}</p>
                             <p><strong>Destination:</strong> {trip.destination}</p>
                             <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                            <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
+                            {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
                         </>
                     )}
                     {renderTripItems()}
                     
                     <div className="add-friend">
                         <h3>Trip Members</h3>
-                        {/* <ul>
-                            {tripMembers.length > 0 ? (
-                                tripMembers.map(member => (
-                                    <li key={member.id}>
-                                        {member.username} 
-                                    </li>
-                                ))
-                            ) : (
-                                <p>No members in this trip.</p>
-                            )}
-                        </ul> */}
-
                         <ul>
                         {tripMembers.map(member => (
                             <li key={member.id} className={member.id === userId ? "current-user" : ""}>
-                            {member.username} {member.id === userId ? "(me)" : ""}
-                            {trip.creator_id === userId && member.id !== userId && (
-                                <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
-                            )}
+                              <img
+                                src={member.profile_pic}
+                                className="profile-pic"
+                              />
+                              {member.username}
+                              {member.id === userId ? "(me)" : ""}
+                              {trip.creator_id === userId && member.id !== userId && (
+                                  <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                              )}
                             </li>
                         ))}
                         </ul>
@@ -602,6 +682,7 @@ const TripDetails = () => {
             ) : (
                 <p className="error">Trip not found.</p>
             )}
+            <ChatWindow tripId={id} userId={userId} />
         </div>
     );
 };

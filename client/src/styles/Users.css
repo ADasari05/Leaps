@@ -15,6 +15,16 @@
     margin-bottom: 20px;
 }
 
+.profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #d3d3d3;
+    box-shadow: 0 2px 4px rgba(118,145,255,0.3);
+    margin-right: 10px;
+    margin-bottom: -15px;
+}
+
 .users-container form {
     display: flex;
     flex-direction: row;
@@ -63,6 +73,28 @@
     transform: none;
 }
 
+.users-container section p {
+    color: #444;
+    font-size: 0.95rem;
+    margin-top: 5px;
+}
+
+.users-container section p:only-child {
+    color: #888;
+    font-style: italic;
+}
+
+.users-container section {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+.users-container section h3 {
+    text-align: center;
+    margin-left: 0.5rem;
+}
+  
+
 .users-list {
     list-style: none;
     padding: 0;
@@ -87,6 +119,8 @@
 .user-info {
     font-size: 16px;
     color: #333;
+    padding-right: 10px;
+    padding-bottom: 10px;
 }
 
 .add-btn {
@@ -114,4 +148,33 @@
 .loading {
     color: #666;
     margin-top: 20px;
+}
+
+.users-list .remove-btn {
+    margin-left: 10px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+  
+.users-list .remove-btn:hover {
+    background-color: #c0392b;
+}
+
+.pending-status {
+    display: flex;
+    align-items: center;
+    color: #999;
+    font-style: italic;
+}
+  
+.mutual-count {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 4px;
 }

@@ -246,3 +246,51 @@
     font-weight: bold;
     color: black; /* Bootstrap primary blue */
   }
+
+.cancelled-sidebar {
+    position: fixed;
+    top: 20%;
+    right: 0;
+    width: 250px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    padding: 15px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.cancelled-sidebar h3 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+.cancelled-sidebar p {
+    font-size: 14px;
+}
+
+.cancelled-sidebar .restore-trip-btn {
+    display: block;
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.cancelled-sidebar .restore-trip-btn:hover {
+    background-color: #0056b3;
+}
+
+  .profile-pic {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #d3d3d3;
+    box-shadow: 0 2px 4px rgba(118,145,255,0.3);
+    margin-right: 10px;
+    margin-bottom: -10px;
+}

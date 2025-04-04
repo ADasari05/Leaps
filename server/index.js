@@ -12,10 +12,27 @@ const lodgingsRoutes = require('./routes/lodgings');
 const travelRoutes = require('./routes/travel');
 const eventsRoutes = require('./routes/Events');
 
+const http = require('http'); 
+const socketIo = require('socket.io');
+const { initializeSocket } = require('./socket');
+
 dotenv.config();
 
+
 const app = express();
+
+const server = http.createServer(app);
+const io = socketIo(server, {
+    cors: {
+      origin: 'http://localhost:3001',
+      methods: ['GET', 'POST'],
+      credentials: true
+    }
+  });
+
+initializeSocket(io);
 const port = process.env.PORT || 3000;
+
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:3001' }));   // Enable CORS for all routes
@@ -35,6 +52,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/lodgings', lodgingsRoutes);
 app.use('/api/travel', travelRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/messages', require('./routes/messages'));
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Leaps' });
@@ -57,6 +75,6 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something went wrong!' });
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
