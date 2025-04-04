@@ -99,6 +99,7 @@ CREATE TABLE travel (
     departure_location VARCHAR(255) NOT NULL,
     arrival TIMESTAMP NOT NULL,
     arrival_location VARCHAR(255) NOT NULL,
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     -- this doesn't work in psql need to create  trigger
     -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

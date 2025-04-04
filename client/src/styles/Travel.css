@@ -101,6 +101,53 @@
     background-color: #0056b3;
 }
 
+.travel-actions {
+    margin-top: auto;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding-top: 15px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.close-btn, .cancel-btn {
+    background-color: #6c757d;
+    margin-top: 10px;
+}
+
+.close-btn:hover, .cancel-btn:hover {
+    background-color: #5a6268;
+}
+
+.add-driving-section {
+    background-color: #e9f7ef;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border: 1px solid #d0e9c6;
+}
+
+.add-driving-btn {
+    background-color: #28a745;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.add-driving-btn:hover {
+    background-color: #218838;
+}
+
+.view-details-btn {
+    background-color: #17a2b8;
+}
+
+.view-details-btn:hover {
+    background-color: #138496;
+}
+
 .filter {
     display: flex;
     justify-content: center;
@@ -133,4 +180,81 @@
 
 .book-travel-btn:hover {
     background-color: #218838;
+}
+
+.guest-banner {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #ffeeba;
+}
+
+.guest-banner a {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+
+.driving-form {
+    max-width: 600px;
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.submit-btn {
+    background-color: #28a745;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.submit-btn:hover {
+    background-color: #218838;
+}
+
+.cancel-btn {
+    background-color: #6c757d;
+    flex: 1;
+    margin-left: 10px;
 }
