@@ -7,16 +7,16 @@ router.get('/', (req, res, next) => {
   req.allowGuest = true;
   next();
 }, auth, async (req, res) => {
-  const { q, location, eventType, startDateTime, endDateTime } = req.query; // Use startDateTime and endDateTime
-  console.log('Query parameters:', { q, location, eventType, startDateTime, endDateTime }); // Debugging log
+  const { q, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude} = req.query; // Use startDateTime and endDateTime
+  console.log('Query parameters:', { q, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude }); // Debugging log
 
   console.log("q = %s", q);
   console.log("location: %s", location);
   console.log("event type %s", eventType);
   try {
     const results = { events: [], travel: [], lodging: [] };
-    if (q || location || eventType || startDateTime || endDateTime) {
-      const externalResults = await apiService.fetchExternalData(q, location, eventType, startDateTime, endDateTime); // Pass startDateTime and endDateTime
+    if (q || location || eventType || startDateTime || endDateTime || priceSort || locationSort || latitude || longitude) {
+      const externalResults = await apiService.fetchExternalData(q, location, eventType, startDateTime, endDateTime, priceSort, locationSort, latitude, longitude); // Pass startDateTime and endDateTime
       results.events = externalResults.events;
     }
     res.json(results);

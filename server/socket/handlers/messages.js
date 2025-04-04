@@ -8,11 +8,11 @@ module.exports = function(io, socket) {
   
   socket.on('send_message', async (messageData) => {
     try {
-      const { tripId, senderId, content } = messageData;
+      const { tripId, senderId, content, attachmentUrl } = messageData;
       
       const result = await db.query(
-        'INSERT INTO messages (id, trip_id, sender_id, content) VALUES(uuid_generate_v4(), $1, $2, $3) RETURNING *',
-        [tripId, senderId, content]
+        'INSERT INTO messages (id, trip_id, sender_id, content, attachment_url) VALUES(uuid_generate_v4(), $1, $2, $3, $4) RETURNING *',
+        [tripId, senderId, content, attachmentUrl]
       );
       
       const newMessage = result.rows[0];

@@ -13,8 +13,7 @@ router.get('/trip/:tripId', auth, async (req, res) => {
     );
     
     if (memberCheck.rows.length === 0) {
-      // Return an empty array with a 403 status code
-      return res.status(403).json({ error: 'Not authorized to view these messages', messages: [] });
+      return res.status(403).json({ msg: 'Not authorized to view these messages' });
     }
     
     const messagesResult = await db.query(
@@ -26,13 +25,48 @@ router.get('/trip/:tripId', auth, async (req, res) => {
       [tripId]
     );
     
-    // Return the messages array
-    res.json(messagesResult.rows || []);
+    res.json(messagesResult.rows);
   } catch (err) {
     console.error(err.message);
-    // Return an empty array with a 500 status code
-    res.status(500).json({ error: 'Server error', messages: [] });
+    res.status(500).send('Server error');
   }
 });
 
+
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR);
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+
+router.post('/upload', auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    // e.g. "http://localhost:3000/uploads/filename.png"
+    const fileUrl = `${process.env.SERVER_URL || 'http://localhost:3000'}/uploads/${req.file.filename}`;
+
+    return res.json({ url: fileUrl });
+  } catch (error) {
+    console.error('Error handling file upload:', error);
+    return res.status(500).json({ message: 'Server error uploading file' });
+  }
+});
 module.exports = router;

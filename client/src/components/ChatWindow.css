@@ -173,6 +173,25 @@
     color: black;
   }
   
+  .file-attachment-label {
+    display: inline-block;
+    cursor: pointer;
+    margin-right: 8px;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+  }
+  
+  .file-attachment-label:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .file-attachment-label input[type="file"] {
+    display: none;
+  }
+
   .message-timestamp {
     font-size: 10px;
     color: #090909;
