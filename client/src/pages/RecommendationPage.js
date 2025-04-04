@@ -138,7 +138,7 @@ const RecommendationPage = () => {
                     >
                         Back to Trip
                     </button>
-                    <EventRecommendationsSearcher onResults={handleResults} location={"New York"} />
+                    <EventRecommendationsSearcher onResults={handleResults} location={trip.destination} />
                     <EventRecommendations results={results} onAddToTrip={addToTrip} currentTrip={trip} />
                 </div>
             ) : (
