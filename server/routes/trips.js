@@ -50,7 +50,7 @@ router.get('/:id', auth, async (req, res) => {
 
         // Fetch trip members, including the creator
         const membersResult = await db.query(
-            `SELECT u.id, u.username 
+            `SELECT u.id, u.username, u.profile_pic 
             FROM users u
             WHERE u.id IN (
                 SELECT user_id FROM trip_members WHERE trip_id = $1
@@ -92,8 +92,7 @@ router.put('/:id', auth, async (req, res) => {
     try {
         const tripId = req.params.id;
         const userId = req.user.id; // From auth middleware
-        const { name, description, destination, startDate, endDate, isPublic } = req.body;
-
+        const { name, description, destination, startDate, endDate, isPublic, current } = req.body;
         // Fetch the current value of is_public if not provided
         let currentIsPublic = isPublic;
         if (currentIsPublic === undefined) {
@@ -106,11 +105,10 @@ router.put('/:id', auth, async (req, res) => {
             }
             currentIsPublic = currentTrip.rows[0].is_public;
         }
-
         // Ensure the user is the creator of the trip
         const result = await db.query(
-            'UPDATE trips SET name = $1, description = $2, destination = $3, start_date = $4, end_date = $5, is_public = $6 WHERE id = $7 AND creator_id = $8 RETURNING *',
-            [name, description, destination, startDate, endDate, currentIsPublic, tripId, userId]
+            'UPDATE trips SET name = $1, description = $2, destination = $3, start_date = $4, end_date = $5, is_public = $6, current = $7 WHERE id = $8 AND creator_id = $9 RETURNING *',
+            [name, description, destination, startDate, endDate, currentIsPublic, current, tripId, userId]
         );
 
         if (result.rows.length === 0) {
@@ -121,6 +119,30 @@ router.put('/:id', auth, async (req, res) => {
     } catch (err) {
         console.error('Error updating trip:', err);
         res.status(500).json({ message: 'Server error updating trip' });
+    }
+});
+
+router.put('/complete/:id', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const tripId = req.params.id;
+
+        //complete the trip
+        const result = await db.query(
+            'UPDATE trips SET current = false WHERE id = $1 AND creator_id = $2 RETURNING *',
+            [tripId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Trip not found or not authorized to update' });
+        }
+
+        res.json(result.rows[0]);
+
+    }
+    catch (err) {
+        console.error('Error completing trip:', err);
+        res.status(500).json({ message: 'Server error completing trip' });
     }
 });
 
@@ -252,6 +274,72 @@ router.get('/events/:id', auth, async (req, res) => {
     } 
   }); */
   
+// Vote on a trip item
+router.post('/items/:tripId/vote', auth, async (req, res) => {
+    const { tripId } = req.params;
+    const { itemId, vote } = req.body;
+    const userId = req.user.id;
+
+    try {
+        // Ensure the user has access to the trip
+        const tripCheck = await db.query(
+            'SELECT * FROM trips WHERE id = $1 AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))',
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Not authorized to vote on this trip' });
+        }
+
+        // Insert or update the vote
+        const result = await db.query(
+            `INSERT INTO trip_item_votes (trip_item_id, user_id, vote) 
+             VALUES ($1, $2, $3) 
+             ON CONFLICT (trip_item_id, user_id) 
+             DO UPDATE SET vote = $3 RETURNING *`,
+            [itemId, userId, vote]
+        );
+
+        // Fetch updated vote counts
+        const votes = await db.query(
+            `SELECT trip_item_id, 
+                    COALESCE(SUM(CASE WHEN vote THEN 1 ELSE 0 END), 0) AS upVotes, 
+                    COALESCE(SUM(CASE WHEN NOT vote THEN 1 ELSE 0 END), 0) AS downVotes 
+             FROM trip_item_votes 
+             WHERE trip_item_id = $1
+             GROUP BY trip_item_id`,
+            [itemId]
+        );
+
+        res.json({ message: 'Vote recorded', vote: result.rows[0], counts: votes.rows[0] });
+    } catch (error) {
+        console.error('Error voting on trip item:', error);
+        res.status(500).json({ error: 'Failed to record vote' });
+    }
+});
+
+// Fetch vote counts for a trip item
+router.get('/items/:tripId/votes', auth, async (req, res) => {
+    const { tripId } = req.params;
+
+    try {
+        const votes = await db.query(
+            `SELECT trip_item_id, 
+                    COALESCE(SUM(CASE WHEN vote THEN 1 ELSE 0 END), 0)::INTEGER AS upVotes, 
+                    COALESCE(SUM(CASE WHEN NOT vote THEN 1 ELSE 0 END), 0)::INTEGER AS downVotes 
+             FROM trip_item_votes 
+             WHERE trip_item_id IN (SELECT id FROM trip_items WHERE trip_id = $1)
+             GROUP BY trip_item_id`,
+            [tripId]
+        );
+
+        res.json(votes.rows);
+    } catch (error) {
+        console.error('Error fetching vote counts:', error);
+        res.status(500).json({ error: 'Failed to fetch vote counts' });
+    }
+});
+
 
 router.get('/friends', auth, async (req, res) => {
     try {

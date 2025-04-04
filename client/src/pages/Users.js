@@ -304,7 +304,11 @@ const Users = () => {
 
               return (
                 <li key={user.id}>
-                  <span className="user-info">{user.username} ({user.email})</span>
+                  <span className="user-info">
+                                <img src={user.profile_pic} className='profile-pic'/>
+                                {user.username}
+                                ({user.email})
+                            </span>
                   {isFriend ? (
                     <span className="friend-status">Friend</span>
                   ) : isPending ? (

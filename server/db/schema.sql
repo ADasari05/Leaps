@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
-DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, travel, lodging, trip_items, trip_cancellation_votes CASCADE;
+DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, customevents, travel, lodging, trip_items, trip_cancellation_votes CASCADE;
 DROP INDEX IF EXISTS idx_events_name, idx_events_location, idx_events_type, idx_travel_departure_location, idx_travel_arrival_location, idx_lodging_name, idx_lodging_location;
 
 
@@ -14,7 +14,9 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,                    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reset_token VARCHAR(255),
-    reset_token_expiry TIMESTAMP
+    reset_token_expiry TIMESTAMP,
+    theme_preference VARCHAR(10) DEFAULT 'light',
+    profile_pic TEXT
      -- this doesn't work in psql need to create  trigger
      -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -47,7 +49,8 @@ CREATE TABLE trips (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_public BOOLEAN DEFAULT false
+    is_public BOOLEAN DEFAULT false,
+    current BOOLEAN DEFAULT true
     -- this doesn't work in psql need to create  trigger
     -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
@@ -63,6 +66,20 @@ CREATE TABLE trip_members (
 -- Events Table 
 CREATE TABLE events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    price DOUBLE PRECISION,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Custom Events Table 
+CREATE TABLE customevents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     type VARCHAR(100) NOT NULL,
     location VARCHAR(255) NOT NULL,
@@ -105,7 +122,7 @@ CREATE TABLE lodging (
 CREATE TABLE trip_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
-    item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'events', 'travel', 'lodging')),
+    item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'events', 'custom-event', 'travel', 'lodging')),
     item_id VARCHAR(255) NOT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, item_type, item_id)
@@ -118,6 +135,15 @@ CREATE TABLE trip_cancellation_votes (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, user_id)
+);
+
+CREATE TABLE trip_item_votes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_item_id UUID REFERENCES trip_items(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    vote BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(trip_item_id, user_id)
 );
 
 CREATE TABLE messages (

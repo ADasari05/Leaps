@@ -25,7 +25,6 @@ export default function ConfirmDelete({ id, token }) {
     const [error, setError] = useState(null);
     const handleDelete = async () => {
         try {
-            console.log("deleting", id)
             const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -34,8 +33,6 @@ export default function ConfirmDelete({ id, token }) {
             });
 
             if (!response.ok) throw new Error('Failed to delete trip');
-
-            console.log('Trip deleted successfully');
             handleClose();
             window.location.reload();
         } catch (err) {

@@ -4,7 +4,7 @@ import LeapsLogo from "../assets/Leapspng.png";
 import "../styles/auth.css";
 import { isAuthenticated } from "../services/authService";
 
-const Login = ({ setAuth }) => {
+const Login = ({ setAuth, setTheme }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
@@ -36,6 +36,7 @@ const Login = ({ setAuth }) => {
                 localStorage.setItem("token", data.token);
                 setTimeout(() => {
                     setAuth(true);
+                    setTheme(data.user.theme_preference || 'light');
                     navigate("/accountpage");
                 }, 1000);
             

@@ -1,7 +1,8 @@
 const fetch = require('node-fetch');
 require('dotenv').config();
 
-const fetchExternalData = async (query, location, eventType) => {
+const fetchExternalData = async (query, location, eventType, startDateTime, endDateTime) => {
+  console.log('Received parameters:', { query, location, eventType, startDateTime, endDateTime }); // Debugging log
   const results = { events: [], travel: [], lodging: [] };
   const tmApiKey = process.env.TICKETMASTER_API_KEY;
   if (!tmApiKey) {
@@ -12,7 +13,11 @@ const fetchExternalData = async (query, location, eventType) => {
   // Normalize location (e.g., 'NY' to 'New York')
   const normalizedLocation = location === 'NY' ? 'New York' : location || '';
 
-  // Build URL with optional eventType
+  // Ensure startDateTime and endDateTime are in full ISO 8601 format
+  const formattedStartDateTime = startDateTime || null;
+  const formattedEndDateTime = endDateTime || null;
+
+  // Build URL with optional eventType, startDateTime, and endDateTime
   let tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&keyword=${encodeURIComponent(query || '')}`;
   if (normalizedLocation) {
     tmUrl += `&city=${encodeURIComponent(normalizedLocation)}`;
@@ -20,10 +25,17 @@ const fetchExternalData = async (query, location, eventType) => {
   if (eventType) {
     tmUrl += `&classificationName=${encodeURIComponent(eventType)}`;
   }
+  if (formattedStartDateTime) {
+    tmUrl += `&startDateTime=${formattedStartDateTime}`;
+  }
+  if (formattedEndDateTime) {
+    tmUrl += `&endDateTime=${formattedEndDateTime}`;
+  }
+
+  console.log('Constructed Ticketmaster URL:', tmUrl); // Debugging log
 
   try {
     const response = await fetch(tmUrl);
-    console.log('Ticketmaster URL:', tmUrl);
     if (!response.ok) throw new Error(`Ticketmaster API error: ${response.status}`);
     const data = await response.json();
     if (data._embedded?.events) {

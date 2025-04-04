@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ChatWindow from "../components/ChatWindow";
 import "../styles/TripDetails.css";
+import EventRecommendationsSearcher from '../components/EventRecommendationsSearcher';
+import EventRecommendations from '../components/EventRecommendations';
+import AddToTripDialog from '../components/AddToTripDialog';
+import AddRecommendationDialog from "../components/AddRecommendationDialog";
 
 
 const TripDetails = () => {
@@ -20,47 +24,74 @@ const TripDetails = () => {
     const [isTripCancelled, setIsTripCancelled] = useState(false);
     const token = localStorage.getItem('token');
     const userId = JSON.parse(atob(token.split('.')[1])).id;
+    const [results, setResults] = useState({ events: [], travel: [], lodging: [] });
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+
+
+    const fetchTrip = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/trips/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch trip');
+
+            const data = await response.json();
+
+            // Fetch vote counts for trip items
+            const votesResponse = await fetch(`/api/trips/items/${id}/votes`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!votesResponse.ok) throw new Error('Failed to fetch vote counts');
+
+            const votesData = await votesResponse.json();
+
+            // Map vote counts to trip 
+            const itemsWithVotes = data.items.map(item => {
+                // Ensure proper matching of trip_item_id with item.id
+                const vote = votesData.find(v => v.trip_item_id === item.id) || {};
+                return {
+                    ...item,
+                    upVotes: vote.upvotes ?? 0, // Correctly use `upvotes` from votesData
+                    downVotes: vote.downvotes ?? 0 // Correctly use `downvotes` from votesData
+                };
+            });
+
+            setTrip({
+                ...data,
+                items: itemsWithVotes,
+                startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
+                endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
+            });
+            setEvents(data.events || []); // Assuming events are part of the trip data
+            setTripMembers(data.members || []); // Ensure members are stored
+            console.log("Trip Members:", data.members); // Debugging log
+        } catch (err) {
+            setError('Error loading trip. Please try again later.');
+            console.error('Error fetching trip:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchTrip = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch(`/api/trips/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) throw new Error('Failed to fetch trip');
-
-                const data = await response.json();
-                setTrip({
-                    ...data,
-                    startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
-                    endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
-                });
-                setEvents(data.events || []); // Assuming events are part of the trip data
-                setTripMembers(data.members || []); // Ensure members are stored
-                console.log("Trip Members:", data.members); // Debugging log
-            } catch (err) {
-                setError('Error loading trip. Please try again later.');
-                console.error('Error fetching trip:', err);
-                //const dummyTrip = dummyTrips.find(trip => trip.id === id); // Use dummy trip if API call fails
-                //setTrip(dummyTrip);
-                //setEvents(dummyTrip ? dummyTrip.events || [] : []); // Use dummy events if available
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        fetchTrip();
 
         const fetchFriends = async () => {
             try {
                 const response = await fetch(`http://localhost:3000/api/friends/list`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-        
+
                 if (!response.ok) throw new Error("Failed to fetch friends");
-        
+
                 const data = await response.json();
                 setFriends(data);
             } catch (err) {
@@ -68,7 +99,6 @@ const TripDetails = () => {
             }
         };
 
-        fetchTrip();
         fetchFriends();
     }, [id, token, userId]);
 
@@ -116,16 +146,16 @@ const TripDetails = () => {
             const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-    
+
             if (!response.ok) throw new Error("Failed to fetch trip members");
-    
+
             const data = await response.json();
             setTripMembers(data.members || []);
         } catch (err) {
             console.error("Error fetching trip members:", err);
         }
     };
-    
+
 
     const handleRemoveMember = async (memberId) => {
         if (memberId === userId) {
@@ -139,11 +169,11 @@ const TripDetails = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-    
+
             if (!response.ok) {
                 throw new Error('Failed to remove member');
             }
-    
+
             alert('Member removed successfully');
             setTripMembers(tripMembers.filter(member => member.id !== memberId));
         } catch (err) {
@@ -157,7 +187,7 @@ const TripDetails = () => {
             console.error("No friend selected");
             return;
         }
-    
+
         try {
             const response = await fetch(`http://localhost:3000/api/trips/${id}/add-friend`, {
                 method: "POST",
@@ -167,14 +197,14 @@ const TripDetails = () => {
                 },
                 body: JSON.stringify({ friendId: selectedFriend }),
             });
-    
+
             const data = await response.json();
             console.log("Add Friend Response:", data);
-    
+
             if (!response.ok) {
                 throw new Error(data.message || "Failed to add friend");
             }
-    
+
             alert("Friend added successfully!");
             setFriends(friends.filter(friend => friend.id !== selectedFriend));
 
@@ -190,7 +220,7 @@ const TripDetails = () => {
             console.error("Error adding friend:", err);
             alert("Failed to add friend.");
         }
-    };    
+    };
 
     const handleAddEvent = () => {
         // TODO Logic to add a new event
@@ -203,6 +233,7 @@ const TripDetails = () => {
 
     const handleSaveTrip = async () => {
         try {
+            console.log(JSON.stringify(trip));
             const response = await fetch(`/api/trips/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -219,7 +250,7 @@ const TripDetails = () => {
                 ...data,
                 startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
                 endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
-            });            setIsEditing(false);
+            }); setIsEditing(false);
         } catch (err) {
             console.error('Error saving trip:', err);
             setError('Error saving trip. Please try again later.');
@@ -254,193 +285,217 @@ const TripDetails = () => {
 
     const handleDeleteItem = async (tripId, itemType, itemId) => {
         if (window.confirm('Are you sure you want to remove this item from the trip?')) {
-          try {
-            console.log(`Attempting to delete: tripId=${tripId}, itemType=${itemType}, itemId=${itemId}`);
-            
-            const url = `/api/trips/items/${tripId}/${itemType}/${itemId}`;
-            console.log('Delete request URL:', url);
-            
-            const response = await fetch(url, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              console.error('Server response:', response.status, errorData);
-              throw new Error(`Failed to delete item: ${response.status}`);
+            try {
+                console.log(`Attempting to delete: tripId=${tripId}, itemType=${itemType}, itemId=${itemId}`);
+
+                const url = `/api/trips/items/${tripId}/${itemType}/${itemId}`;
+                console.log('Delete request URL:', url);
+
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Server response:', response.status, errorData);
+                    throw new Error(`Failed to delete item: ${response.status}`);
+                }
+
+                // Update local state to reflect the deletion
+                setTrip(prevTrip => ({
+                    ...prevTrip,
+                    items: prevTrip.items.filter(item =>
+                        !(item.trip_id === tripId && item.item_type === itemType && item.item_id === itemId)
+                    )
+                }));
+
+            } catch (err) {
+                console.error('Error deleting item:', err);
+                setError('Failed to remove item from trip');
             }
-            
-            // Update local state to reflect the deletion
-            setTrip(prevTrip => ({
-              ...prevTrip,
-              items: prevTrip.items.filter(item => 
-                !(item.trip_id === tripId && item.item_type === itemType && item.item_id === itemId)
-              )
-            }));
-            
-          } catch (err) {
-            console.error('Error deleting item:', err);
-            setError('Failed to remove item from trip');
-          }
         }
     };
 
+    const handleVote = async (itemId, voteType) => {
+        try {
+            const response = await fetch(`/api/trips/items/${id}/vote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ itemId, vote: voteType === 'up' })
+            });
+
+            if (!response.ok) throw new Error('Failed to submit vote');
+
+            // Refresh trip data to update vote counts
+            await fetchTrip();
+        } catch (err) {
+            console.error('Error submitting vote:', err);
+        }
+    };
 
     const fetchItemDetails = async (type, id) => {
         console.log(`Fetching details for ${type} with ID: ${id}`);
-        if (type === 'events') {
-          try {
-            navigate(`/viewevent/${id}`);
-          } catch (err) {
-            console.error('Error fetching event details:', err);
-          }
+        if (type === 'events' || type == 'custom-event') {
+            try {
+                navigate(`/viewevent/${id}`);
+            } catch (err) {
+                console.error('Error fetching event details:', err);
+            }
         } else if (type === 'lodging') {
             try {
-              // Navigate to lodging page if you have one
-              navigate('/lodgings');
-              //navigate(`/lodging/${id}`);
+                // Navigate to lodging page if you have one
+                navigate('/lodgings');
+                //navigate(`/lodging/${id}`);
             } catch (err) {
-              console.error('Error navigating to lodging:', err);
+                console.error('Error navigating to lodging:', err);
             }
-          } else if (type === 'travel') {
+        } else if (type === 'travel') {
             try {
-              // Navigate to travel page if you have one
-              navigate('/travel');
-              //navigate(`/travel/${id}`);
+                // Navigate to travel page if you have one
+                navigate('/travel');
+                //navigate(`/travel/${id}`);
             } catch (err) {
-              console.error('Error navigating to travel:', err);
+                console.error('Error navigating to travel:', err);
             }
-          } else {
+        } else {
             console.log(`Item type ${type} not supported for viewing details`);
-          }
+        }
     };
 
     const ItemPreview = ({ type, id }) => {
         const [preview, setPreview] = useState(null);
         const [loading, setLoading] = useState(true);
-        
+
         useEffect(() => {
-          const fetchPreview = async () => {
-            setLoading(true);
-            try {
-              let endpoint;
-              if (type === 'events') {
-                endpoint = `/api/events/${id}`;
-              } else if (type === 'lodging') {
-                endpoint = `/api/lodging/${id}`;
-              } else if (type === 'travel') {
-                endpoint = `/api/travel/${id}`;
-              }
-              
-              if (endpoint) {
-                const response = await fetch(endpoint, {
-                  headers: { 'Authorization': `Bearer ${token}` },
-                });
-                
-                if (response.ok) {
-                  const data = await response.json();
-                  setPreview(data);
+            const fetchPreview = async () => {
+                setLoading(true);
+                try {
+                    let endpoint;
+                    if (type === 'events' || type === 'custom-event') {
+                        endpoint = `/api/events/${id}`;
+                    } else if (type === 'lodging') {
+                        endpoint = `/api/lodging/${id}`;
+                    } else if (type === 'travel') {
+                        endpoint = `/api/travel/${id}`;
+                    }
+
+                    if (endpoint) {
+                        const response = await fetch(endpoint, {
+                            headers: { 'Authorization': `Bearer ${token}` },
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            setPreview(data);
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Error fetching ${type} preview:`, err);
+                } finally {
+                    setLoading(false);
                 }
-              }
-            } catch (err) {
-              console.error(`Error fetching ${type} preview:`, err);
-            } finally {
-              setLoading(false);
-            }
-          };
-          
-          fetchPreview();
+            };
+
+            fetchPreview();
         }, [type, id]);
-        
+
         if (loading) return <p>Loading...</p>;
-        
+
         if (!preview) return (
-          <div className="preview-placeholder">
-            <p>{type.charAt(0).toUpperCase() + type.slice(1)} item</p>
-            <p className="preview-id">ID: {id.slice(0, 8)}...</p>
-          </div>
+            <div className="preview-placeholder">
+                <p>{type.charAt(0).toUpperCase() + type.slice(1)} item</p>
+                <p className="preview-id">ID: {id.slice(0, 8)}...</p>
+            </div>
         );
-        
+
         // Render different previews based on item type
-        if (type === 'events') {
-          return (
-            <div className="event-preview">
-              {preview.image && (
-                <img src={preview.image} alt={preview.name} className="preview-image" />
-              )}
-              <h5>{preview.name}</h5>
-              <p>{preview.date} | {preview.location}</p>
-            </div>
-          );
+        if (type === 'events' || type === 'custom-event') {
+            return (
+                <div className="event-preview">
+                    {preview.image && (
+                        <img src={preview.image} alt={preview.name} className="preview-image" />
+                    )}
+                    <h5>{preview.name}</h5>
+                    <p>{preview.date} | {preview.location}</p>
+                </div>
+            );
         } else if (type === 'lodging') {
-          return (
-            <div className="lodging-preview">
-              <h5>{preview.name}</h5>
-              <p>{preview.location}</p>
-            </div>
-          );
+            return (
+                <div className="lodging-preview">
+                    <h5>{preview.name}</h5>
+                    <p>{preview.location}</p>
+                </div>
+            );
         } else if (type === 'travel') {
-          return (
-            <div className="travel-preview">
-              <h5>{preview.type}</h5>
-              <p>{preview.departure_location} → {preview.arrival_location}</p>
-            </div>
-          );
+            return (
+                <div className="travel-preview">
+                    <h5>{preview.type}</h5>
+                    <p>{preview.departure_location} → {preview.arrival_location}</p>
+                </div>
+            );
         }
-        
+
         return <p>Unknown item type</p>;
     };
 
-    
     const renderTripItems = () => {
         if (!trip.items || trip.items.length === 0) {
-          return <p>No items added to this trip yet.</p>;
+            return <p>No items added to this trip yet.</p>;
         }
-      
-        // Group items by type
+
         const groupedItems = trip.items.reduce((acc, item) => {
-          const type = item.item_type;
-          if (!acc[type]) {
-            acc[type] = [];
-          }
-          acc[type].push(item);
-          return acc;
+            const type = item.item_type;
+            if (!acc[type]) {
+                acc[type] = [];
+            }
+            acc[type].push(item);
+            return acc;
         }, {});
-      
+
         return (
-          <div className="trip-items">
-            <h3>Trip Items</h3>
-            
-            {Object.entries(groupedItems).map(([type, items]) => (
-              <div key={type} className="item-type-section">
-                <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
-                <div className="items-grid">
-                  {items.map((item) => (
-                    <div key={item.id} className="trip-item-card">
-                      <ItemPreview type={item.item_type} id={item.item_id} />
-                      <button 
-                        onClick={() => fetchItemDetails(item.item_type, item.item_id)}
-                        className="view-details-btn"
-                      >
-                        View Details
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
-                        className="delete-item-btn"
-                      >
-                        Remove
-                        </button>
+            <div className="trip-items">
+                <h3>Trip Items</h3>
+                {Object.entries(groupedItems).map(([type, items]) => (
+                    <div key={type} className="item-type-section">
+                        <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+                        <div className="items-grid">
+                            {items.map((item) => (
+                                <div key={item.id} className="trip-item-card">
+                                    <ItemPreview type={item.item_type} id={item.item_id} />
+                                    <button
+                                        onClick={() => fetchItemDetails(item.item_type, item.item_id)}
+                                        className="view-details-btn"
+                                    >
+                                        View Details
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
+                                        className="delete-item-btn"
+                                    >
+                                        Remove
+                                    </button>
+                                    <div className="vote-buttons">
+                                        <button onClick={() => handleVote(item.id, 'up')} className="thumbs-up-btn">
+                                            👍 {item.upVotes || 0}
+                                        </button>
+                                        <button onClick={() => handleVote(item.id, 'down')} className="thumbs-down-btn">
+                                            👎 {item.downVotes || 0}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                ))}
+            </div>
         );
-      };
+    };
 
     const voteToCancel = async () => {
         try {
@@ -460,6 +515,16 @@ const TripDetails = () => {
         } catch (err) {
             console.error('Error voting to cancel trip:', err);
         }
+    };
+
+    const handleResults = (data) => {
+        console.log('Received results:', data);
+        setResults(data);
+    };
+
+    const openAddToTrip = (item) => {
+        setSelectedItem(item);
+        setDialogOpen(true);
     };
 
     const rescindVote = async () => {
@@ -556,34 +621,42 @@ const TripDetails = () => {
                             <p>{trip.description}</p>
                             <p><strong>Destination:</strong> {trip.destination}</p>
                             <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                            <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
+                            {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
                         </>
                     )}
                     {renderTripItems()}
-                    
+
+                    <div className="event-recommendations">
+                        <h3>Recommended Events</h3>
+                        <EventRecommendationsSearcher onResults={handleResults} location={"New York"} />
+                        <EventRecommendations results={results} onAddToTrip={openAddToTrip} currentTrip={trip} />
+                        {selectedItem && (
+                            <AddRecommendationDialog
+                                open={dialogOpen}
+                                onClose={() => setDialogOpen(false)}
+                                item={selectedItem}
+                                reload={fetchTrip()}
+                            />
+                        )}
+                    </div>
+
                     <div className="add-friend">
                         <h3>Trip Members</h3>
-                        {/* <ul>
-                            {tripMembers.length > 0 ? (
-                                tripMembers.map(member => (
-                                    <li key={member.id}>
-                                        {member.username} 
-                                    </li>
-                                ))
-                            ) : (
-                                <p>No members in this trip.</p>
-                            )}
-                        </ul> */}
-
                         <ul>
-                        {tripMembers.map(member => (
-                            <li key={member.id} className={member.id === userId ? "current-user" : ""}>
-                            {member.username} {member.id === userId ? "(me)" : ""}
-                            {trip.creator_id === userId && member.id !== userId && (
-                                <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
-                            )}
-                            </li>
-                        ))}
+                            {tripMembers.map(member => (
+                                <li key={member.id} className={member.id === userId ? "current-user" : ""}>
+                                    <img
+                                        src={member.profile_pic}
+                                        className="profile-pic"
+                                    />
+                                    {member.username}
+                                    {member.id === userId ? "(me)" : ""}
+                                    {trip.creator_id === userId && member.id !== userId && (
+                                        <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                                    )}
+
+                                </li>
+                            ))}
                         </ul>
 
                         <h3>Add a Friend</h3>
@@ -602,28 +675,11 @@ const TripDetails = () => {
                         <h3>Share by Link</h3>
                         <p>Link: http://localhost:3001/trips/{id}/share</p>
                     </div>
-
-                    <h3>Events</h3>
-                    <ul>
-                        {events.length > 0 ? (
-                            events.map(event => (
-                                <li key={event.id}>
-                                    <p><strong>{event.name}</strong></p>
-                                    <p>{event.description}</p>
-                                    <p><strong>Date:</strong> {event.date}</p>
-                                    <button onClick={() => handleRemoveEvent(event.id)} className="remove-event-btn">Remove Event</button>
-                                </li>
-                            ))
-                        ) : (
-                            <p>No events found.</p>
-                        )}
-                    </ul>
-                    <button onClick={handleAddEvent} className="add-event-btn">Add Event</button>
+                    {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
                     <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
 
-                    <div className="trip-cancellation">
-                        <h3>Cancel Votes</h3>
-                        <p><strong>Cancel Votes:</strong> {cancelVotes}</p>
+                    {trip.current && (<div className="trip-cancellation">
+                        <h3>Cancel Votes</h3><p><strong>Cancel Votes:</strong> {cancelVotes}</p>
                         {hasVotedToCancel ? (
                             <button onClick={rescindVote} className="rescind-vote-btn">
                                 Rescind Cancellation Vote
@@ -638,7 +694,7 @@ const TripDetails = () => {
                                 Restore Trip
                             </button>
                         )}
-                    </div>
+                    </div>)}
                 </>
             ) : (
                 <p className="error">Trip not found.</p>

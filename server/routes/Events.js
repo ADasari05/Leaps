@@ -5,24 +5,67 @@ const auth = require('../middleware/auth');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
-// Create a new event
+// Create a new custom event
 router.post('/', auth, async (req, res) => {
     try {
-        const { name, description, location, start_time, price, type } = req.body;
-        const creatorId = req.user.id; // From auth middleware
-        if (!name || !description || !location || !start_time || !price || !type) {
+        console.log(req.body);
+        const { name, description, location, date, start_time, price, type } = req.body;
+        const creator_id = req.user.id; // From auth middleware
+        if (!name || !location || !start_time || !type) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
+        // Combine date and time into a full timestamp
+        const formattedStartTime = `${date} ${start_time}:00`;
         // Insert event data into the database
         const result = await db.query(
-            'INSERT INTO events (name, description, location, start_time, price, type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [name, description, location, start_time, price, type]
+            'INSERT INTO customevents (creator_id, name, description, location, start_time, price, type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [creator_id, name, description, location, formattedStartTime, price, type]
         );
 
         res.status(201).json(result.rows[0]);
     } catch (err) {
-        console.error('Error creating event:', err);
-        res.status(500).json({ message: 'Server error creating event' });
+        console.error('Error creating custom event:', err);
+        res.status(500).json({ message: 'Server error creating custom event!' });
+    }
+});
+
+// Get all custom events for the authenticated user
+router.get('/', auth, async (req, res) => {
+    try {
+        const userId = req.user.id; // From auth middleware
+
+        const result = await db.query(
+            'SELECT * FROM customevents WHERE creator_id = $1', [userId]
+        );
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching events:', err);
+        res.status(500).json({ message: 'Server error fetching events' });
+    }
+});
+
+
+// Delete a custom event by ID
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const eventId = req.params.id;
+        const userId = req.user.id; // From auth middleware
+
+        // Ensure the user is the creator of the event
+        const result = await db.query(
+            'DELETE FROM customevents WHERE id = $1 AND creator_id = $2 RETURNING *',
+            [eventId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Custom event not found or not authorized to delete' });
+        }
+
+        res.json({ message: 'Event deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting custom event:', err);
+        res.status(500).json({ message: 'Server error deleting custom event' });
     }
 });
 
@@ -35,7 +78,24 @@ router.get('/:id', (req, res, next) => {
         const eventID = req.params.id;
         console.log(`Fetching event with ID: ${eventID}`);
 
+        let itemType;
         try {
+            const tripItemResult = await db.query(
+                'SELECT item_type FROM trip_items WHERE item_id = $1',
+                [eventID]
+            );
+
+            if (tripItemResult.rows.length === 0) {
+                return res.status(404).json({ message: 'Trip item not found' });
+            }
+            itemType = tripItemResult.rows[0].item_type;
+            console.log(`Item type found in trip-items table: ${itemType}`);
+        } catch (err) {
+            console.log("Error fetching item type from trip-items table:", err.message);
+            return res.status(500).json({ message: 'Error fetching item type from trip-items table' });
+        }
+
+        /*try {
             const result = await db.query(
                 'SELECT * FROM events WHERE id = $1',
                 [eventID]
@@ -47,6 +107,58 @@ router.get('/:id', (req, res, next) => {
             }
         } catch (dbErr) {
             console.log("DB lookup failed, trying Ticketmaster instead:", dbErr.message);
+        }*/
+
+        let result;
+        if (itemType === 'events') {
+            // If item type is 'events', fetch from the 'events' table
+            try {
+                result = await db.query(
+                    'SELECT * FROM events WHERE id = $1',
+                    [eventID]
+                );
+
+                if (result.rows.length > 0) {
+                    console.log("Found regular event in database");
+                    return res.json({ ...result.rows[0], type: 'regular-event' });
+                }
+            } catch (dbErr) {
+                console.log("Error fetching event from events table:", dbErr.message);
+            }
+        } else if (itemType === 'custom-event') {
+            // If item type is 'custom-event', fetch from the 'custom-events' table
+            try {
+                result = await db.query(
+                    'SELECT * FROM customevents WHERE id = $1',
+                    [eventID]
+                );
+
+                if (result.rows.length > 0) {
+                    console.log("Found custom event in database");
+                    const customEvent = result.rows[0];
+                
+                    return res.json({
+                        id: customEvent.id,
+                        name: customEvent.name,
+                        location: customEvent.location,
+                        date: customEvent.start_time.toISOString().split('T')[0],
+                        time: new Date(customEvent.start_time).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        }), 
+                        description: customEvent.description || 'No description available',
+                        price: customEvent.price || 'Free',
+                        image: customEvent.image || null,
+                        url: 'N/A',
+                        eventType: customEvent.type
+                    });
+                }
+            } catch (dbErr) {
+                console.log("Error fetching event from custom-events table:", dbErr.message);
+            }
+        } else {
+            return res.status(404).json({ message: 'Invalid item type in trip-items table' });
         }
 
         const tmApiKey = process.env.TICKETMASTER_API_KEY;
