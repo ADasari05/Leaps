@@ -69,6 +69,47 @@ router.get('/:id', auth, async (req, res) => {
     }
 });
 
+// Get trip items with associated date information
+router.get('/:id/items-with-dates', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        // Ensure the user has access to the trip
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips 
+             WHERE id = $1 
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'Not authorized to access this trip' });
+        }
+
+        // Fetch trip items with date information
+        const itemsResult = await db.query(
+            `SELECT ti.*, 
+                    e.start_time AS event_start_date, e.end_time AS event_end_date,
+                    t.departure AS travel_start_date, t.arrival AS travel_end_date,
+                    l.check_in_date AS lodging_start_date, l.check_out_date AS lodging_end_date
+             FROM trip_items ti
+             LEFT JOIN events e ON ti.item_type = 'event' AND ti.item_id = e.id::TEXT
+             LEFT JOIN travel t ON ti.item_type = 'travel' AND ti.item_id = t.id::TEXT
+             LEFT JOIN lodging l ON ti.item_type = 'lodging' AND ti.item_id = l.id::TEXT
+             WHERE ti.trip_id = $1
+             ORDER BY ti.created_at DESC`,
+            [tripId]
+        );
+
+        console.log("Items result:", itemsResult.rows); // Debugging log
+        res.json(itemsResult.rows);
+    } catch (err) {
+        console.error('Error fetching trip items with dates:', err);
+        res.status(500).json({ message: 'Server error fetching trip items with dates' });
+    }
+});
+
 // Create a new trip
 router.post('/', auth, async (req, res) => {
     try {

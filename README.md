@@ -34,7 +34,7 @@ When prompted for a password, use the password you created at setup for PostgreS
 ### Backend Setup (Server)
 Navigate to the server directory and install dependencies:
 
-    npm install express cors dotenv bcryptjs jsonwebtoken pg uuid 
+    npm install express cors dotenv bcryptjs jsonwebtoken pg uuid react-calendar
 
 ##Future installs after intial set up
    

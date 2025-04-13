@@ -294,3 +294,66 @@
     margin-right: 10px;
     margin-bottom: -10px;
 }
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.tabs button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tabs button.active {
+    background-color: #0056b3;
+}
+
+.tabs button:hover {
+    background-color: #0056b3;
+}
+
+.calendar-view {
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.calendar-event {
+    background-color: #7691ff;
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    margin-top: 5px;
+    font-size: 0.8rem;
+}
+
+.selected-date-events {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.selected-date-events h4 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.selected-date-events ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.selected-date-events li {
+    background-color: #f9f9f9;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}

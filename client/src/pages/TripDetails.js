@@ -6,7 +6,8 @@ import EventRecommendationsSearcher from '../components/EventRecommendationsSear
 import EventRecommendations from '../components/EventRecommendations';
 import AddToTripDialog from '../components/AddToTripDialog';
 import AddRecommendationDialog from "../components/AddRecommendationDialog";
-
+import Calendar from "react-calendar"; // Import a calendar library
+import "react-calendar/dist/Calendar.css"; // Import calendar styles
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -27,7 +28,10 @@ const TripDetails = () => {
     const [results, setResults] = useState({ events: [], travel: [], lodging: [] });
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-
+    const [activeTab, setActiveTab] = useState("details");
+    const [calendarEvents, setCalendarEvents] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [eventsForSelectedDate, setEventsForSelectedDate] = useState([]);
 
     const fetchTrip = async () => {
         setIsLoading(true);
@@ -81,8 +85,40 @@ const TripDetails = () => {
         }
     };
 
+    const fetchTripItemsWithDates = async () => {
+        try {
+            const response = await fetch(`/api/trips/${id}/items-with-dates`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch trip items with dates');
+
+            const items = await response.json();
+
+            const events = items.map((item) => {
+                const startDate =
+                    item.event_start_date || item.travel_start_date || item.lodging_start_date;
+                const endDate =
+                    item.event_end_date || item.travel_end_date || item.lodging_end_date;
+
+                return {
+                    title: item.name || item.item_type,
+                    startDate: startDate ? new Date(startDate) : null,
+                    endDate: endDate ? new Date(endDate) : null,
+                };
+            });
+
+            setCalendarEvents(events);
+        } catch (err) {
+            console.error('Error fetching trip items with dates:', err);
+        }
+    };
+
     useEffect(() => {
         fetchTrip();
+        fetchTripItemsWithDates();
 
         const fetchFriends = async () => {
             try {
@@ -156,6 +192,16 @@ const TripDetails = () => {
         }
     };
 
+    useEffect(() => {
+        if (trip && trip.items) {
+            console.log("Trip Items:", trip.items);
+            const events = trip.items.map((item) => ({
+                title: item.name || item.item_type,
+                date: item.date || item.start_date || item.end_date, // Adjust based on your data structure
+            }));
+            setCalendarEvents(events);
+        }
+    }, [trip]);
 
     const handleRemoveMember = async (memberId) => {
         if (memberId === userId) {
@@ -497,6 +543,50 @@ const TripDetails = () => {
         );
     };
 
+    const handleDateClick = (date) => {
+        setSelectedDate(date);
+        const eventsOnDate = calendarEvents.filter((event) => {
+            const eventStartDate = new Date(event.startDate || event.date);
+            const eventEndDate = new Date(event.endDate || event.date);
+            return date >= eventStartDate && date <= eventEndDate;
+        });
+        setEventsForSelectedDate(eventsOnDate);
+    };
+
+    const renderCalendarView = () => (
+        <div className="calendar-view">
+            <Calendar
+                onClickDay={handleDateClick} // Handle date selection
+                tileContent={({ date }) => {
+                    const eventsOnDate = calendarEvents.filter((event) => {
+                        const eventStartDate = new Date(event.startDate || event.date);
+                        const eventEndDate = new Date(event.endDate || event.date);
+                        return date >= eventStartDate && date <= eventEndDate;
+                    });
+                    return eventsOnDate.map((event, index) => (
+                        <div key={index} className="calendar-event">
+                            {event.title}
+                        </div>
+                    ));
+                }}
+            />
+            {selectedDate && (
+                <div className="selected-date-events">
+                    <h4>Events on {selectedDate.toDateString()}</h4>
+                    {eventsForSelectedDate.length > 0 ? (
+                        <ul>
+                            {eventsForSelectedDate.map((event, index) => (
+                                <li key={index}>{event.title}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>No events on this day.</p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+
     const voteToCancel = async () => {
         try {
             const response = await fetch(`/api/trips/${id}/vote-cancel`, {
@@ -614,114 +704,125 @@ const TripDetails = () => {
                     )}
                 </div>
             )}
-            {trip ? (
-                <>
-                    {isEditing ? (
-                        <>
-                            <input
-                                type="text"
-                                value={trip.name}
-                                onChange={(e) => setTrip({ ...trip, name: e.target.value })}
-                            />
-                            <textarea
-                                value={trip.description}
-                                onChange={(e) => setTrip({ ...trip, description: e.target.value })}
-                            />
-                            <input
-                                type="text"
-                                value={trip.destination}
-                                onChange={(e) => setTrip({ ...trip, destination: e.target.value })}
-                            />
-                            <input
-                                type="date"
-                                value={trip.startDate}
-                                onChange={(e) => setTrip({ ...trip, startDate: e.target.value })}
-                            />
-                            <input
-                                type="date"
-                                value={trip.endDate}
-                                onChange={(e) => setTrip({ ...trip, endDate: e.target.value })}
-                            />
-                            <button onClick={handleSaveTrip} className="save-trip-btn">Save Trip</button>
-                        </>
-                    ) : (
-                        <>
-                            <h2>{trip.name}</h2>
-                            <p>{trip.description}</p>
-                            <p><strong>Destination:</strong> {trip.destination}</p>
-                            <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                            {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
-                        </>
-                    )}
-                    {renderTripItems()}
-
-                    <div className="event-recommendations">
-                        {trip.current && (<button
-                            onClick={navRecommendations}
-                        >
-                            View Recommendations
-                        </button>)}
-                    </div>
-
-                    <div className="add-friend">
-                        <h3>Trip Members</h3>
-                        <ul>
-                            {tripMembers.map(member => (
-                                <li key={member.id} className={member.id === userId ? "current-user" : ""}>
-                                    <img
-                                        src={member.profile_pic}
-                                        className="profile-pic"
-                                    />
-                                    {member.username}
-                                    {member.id === userId ? "(me)" : ""}
-                                    {trip.creator_id === userId && member.id !== userId && (
-                                        <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
-                                    )}
-
-                                </li>
-                            ))}
-                        </ul>
-
-                        <h3>Add a Friend</h3>
-                        <select onChange={(e) => setSelectedFriend(e.target.value)} value={selectedFriend}>
-                            <option value="">Select a friend</option>
-                            {friends.map((friend) => (
-                                <option key={friend.id} value={friend.id}>
-                                    {friend.username}
-                                </option>
-                            ))}
-                        </select>
-                        <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
-                    </div>
-
-                    <div>
-                        <h3>Share by Link</h3>
-                        <p>Link: http://localhost:3001/trips/{id}/share</p>
-                    </div>
-                    {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
-                    <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
-
-                    {trip.current && (<div className="trip-cancellation">
-                        <h3>Cancel Votes</h3><p><strong>Cancel Votes:</strong> {cancelVotes}</p>
-                        {hasVotedToCancel ? (
-                            <button onClick={rescindVote} className="rescind-vote-btn">
-                                Rescind Cancellation Vote
-                            </button>
+            <div className="tabs">
+                <button onClick={() => setActiveTab("details")} className={activeTab === "details" ? "active" : ""}>
+                    Trip Details
+                </button>
+                <button onClick={() => setActiveTab("calendar")} className={activeTab === "calendar" ? "active" : ""}>
+                    Calendar View
+                </button>
+            </div>
+            {activeTab === "details" && (
+                trip ? (
+                    <>
+                        {isEditing ? (
+                            <>
+                                <input
+                                    type="text"
+                                    value={trip.name}
+                                    onChange={(e) => setTrip({ ...trip, name: e.target.value })}
+                                />
+                                <textarea
+                                    value={trip.description}
+                                    onChange={(e) => setTrip({ ...trip, description: e.target.value })}
+                                />
+                                <input
+                                    type="text"
+                                    value={trip.destination}
+                                    onChange={(e) => setTrip({ ...trip, destination: e.target.value })}
+                                />
+                                <input
+                                    type="date"
+                                    value={trip.startDate}
+                                    onChange={(e) => setTrip({ ...trip, startDate: e.target.value })}
+                                />
+                                <input
+                                    type="date"
+                                    value={trip.endDate}
+                                    onChange={(e) => setTrip({ ...trip, endDate: e.target.value })}
+                                />
+                                <button onClick={handleSaveTrip} className="save-trip-btn">Save Trip</button>
+                            </>
                         ) : (
-                            <button onClick={voteToCancel} className="cancel-vote-btn">
-                                Vote to Cancel Trip
-                            </button>
+                            <>
+                                <h2>{trip.name}</h2>
+                                <p>{trip.description}</p>
+                                <p><strong>Destination:</strong> {trip.destination}</p>
+                                <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
+                                {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
+                            </>
                         )}
-                        {trip.isCancelled && (
-                            <button onClick={restoreTrip} className="restore-trip-btn">
-                                Restore Trip
-                            </button>
-                        )}
-                    </div>)}
-                </>
-            ) : (
-                <p className="error">Trip not found.</p>
+                        {renderTripItems()}
+
+                        <div className="event-recommendations">
+                            {trip.current && (<button
+                                onClick={navRecommendations}
+                            >
+                                View Recommendations
+                            </button>)}
+                        </div>
+
+                        <div className="add-friend">
+                            <h3>Trip Members</h3>
+                            <ul>
+                                {tripMembers.map(member => (
+                                    <li key={member.id} className={member.id === userId ? "current-user" : ""}>
+                                        <img
+                                            src={member.profile_pic}
+                                            className="profile-pic"
+                                        />
+                                        {member.username}
+                                        {member.id === userId ? "(me)" : ""}
+                                        {trip.creator_id === userId && member.id !== userId && (
+                                            <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                                        )}
+
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <h3>Add a Friend</h3>
+                            <select onChange={(e) => setSelectedFriend(e.target.value)} value={selectedFriend}>
+                                <option value="">Select a friend</option>
+                                {friends.map((friend) => (
+                                    <option key={friend.id} value={friend.id}>
+                                        {friend.username}
+                                    </option>
+                                ))}
+                            </select>
+                            <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
+                        </div>
+
+                        <div>
+                            <h3>Share by Link</h3>
+                            <p>Link: http://localhost:3001/trips/{id}/share</p>
+                        </div>
+                        {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
+                        <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
+
+                        {trip.current && (<div className="trip-cancellation">
+                            <h3>Cancel Votes</h3><p><strong>Cancel Votes:</strong> {cancelVotes}</p>
+                            {hasVotedToCancel ? (
+                                <button onClick={rescindVote} className="rescind-vote-btn">
+                                    Rescind Cancellation Vote
+                                </button>
+                            ) : (
+                                <button onClick={voteToCancel} className="cancel-vote-btn">
+                                    Vote to Cancel Trip
+                                </button>
+                            )}
+                            {trip.isCancelled && (
+                                <button onClick={restoreTrip} className="restore-trip-btn">
+                                    Restore Trip
+                                </button>
+                            )}
+                        </div>)}
+                    </>
+                ) : (
+                    <p className="error">Trip not found.</p>
+                )
             )}
+            {activeTab === "calendar" && renderCalendarView()}
             <ChatWindow tripId={id} userId={userId} />
         </div>
     );
