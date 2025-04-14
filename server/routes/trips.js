@@ -40,13 +40,27 @@ router.get('/:id', auth, async (req, res) => {
 
         const trip = result.rows[0];
 
+        // Fetch trip items with date information
         const itemsResult = await db.query(
-            'SELECT * FROM trip_items WHERE trip_id = $1 ORDER BY created_at DESC',
+            `SELECT ti.*, 
+                    e.start_time AS event_start_date, e.end_time AS event_end_date,
+                    t.departure AS travel_start_date, t.arrival AS travel_end_date,
+                    l.check_in_date AS lodging_start_date, l.check_out_date AS lodging_end_date
+             FROM trip_items ti
+             LEFT JOIN events e ON ti.item_type = 'event' AND ti.item_id = e.id::TEXT
+             LEFT JOIN travel t ON ti.item_type = 'travel' AND ti.item_id = t.id::TEXT
+             LEFT JOIN lodging l ON ti.item_type = 'lodging' AND ti.item_id = l.id::TEXT
+             WHERE ti.trip_id = $1
+             ORDER BY ti.created_at DESC`,
             [tripId]
         );
-        
-        trip.items = itemsResult.rows;
 
+        // Map date information to items
+        trip.items = itemsResult.rows.map(item => ({
+            ...item,
+            start_date: item.event_start_date || item.travel_start_date || item.lodging_start_date,
+            end_date: item.event_end_date || item.travel_end_date || item.lodging_end_date
+        }));
 
         // Fetch trip members, including the creator
         const membersResult = await db.query(

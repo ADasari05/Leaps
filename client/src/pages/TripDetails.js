@@ -6,8 +6,8 @@ import EventRecommendationsSearcher from '../components/EventRecommendationsSear
 import EventRecommendations from '../components/EventRecommendations';
 import AddToTripDialog from '../components/AddToTripDialog';
 import AddRecommendationDialog from "../components/AddRecommendationDialog";
-import Calendar from "react-calendar"; // Import a calendar library
-import "react-calendar/dist/Calendar.css"; // Import calendar styles
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -197,7 +197,8 @@ const TripDetails = () => {
             console.log("Trip Items:", trip.items);
             const events = trip.items.map((item) => ({
                 title: item.name || item.item_type,
-                date: item.date || item.start_date || item.end_date, // Adjust based on your data structure
+                startDate: item.start_date ? new Date(item.start_date) : null,
+                endDate: item.end_date ? new Date(item.end_date) : null,
             }));
             setCalendarEvents(events);
         }
@@ -545,10 +546,12 @@ const TripDetails = () => {
 
     const handleDateClick = (date) => {
         setSelectedDate(date);
+        console.log('calendarEvents:', calendarEvents);
         const eventsOnDate = calendarEvents.filter((event) => {
-            const eventStartDate = new Date(event.startDate || event.date);
-            const eventEndDate = new Date(event.endDate || event.date);
-            return date >= eventStartDate && date <= eventEndDate;
+            const eventStartDate = event.startDate ? new Date(event.startDate).setHours(0, 0, 0, 0) : null;
+            const eventEndDate = event.endDate ? new Date(event.endDate).setHours(23, 59, 59, 999) : null;
+            const selectedDate = new Date(date).setHours(0, 0, 0, 0);
+            return selectedDate >= eventStartDate && selectedDate <= eventEndDate;
         });
         setEventsForSelectedDate(eventsOnDate);
     };
@@ -559,9 +562,10 @@ const TripDetails = () => {
                 onClickDay={handleDateClick} // Handle date selection
                 tileContent={({ date }) => {
                     const eventsOnDate = calendarEvents.filter((event) => {
-                        const eventStartDate = new Date(event.startDate || event.date);
-                        const eventEndDate = new Date(event.endDate || event.date);
-                        return date >= eventStartDate && date <= eventEndDate;
+                        const eventStartDate = event.startDate ? new Date(event.startDate).setHours(0, 0, 0, 0) : null;
+                        const eventEndDate = event.endDate ? new Date(event.endDate).setHours(23, 59, 59, 999) : null;
+                        const tileDate = new Date(date).setHours(0, 0, 0, 0);
+                        return tileDate >= eventStartDate && tileDate <= eventEndDate;
                     });
                     return eventsOnDate.map((event, index) => (
                         <div key={index} className="calendar-event">
