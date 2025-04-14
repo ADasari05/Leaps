@@ -27,7 +27,7 @@
     display: flex;
     justify-content: center;
     gap: 30px; /* Controls spacing between links */
-    padding-left: 17%; /* Adjust this percentage as needed */
+    padding-left: 10%; /* Adjust this percentage as needed */
 }
 
 /* Individual Nav Items */
