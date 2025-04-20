@@ -42,7 +42,7 @@ const Navbar = () => {
         <nav className="navbar">
             {/*Home button*/}
             <div className="home">
-                <Link to="/signup">
+                <Link to="/home">
                 <img src={LeapsLogo} alt="Home" className="home"/>
                 </Link>
             </div>

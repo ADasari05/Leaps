@@ -7,6 +7,7 @@ import './styles/Comparison.css';
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import HomePage from "./pages/HomePage";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import AccountPage from "./pages/AccountPage";
@@ -63,11 +64,12 @@ function App() {
         <Navbar />
         <div style={{ padding: "1rem" }}>          
           <Routes>
-            <Route path="/" element={<Navigate to="/signup" />} />
+            <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/login" element={<Login setAuth={setAuth} setTheme={setTheme} />} />
             <Route path="/signup" element={<SignUp setAuth={setAuth} />} />
 
             {/* Public routes that allow guest access */}
+            <Route path="/home" element={<HomePage />} />
             <Route path="/events" element={<Events />} />
             <Route path="/customevents" element={<CustomEvents />} />
             <Route path="/create-event" element={<CreateNewEvent />} />
