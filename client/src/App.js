@@ -28,6 +28,7 @@ import Search from './pages/SearchPage';
 import Share from './pages/Share';
 import Lodgings from "./pages/Lodgings";
 import Travel from "./pages/Travel";
+import NotificationPage from "./pages/NotificationPage";
 import { isAuthenticated } from "./services/authService"; 
 import { useState, useEffect } from "react";
 import './App.css';
@@ -88,6 +89,9 @@ function App() {
             } />
             <Route path="/createtrip" element={
               auth ? <CreateTrip /> : <Navigate to="/login" />
+            } />
+            <Route path="/notifications" element={
+              <NotificationPage />
             } />
             <Route path="/trips" element={
               <Trips />

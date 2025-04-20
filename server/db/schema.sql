@@ -2,7 +2,18 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
-DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, customevents, travel, friend_requests, lodging, trip_items, trip_item_votes, trip_cancellation_votes, messages,  CASCADE;
+DROP TABLE IF EXISTS users, 
+                     friendships, 
+                     trips, 
+                     trip_members, 
+                     events, customevents, 
+                     travel, friend_requests, 
+                     lodging, trip_items, 
+                     trip_item_votes, 
+                     trip_cancellation_votes, 
+                     messages, 
+                     notifications, 
+                     CASCADE;
 DROP INDEX IF EXISTS idx_events_name, 
                      idx_events_location, 
                      idx_events_type, 
@@ -161,6 +172,17 @@ CREATE TABLE messages (
     sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     attachment_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+/* Notification table */
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    type TEXT,
+    message TEXT,
+    is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

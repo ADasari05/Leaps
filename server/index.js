@@ -12,6 +12,7 @@ const searchRoutes = require('./routes/search');
 const lodgingsRoutes = require('./routes/lodgings');
 const travelRoutes = require('./routes/travel');
 const eventsRoutes = require('./routes/Events');
+const notificationRoutes = require('./routes/notifications');
 
 const http = require('http'); 
 const socketIo = require('socket.io');
@@ -54,6 +55,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/lodgings', lodgingsRoutes);
 app.use('/api/travel', travelRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', require('./routes/messages'));
 
 app.get('/', (req, res) => {
