@@ -61,6 +61,8 @@ Navigate to the client directory and install dependencies:
 
     npm install
     npm install socket.io-client
+    npm install react-calendar
+    npm install react-scroll
 
 Start the React development server:
 
