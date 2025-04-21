@@ -6,6 +6,7 @@ import EventRecommendationsSearcher from '../components/EventRecommendationsSear
 import EventRecommendations from '../components/EventRecommendations';
 import AddToTripDialog from '../components/AddToTripDialog';
 import AddRecommendationDialog from "../components/AddRecommendationDialog";
+import CostSummary from "../components/CostSummary";
 
 
 const TripDetails = () => {
@@ -27,6 +28,11 @@ const TripDetails = () => {
     const [results, setResults] = useState({ events: [], travel: [], lodging: [] });
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
+    const [costs, setCosts] = useState({
+                                        total: 0,
+                                        perUser: 0,
+                                        youOwe: 0,
+                                    });
 
 
     const fetchTrip = async () => {
@@ -80,6 +86,23 @@ const TripDetails = () => {
             setIsLoading(false);
         }
     };
+
+    // Fetch cost summary once trip loads
+    useEffect(() => {
+        if (!trip) return;
+        (async () => {
+            try {
+                const res = await fetch(`/api/trips/${id}/costs`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) throw new Error("Failed to fetch costs");
+                const { totalCost, splitCost, youOwe } = await res.json();
+                setCosts({ total: totalCost, perUser: splitCost, youOwe });
+            } catch (err) {
+              console.error("Error loading cost summary:", err);
+            }
+        })();
+    }, [trip, id, token]);
 
     useEffect(() => {
         fetchTrip();
@@ -603,6 +626,11 @@ const TripDetails = () => {
 
     return (
         <div className="trip-details">
+            <CostSummary
+                total={costs.total}
+                perUser={costs.perUser}
+                youOwe={costs.youOwe}
+            />
             {isTripCancelled && (
                 <div className="cancelled-sidebar">
                     <h3>Trip Cancelled</h3>
@@ -654,7 +682,7 @@ const TripDetails = () => {
                         </>
                     )}
                     {renderTripItems()}
-
+                    {renderTripItems()}
                     <div className="event-recommendations">
                         {trip.current && (<button
                             onClick={navRecommendations}
