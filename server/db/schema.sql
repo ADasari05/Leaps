@@ -68,6 +68,7 @@ CREATE TABLE trips (
 CREATE TABLE trip_members (
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    cost_ratio NUMERIC(5,4) CHECK (cost_ratio > 0 AND cost_ratio <= 1),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, user_id)
 );
@@ -133,6 +134,7 @@ CREATE TABLE trip_items (
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'events', 'custom-event', 'travel', 'lodging')),
     item_id VARCHAR(255) NOT NULL, 
+    actual_price NUMERIC(10,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, item_type, item_id)
 );

@@ -686,5 +686,63 @@ router.put('/mark-as-current/:tripId', auth, async (req, res) => {
     }
 });
 
+router.get('/:tripId/costs', auth, async (req, res) => {
+    const { tripId } = req.params;
+    const userId     = req.user.id;
+  
+    try {
+      const result = await db.query(
+        `WITH item_prices AS (
+           SELECT 
+             COALESCE(
+               ti.actual_price,
+               CASE ti.item_type
+                 WHEN 'event'        THEN (SELECT price      FROM events       WHERE id = ti.item_id::uuid)
+                 WHEN 'custom-event' THEN (SELECT price      FROM customevents WHERE id = ti.item_id::uuid)
+                 WHEN 'travel'       THEN (SELECT price      FROM travel       WHERE id = ti.item_id::uuid)
+                 WHEN 'lodging'      THEN (
+                                       SELECT price_per_night
+                                              * GREATEST(
+                                                  DATE_PART('day', check_out_date - check_in_date),
+                                                  1
+                                                )
+                                       FROM lodging
+                                       WHERE id = ti.item_id::uuid
+                                     )
+                 ELSE 0
+               END
+             ) AS price
+           FROM trip_items ti
+           WHERE ti.trip_id = $1
+         ), member_ratios AS (
+           SELECT user_id, cost_ratio
+           FROM trip_members
+           WHERE trip_id = $1
+         )
+         SELECT
+           SUM(ip.price)                                  AS "totalCost",
+           COALESCE(SUM(ip.price) / COUNT(mr.*), 0)       AS "splitCost",
+           COALESCE(
+             (SELECT cost_ratio FROM member_ratios WHERE user_id = $2),
+             1.0 / NULLIF(COUNT(mr.*),0)
+           ) * SUM(ip.price)                              AS "youOwe"
+         FROM item_prices ip
+         CROSS JOIN member_ratios mr;`,
+        [tripId, userId]
+      );
+  
+      if (!result.rows.length) {
+        return res.status(404).json({ msg: 'Trip not found or no members' });
+      }
+  
+      const { totalCost, splitCost, youOwe } = result.rows[0];
+      res.json({ totalCost, splitCost, youOwe });
+  
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Server error');
+    }
+  });
+
 
 module.exports = router;
