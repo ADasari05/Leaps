@@ -63,8 +63,8 @@ const TripDetails = () => {
                 const vote = votesData.find(v => v.trip_item_id === item.id) || {};
                 return {
                     ...item,
-                    upVotes: vote.upvotes ?? 0, // Correctly use `upvotes` from votesData
-                    downVotes: vote.downvotes ?? 0 // Correctly use `downvotes` from votesData
+                    upVotes: vote.upvotes ?? 0,
+                    downVotes: vote.downvotes ?? 0
                 };
             });
 
@@ -74,9 +74,8 @@ const TripDetails = () => {
                 startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
                 endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
             });
-            setEvents(data.events || []); // Assuming events are part of the trip data
-            setTripMembers(data.members || []); // Ensure members are stored
-            console.log("Trip Members:", data.members); // Debugging log
+            setEvents(data.events || []);
+            fetchTripMembers();
         } catch (err) {
             setError('Error loading trip. Please try again later.');
             console.error('Error fetching trip:', err);
@@ -179,14 +178,14 @@ const TripDetails = () => {
 
     const fetchTripMembers = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/api/trips/${id}`, {
+            const response = await fetch(`/api/trips/${id}/members`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
             if (!response.ok) throw new Error("Failed to fetch trip members");
 
             const data = await response.json();
-            setTripMembers(data.members || []);
+            setTripMembers(data || []);
         } catch (err) {
             console.error("Error fetching trip members:", err);
         }
@@ -521,12 +520,14 @@ const TripDetails = () => {
                                     >
                                         View Details
                                     </button>
-                                    <button
-                                        onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
-                                        className="delete-item-btn"
-                                    >
-                                        Remove
-                                    </button>
+                                    {tripMembers.find(m => m.id === userId)?.role !== "view" && (
+                                        <button
+                                            onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
+                                            className="delete-item-btn"
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
                                     <div className="vote-buttons">
                                         <button onClick={() => handleVote(item.id, 'up')} className="thumbs-up-btn">
                                             👍 {item.upVotes || 0}
@@ -687,6 +688,27 @@ const TripDetails = () => {
         navigate('./recommendation');
     }
 
+    const handleUpdateRole = async (memberId, newRole) => {
+        try {
+            const response = await fetch(`/api/trips/${id}/members/${memberId}/role`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+
+            if (!response.ok) throw new Error('Failed to update role');
+
+            alert('Role updated successfully');
+            window.location.reload();
+        } catch (err) {
+            console.error('Error updating role:', err);
+            alert('Failed to update role');
+        }
+    };
+
     if (isLoading) {
         return <div className="trip-details"><p className="loading">Loading trip details...</p></div>;
     }
@@ -778,9 +800,19 @@ const TripDetails = () => {
                                         {member.username}
                                         {member.id === userId ? "(me)" : ""}
                                         {trip.creator_id === userId && member.id !== userId && (
-                                            <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                                            <>
+                                                <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
+                                                <select
+                                                    value={member.role || "permissions"}
+                                                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                                                >
+                                                    <option value="permissions" disabled>Permissions</option>
+                                                    <option value="view">View</option>
+                                                    <option value="edit">Edit</option>
+                                                    <option value="co-creator">Co-Creator</option>
+                                                </select>
+                                            </>
                                         )}
-
                                     </li>
                                 ))}
                             </ul>
@@ -802,7 +834,9 @@ const TripDetails = () => {
                             <p>Link: http://localhost:3001/trips/{id}/share</p>
                         </div>
                         {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
-                        <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
+                        {(tripMembers.find(m => m.id === userId)?.role === "creator" || tripMembers.find(m => m.id === userId)?.role === "co-creator") && (
+                            <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
+                        )}
 
                         {trip.current && (<div className="trip-cancellation">
                             <h3>Cancel Votes</h3><p><strong>Cancel Votes:</strong> {cancelVotes}</p>

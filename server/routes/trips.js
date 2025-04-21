@@ -116,7 +116,7 @@ router.get('/:id/items-with-dates', auth, async (req, res) => {
             [tripId]
         );
 
-        console.log("Items result:", itemsResult.rows); // Debugging log
+        //console.log("Items result:", itemsResult.rows); // Debugging log
         res.json(itemsResult.rows);
     } catch (err) {
         console.error('Error fetching trip items with dates:', err);
@@ -562,6 +562,59 @@ router.delete('/:tripId/remove-member/:memberId', auth, async (req, res) => {
     } catch (err) {
         console.error('Error removing member:', err);
         res.status(500).json({ message: 'Server error removing member' });
+    }
+});
+
+// Assign a role to a trip member
+router.put('/:tripId/members/:memberId/role', auth, async (req, res) => {
+    try {
+        const { tripId, memberId } = req.params;
+        const { role } = req.body;
+        const userId = req.user.id;
+
+        // Ensure the user is the creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0 || tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the trip creator can update roles' });
+        }
+
+        // Update or insert the member's role
+        const result = await db.query(
+            `INSERT INTO trip_member_roles (trip_id, user_id, role) 
+             VALUES ($1, $2, $3)
+             ON CONFLICT (trip_id, user_id) 
+             DO UPDATE SET role = $3 RETURNING *`,
+            [tripId, memberId, role]
+        );
+
+        res.json({ message: 'Role updated successfully', member: result.rows[0] });
+    } catch (err) {
+        console.error('Error updating member role:', err);
+        res.status(500).json({ message: 'Server error updating member role' });
+    }
+});
+
+// Fetch trip members with roles
+router.get('/:tripId/members', auth, async (req, res) => {
+    try {
+        const { tripId } = req.params;
+
+        const members = await db.query(
+            `SELECT u.id, u.username, u.profile_pic, r.role
+             FROM users u
+             JOIN trip_member_roles r ON u.id = r.user_id
+             WHERE r.trip_id = $1`,
+            [tripId]
+        );
+        console.log("Members result:", members.rows);
+        res.json(members.rows);
+    } catch (err) {
+        console.error('Error fetching trip members with roles:', err);
+        res.status(500).json({ message: 'Server error fetching trip members' });
     }
 });
 
