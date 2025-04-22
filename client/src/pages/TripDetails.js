@@ -75,6 +75,7 @@ const TripDetails = () => {
                 endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
             });
             setEvents(data.events || []);
+            setTripMembers(data.members || []);
             fetchTripMembers();
         } catch (err) {
             setError('Error loading trip. Please try again later.');
@@ -185,7 +186,7 @@ const TripDetails = () => {
             if (!response.ok) throw new Error("Failed to fetch trip members");
 
             const data = await response.json();
-            setTripMembers(data || []);
+            //setTripMembers(data || []);
         } catch (err) {
             console.error("Error fetching trip members:", err);
         }
@@ -709,6 +710,33 @@ const TripDetails = () => {
         }
     };
 
+    const handlePromoteToCreator = async (memberId) => {
+        const confirmPromotion = window.confirm(
+            "Are you sure you want to promote this user to Creator? You will lose your Creator status."
+        );
+
+        if (!confirmPromotion) return;
+
+        try {
+            const response = await fetch(`/api/trips/${id}/promote-to-creator`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ newCreatorId: memberId }),
+            });
+
+            if (!response.ok) throw new Error("Failed to promote user to Creator");
+
+            alert("User promoted to Creator successfully!");
+            window.location.reload();
+        } catch (err) {
+            console.error("Error promoting user to Creator:", err);
+            alert("Failed to promote user to Creator.");
+        }
+    };
+
     if (isLoading) {
         return <div className="trip-details"><p className="loading">Loading trip details...</p></div>;
     }
@@ -811,6 +839,12 @@ const TripDetails = () => {
                                                     <option value="edit">Edit</option>
                                                     <option value="co-creator">Co-Creator</option>
                                                 </select>
+                                                <button
+                                                    onClick={() => handlePromoteToCreator(member.id)}
+                                                    className="promote-to-creator-btn"
+                                                >
+                                                    Promote to Creator
+                                                </button>
                                             </>
                                         )}
                                     </li>
@@ -834,7 +868,7 @@ const TripDetails = () => {
                             <p>Link: http://localhost:3001/trips/{id}/share</p>
                         </div>
                         {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
-                        {(tripMembers.find(m => m.id === userId)?.role === "creator" || tripMembers.find(m => m.id === userId)?.role === "co-creator") && (
+                        {(trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
                             <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
                         )}
 

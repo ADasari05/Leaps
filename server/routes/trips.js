@@ -794,5 +794,77 @@ router.put('/mark-as-current/:tripId', auth, async (req, res) => {
     }
 });
 
+// Promote a user to Creator
+router.put('/:id/promote-to-creator', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const { newCreatorId } = req.body;
+        const userId = req.user.id;
+
+        // Ensure the user is the current creator of the trip
+        const tripCheck = await db.query(
+            'SELECT creator_id FROM trips WHERE id = $1',
+            [tripId]
+        );
+
+        if (tripCheck.rows.length === 0 || tripCheck.rows[0].creator_id !== userId) {
+            return res.status(403).json({ message: 'Only the current Creator can promote another user to Creator' });
+        }
+
+        // Start a transaction
+        await db.query('BEGIN');
+
+        // Add the current creator as a "co-creator" in trip_member_roles
+        await db.query(
+            `INSERT INTO trip_member_roles (trip_id, user_id, role) 
+             VALUES ($1, $2, 'co-creator') 
+             ON CONFLICT (trip_id, user_id) 
+             DO UPDATE SET role = 'co-creator'`,
+            [tripId, userId]
+        );
+
+        // Ensure the current creator is in trip_members
+        await db.query(
+            `INSERT INTO trip_members (trip_id, user_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT DO NOTHING`,
+            [tripId, userId]
+        );
+
+        // Remove the new creator from trip_members
+        await db.query(
+            `DELETE FROM trip_members 
+             WHERE trip_id = $1 AND user_id = $2`,
+            [tripId, newCreatorId]
+        );
+
+        // Remove the new creator from any previous role in trip_member_roles
+        await db.query(
+            `DELETE FROM trip_member_roles 
+             WHERE trip_id = $1 AND user_id = $2`,
+            [tripId, newCreatorId]
+        );
+
+        // Update the trip's creator_id
+        const result = await db.query(
+            'UPDATE trips SET creator_id = $1 WHERE id = $2 RETURNING *',
+            [newCreatorId, tripId]
+        );
+
+        if (result.rows.length === 0) {
+            await db.query('ROLLBACK');
+            return res.status(404).json({ message: 'Trip not found' });
+        }
+
+        // Commit the transaction
+        await db.query('COMMIT');
+
+        res.json({ message: 'User promoted to Creator successfully', trip: result.rows[0] });
+    } catch (err) {
+        console.error('Error promoting user to Creator:', err);
+        await db.query('ROLLBACK');
+        res.status(500).json({ message: 'Server error promoting user to Creator' });
+    }
+});
 
 module.exports = router;
