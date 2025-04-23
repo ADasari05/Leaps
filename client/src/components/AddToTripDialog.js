@@ -50,18 +50,18 @@ const AddToTripDialog = ({ open, onClose, item }) => {
 
   const addToTrip = (tripId) => {
     setLoading(true);
-    console.log("Would send to server:", { tripId, itemType: item.type, itemId: item.id });
+    console.log("Would send to server:", { tripId, itemType: item.type, itemId: item.id, price: item.min_price});
     fetch('/api/trips/add-item', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ tripId, itemType: item.type, itemId: item.id }),
+      body: JSON.stringify({ tripId, itemType: item.type, itemId: item.id, price: item.min_price }),
     })
     .then(res => {
       if (!res.ok) throw new Error('Failed to add item');
-      console.log("Sending to server:", { tripId, itemType: item.type, itemId: item.id });
+      console.log("Sending to server:", { tripId, itemType: item.type, itemId: item.id, price: item.price });
       setSuccess(`Successfully added to trip!`);
       setTimeout(() => onClose(), 1500);
       

@@ -227,6 +227,56 @@ const Travel = () => {
         });
     };
 
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const getDistanceFromAPI = async (from, to) => {
+  // 1. Geocode origin
+  const originRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(from)}&format=json&limit=1`, {
+    headers: {
+      'User-Agent': 'LeapsApp/1.0'
+    }
+  });
+  const originData = await originRes.json();
+  await delay(1000); // respect rate limit
+
+  // 2. Geocode destination
+  const destRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(to)}&format=json&limit=1`, {
+    headers: {
+      'User-Agent': 'LeapsApp/1.0'
+    }
+  });
+  const destData = await destRes.json();
+  await delay(1000); // respect rate limit
+
+  if (!originData.length || !destData.length) throw new Error("Location not found");
+
+  const originCoord = `${originData[0].lon},${originData[0].lat}`;
+  const destCoord = `${destData[0].lon},${destData[0].lat}`;
+
+  // 3. Get driving distance from OSRM
+  const routeRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${originCoord};${destCoord}?overview=false`);
+  const routeData = await routeRes.json();
+
+  if (routeData.code !== 'Ok' || !routeData.routes.length) {
+    throw new Error("Routing failed");
+  }
+
+  const distanceInMiles = routeData.routes[0].distance / 1609.34;
+  return parseFloat(distanceInMiles.toFixed(1));
+};
+
+const calculateDrivingCost = ({ distance, fuelPrice = 3.5, fuelEfficiency = 25, tolls = 0 }) => {
+  const gallonsNeeded = distance / fuelEfficiency;
+  const fuelCost = gallonsNeeded * fuelPrice;
+  const total = fuelCost + tolls;
+  return {
+    fuelCost: fuelCost.toFixed(2),
+    tollCost: tolls.toFixed(2),
+    totalCost: total.toFixed(2),
+    distance: distance.toFixed(1)
+  };
+};
+
     const handleCreateDriving = async () => {
         if (!newDriving.departure_location || !newDriving.arrival_location) {
           alert('Please enter both departure and arrival locations');
@@ -234,14 +284,33 @@ const Travel = () => {
         }
     
         try {
-          const response = await fetch('/api/travel', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(newDriving)
-          });
+            const distance = await getDistanceFromAPI(
+                newDriving.departure_location,
+                newDriving.arrival_location
+              );
+          
+              // Estimate cost
+              const costEstimate = calculateDrivingCost({
+                distance,
+                fuelPrice: 3.5,
+                fuelEfficiency: 25,
+                tolls: 0
+              });
+          
+              const drivingData = {
+                ...newDriving,
+                price: parseFloat(costEstimate.totalCost),
+                notes: `${newDriving.notes} (Est. distance: ${costEstimate.distance} mi)`
+              };
+          
+              const response = await fetch('/api/travel', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(drivingData)
+              });
           if (!response.ok) {
             throw new Error('Failed to create driving option');
           }
@@ -286,7 +355,7 @@ const Travel = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ tripId, itemType: 'travel', itemId: selectedTravel.id })
+                body: JSON.stringify({ tripId, itemType: 'travel', itemId: selectedTravel.id, price: selectedTravel.price })
             });
 
             if (!response.ok) throw new Error('Failed to add travel to trip');

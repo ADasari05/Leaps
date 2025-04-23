@@ -171,7 +171,7 @@ const Lodgings = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ tripId, itemType: 'lodging', itemId: selectedLodging.id })
+                body: JSON.stringify({ tripId, itemType: 'lodging', itemId: selectedLodging.id, price: selectedLodging.price_per_night})
             });
 
             if (!response.ok) throw new Error('Failed to add lodging to trip');

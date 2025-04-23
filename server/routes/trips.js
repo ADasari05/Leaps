@@ -194,12 +194,12 @@ router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
 
 // Add an item (event, travel, lodging) to a trip
 router.post('/add-item', auth, async (req, res) => {
-    const { tripId, itemType, itemId } = req.body;
-    console.log("Received:", { tripId, itemType, itemId });
+    const { tripId, itemType, itemId, price} = req.body;
+    console.log("Received:", { tripId, itemType, itemId, price});
     try {
       const result = await db.query(
-        'INSERT INTO trip_items (trip_id, item_type, item_id) VALUES ($1, $2, $3) RETURNING *',
-        [tripId, itemType, itemId]
+        'INSERT INTO trip_items (trip_id, item_type, item_id, price) VALUES ($1, $2, $3, $4) RETURNING *',
+        [tripId, itemType, itemId, price]
       );
       res.json(result.rows[0]);
     } catch (error) {
@@ -686,63 +686,63 @@ router.put('/mark-as-current/:tripId', auth, async (req, res) => {
     }
 });
 
-router.get('/:tripId/costs', auth, async (req, res) => {
-    const { tripId } = req.params;
-    const userId     = req.user.id;
-  
+router.get('/:tripId/cost-summary', auth, async (req, res, next) => {
     try {
-      const result = await db.query(
-        `WITH item_prices AS (
-           SELECT 
-             COALESCE(
-               ti.actual_price,
-               CASE ti.item_type
-                 WHEN 'event'        THEN (SELECT price      FROM events       WHERE id = ti.item_id::uuid)
-                 WHEN 'custom-event' THEN (SELECT price      FROM customevents WHERE id = ti.item_id::uuid)
-                 WHEN 'travel'       THEN (SELECT price      FROM travel       WHERE id = ti.item_id::uuid)
-                 WHEN 'lodging'      THEN (
-                                       SELECT price_per_night
-                                              * GREATEST(
-                                                  DATE_PART('day', check_out_date - check_in_date),
-                                                  1
-                                                )
-                                       FROM lodging
-                                       WHERE id = ti.item_id::uuid
-                                     )
-                 ELSE 0
-               END
-             ) AS price
-           FROM trip_items ti
-           WHERE ti.trip_id = $1
-         ), member_ratios AS (
-           SELECT user_id, cost_ratio
-           FROM trip_members
-           WHERE trip_id = $1
-         )
-         SELECT
-           SUM(ip.price)                                  AS "totalCost",
-           COALESCE(SUM(ip.price) / COUNT(mr.*), 0)       AS "splitCost",
-           COALESCE(
-             (SELECT cost_ratio FROM member_ratios WHERE user_id = $2),
-             1.0 / NULLIF(COUNT(mr.*),0)
-           ) * SUM(ip.price)                              AS "youOwe"
-         FROM item_prices ip
-         CROSS JOIN member_ratios mr;`,
-        [tripId, userId]
+      const tripId = req.params.tripId;
+      const userId = req.user.id;
+  
+      // 1. sum all prices on this trip
+      const { rows: evs } = await db.query(
+        `SELECT price FROM trip_items WHERE trip_id = $1`, [tripId]
       );
+      const total = evs.reduce((sum, r) => sum + Number(r.price||0), 0);
   
-      if (!result.rows.length) {
-        return res.status(404).json({ msg: 'Trip not found or no members' });
-      }
+      // 2. load members
+      const { rows: members } = await db.query(
+        `SELECT u.id, u.username 
+           FROM trip_members tm 
+           JOIN users u ON tm.user_id = u.id 
+          WHERE tm.trip_id = $1
+         UNION
+         SELECT creator_id AS id, '' AS username
+           FROM trips WHERE id = $1`, [tripId]
+      );
+      const share = members.length ? total / members.length : 0;
   
-      const { totalCost, splitCost, youOwe } = result.rows[0];
-      res.json({ totalCost, splitCost, youOwe });
+      const perUser = members.map(u => ({
+        userId:   u.id,
+        username: u.username || (u.id === userId ? req.user.username : '—'),
+        cost:     Number(share.toFixed(2))
+      }));
   
+      const yourCost = perUser.find(u => u.userId === userId)?.cost || 0;
+      res.json({
+        totalCost: Number(total.toFixed(2)),
+        perUser,
+        yourCost
+      });
     } catch (err) {
       console.error(err);
-      res.status(500).send('Server error');
+      res.status(500).json({ message: 'Server error in cost-summary' });
     }
   });
-
+  
+  router.put('/:tripId/items/:itemId/price', auth, async (req, res) => {
+    try {
+      const { tripId, itemId } = req.params;
+      const { price } = req.body;
+      await db.query(
+        `UPDATE trip_items
+            SET price = $1
+          WHERE trip_id = $2 AND id = $3`,
+        [price, tripId, itemId]
+      );
+      res.sendStatus(204);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error updating price' });
+    }
+  });
+  
 
 module.exports = router;

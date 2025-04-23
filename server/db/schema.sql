@@ -81,6 +81,8 @@ CREATE TABLE events (
     location VARCHAR(255) NOT NULL,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP,
+    min_price DOUBLE PRECISION,
+    max_price DOUBLE PRECISION,
     price DOUBLE PRECISION,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -134,7 +136,9 @@ CREATE TABLE trip_items (
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     item_type VARCHAR(50) NOT NULL CHECK (item_type IN ('event', 'events', 'custom-event', 'travel', 'lodging')),
     item_id VARCHAR(255) NOT NULL, 
-    actual_price NUMERIC(10,2),
+    min_price DOUBLE PRECISION,
+    max_price DOUBLE PRECISION,
+    price NUMERIC(10,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, item_type, item_id)
 );

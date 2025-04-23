@@ -134,10 +134,14 @@ router.get('/:id', (req, res, next) => {
             );
 
             if (tripItemResult.rows.length === 0) {
-                return res.status(404).json({ message: 'Trip item not found' });
-            }
-            itemType = tripItemResult.rows[0].item_type;
-            console.log(`Item type found in trip-items table: ${itemType}`);
+                console.log(`[GET /events/:id] ${eventID} not found in trip_items — assuming external Ticketmaster event`);
+                itemType = 'external';
+              } else {
+                itemType = tripItemResult.rows[0].item_type;
+                console.log(`Item type found in trip_items: ${itemType}`);
+              }
+            //itemType = tripItemResult.rows[0].item_type;
+            //console.log(`Item type found in trip-items table: ${itemType}`);
         } catch (err) {
             console.log("Error fetching item type from trip-items table:", err.message);
             return res.status(500).json({ message: 'Error fetching item type from trip-items table' });
@@ -205,9 +209,12 @@ router.get('/:id', (req, res, next) => {
             } catch (dbErr) {
                 console.log("Error fetching event from custom-events table:", dbErr.message);
             }
-        } else {
+        }  else if (itemType === 'external') {
+            console.log("Falling back to Ticketmaster fetch");
+            // continue to Ticketmaster fetch
+          } else {
             return res.status(404).json({ message: 'Invalid item type in trip-items table' });
-        }
+          }
 
         const tmApiKey = process.env.TICKETMASTER_API_KEY;
         if (!tmApiKey) {
@@ -225,8 +232,7 @@ router.get('/:id', (req, res, next) => {
 
         const eventData = await response.json();
         const priceData = eventData.priceRanges?.[0] || randomPrice(eventData);
-
-        //console.log('Raw event data:', eventData.priceRanges);
+        console.log("Price data:", priceData);
         // Transform the Ticketmaster data to match your application's format
         const formattedEvent = {
             id: eventData.id,
@@ -238,6 +244,8 @@ router.get('/:id', (req, res, next) => {
                   new Date(`1970-01-01T${eventData.dates?.start?.localTime}`).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}) 
                   : 'TBD',
             description: eventData.info || eventData.pleaseNote || 'No description available',
+            min_price: priceData.min,
+            max_price: priceData.max,
             price: priceData
                 ? `$${priceData.min} - $${priceData.max}`
                 : 'Price unavailable',

@@ -294,3 +294,24 @@
     margin-right: 10px;
     margin-bottom: -10px;
 }
+
+.cost-summary-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+.cost-summary-card ul {
+  list-style: none;
+  padding: 0;
+}
+.cost-summary-card .you {
+  font-weight: bold;
+}
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

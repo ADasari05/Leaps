@@ -6,7 +6,6 @@ import EventRecommendationsSearcher from '../components/EventRecommendationsSear
 import EventRecommendations from '../components/EventRecommendations';
 import AddToTripDialog from '../components/AddToTripDialog';
 import AddRecommendationDialog from "../components/AddRecommendationDialog";
-import CostSummary from "../components/CostSummary";
 
 
 const TripDetails = () => {
@@ -29,10 +28,12 @@ const TripDetails = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [costs, setCosts] = useState({
-                                        total: 0,
-                                        perUser: 0,
-                                        youOwe: 0,
+                                        totalCost: 0,
+                                        perUser: [],
+                                        yourCost: 0
                                     });
+    const [isAdjusting, setIsAdjusting] = useState(false);
+
 
 
     const fetchTrip = async () => {
@@ -87,22 +88,18 @@ const TripDetails = () => {
         }
     };
 
-    // Fetch cost summary once trip loads
+
     useEffect(() => {
         if (!trip) return;
-        (async () => {
-            try {
-                const res = await fetch(`/api/trips/${id}/costs`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!res.ok) throw new Error("Failed to fetch costs");
-                const { totalCost, splitCost, youOwe } = await res.json();
-                setCosts({ total: totalCost, perUser: splitCost, youOwe });
-            } catch (err) {
-              console.error("Error loading cost summary:", err);
-            }
-        })();
+      
+        fetch(`/api/trips/${id}/cost-summary`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(r => r.json())
+          .then(setCosts)
+          .catch(console.error);
     }, [trip, id, token]);
+
 
     useEffect(() => {
         fetchTrip();
@@ -626,11 +623,20 @@ const TripDetails = () => {
 
     return (
         <div className="trip-details">
-            <CostSummary
-                total={costs.total}
-                perUser={costs.perUser}
-                youOwe={costs.youOwe}
-            />
+            <div className="cost-summary-card">
+                <h3>Cost Summary</h3>
+                <p><strong>Total:</strong> ${costs.totalCost}</p>
+
+                { Array.isArray(costs.perUser) && (
+                <ul>
+                    {costs.perUser.map(u => (
+                    <li key={u.userId} className={u.userId === userId ? 'you' : ''}>
+                        {u.username}: ${u.cost}
+                    </li>
+                    ))}
+                </ul>
+                )}
+            </div>
             {isTripCancelled && (
                 <div className="cancelled-sidebar">
                     <h3>Trip Cancelled</h3>
@@ -681,7 +687,6 @@ const TripDetails = () => {
                             {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
                         </>
                     )}
-                    {renderTripItems()}
                     {renderTripItems()}
                     <div className="event-recommendations">
                         {trip.current && (<button
