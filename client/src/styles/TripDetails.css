@@ -357,3 +357,319 @@
     border-radius: 5px;
     border: 1px solid #ccc;
 }
+
+/* Members Section */
+.members-section {
+  margin: 25px 0;
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.members-section h3 {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Add Member Form */
+.add-member-container {
+  margin-bottom: 20px;
+}
+
+.add-member-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.friend-select {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+.friend-select:focus {
+  border-color: #7691ff;
+  outline: none;
+}
+
+.add-friend-btn {
+  padding: 10px 20px;
+  background-color: #7691ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-friend-btn:hover {
+  background-color: #5a78ff;
+  transform: translateY(-1px);
+}
+
+.add-friend-btn:disabled {
+  background-color: #b4bfff;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Members List */
+.members-list-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.members-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.member-item:last-child {
+  border-bottom: none;
+}
+
+.member-item:hover {
+  background-color: #f8f9fa;
+}
+
+.member-item.current-user {
+  background-color: #f0f7ff;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.member-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.current-user-tag {
+  font-weight: normal;
+  font-style: italic;
+  color: #7691ff;
+  margin-left: 5px;
+  font-size: 13px;
+}
+
+/* Action Dropdown */
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.action-dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 180px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 8px 0;
+  z-index: 10;
+}
+
+.action-dropdown:hover .action-dropdown-content {
+  display: block;
+}
+
+.action-dropdown-content button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.action-dropdown-content button:hover {
+  background-color: #f5f5f5;
+  color: #7691ff;
+}
+
+.role-selector {
+  padding: 8px 16px;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin: 5px 0;
+}
+
+.role-selector span {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.role-selector select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* Member actions row with direct buttons */
+.member-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Remove member button styling */
+.remove-member-btn {
+  padding: 6px 10px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-member-btn:hover {
+  background-color: #e04040;
+  transform: translateY(-1px);
+}
+
+/* RSVP reminder button styling */
+.rsvp-reminder-btn {
+  padding: 6px 10px;
+  background-color: #7691ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rsvp-reminder-btn:hover {
+  background-color: #5a78ff;
+  transform: translateY(-1px);
+}
+
+/* More dropdown button is now smaller and less prominent */
+.action-btn {
+  padding: 6px 10px;
+  background-color: #f0f0f0;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* Make the members list a bit cleaner with more padding */
+.member-item {
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+/* Make sure there's enough space for the action buttons */
+@media (max-width: 600px) {
+  .member-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .member-actions {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.no-friends-message {
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Make the dropdown appear disabled when empty */
+.friend-select:disabled {
+  background-color: #f5f5f5;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+/* Update the add friend button to be disabled when appropriate */
+.add-friend-btn:disabled {
+  background-color: #b4bfff;
+  cursor: not-allowed;
+  transform: none;
+}
