@@ -237,7 +237,7 @@ router.put('/complete/:id', auth, async (req, res) => {
             return db.query(
                 `INSERT INTO notifications (user_id, trip_id, type, message)
                  VALUES ($1, $2, $3, $4)`,
-                [userId1, tripId, 'trip_complete', `Congrats! Trip: ${trip.rows[0].name} has been marked as complete.`]
+                [userId1, tripId, 'trip_status', `Congrats! Trip: ${trip.rows[0].name} has been marked as complete.`]
             );
         });
         await Promise.all(notificationPromises);
@@ -1042,7 +1042,7 @@ router.put('/cancel/:tripId', async (req, res) => {
             return db.query(
                 `INSERT INTO notifications (user_id, trip_id, type, message)
                  VALUES ($1, $2, $3, $4)`,
-                [userId1, tripId, 'trip_cancel', `Trip: ${trip.rows[0].name} has been cancelled.`]
+                [userId1, tripId, 'trip_status', `Trip: ${trip.rows[0].name} has been cancelled.`]
             );
         });
         await Promise.all(notificationPromises);
@@ -1089,9 +1089,11 @@ router.put('/mark-as-current/:tripId', auth, async (req, res) => {
             return db.query(
                 `INSERT INTO notifications (user_id, trip_id, type, message)
                  VALUES ($1, $2, $3, $4)`,
-                [userId1, tripId, 'trip_current', `Trip: ${tripname.rows[0].name} has been marked as current!`]
+                [userId1, tripId, 'trip_status', `Trip: ${tripname.rows[0].name} has been marked as current!`]
             );
         });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (err) {
         console.error('Error marking trip as current:', err);
         res.status(500).json({ message: 'Server error updating trip status' });

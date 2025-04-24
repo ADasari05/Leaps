@@ -45,6 +45,14 @@ router.post('/signup', async (req, res) => {
             [username, email, hashedPassword, default_prof]
         );
 
+        const newUserId = newUser.rows[0].id;
+
+        // Insert default notification preferences
+        await db.query(
+            'INSERT INTO notification_preferences (user_id, friend_request, trip_update, trip_status, ratio_changed) VALUES ($1, true, true, true, true)',
+            [newUserId]
+        );
+
         // Generate JWT token
         const token = jwt.sign(
             { id: newUser.rows[0].id }, 

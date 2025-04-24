@@ -12,7 +12,7 @@ router.get('/list', auth, async (req, res) => {
 
     // Fetch user preferences
     const preferencesResult = await db.query(
-      `SELECT friend_request, trip_update
+      `SELECT friend_request, trip_update, trip_status, ratio_changed
        FROM notification_preferences
        WHERE user_id = $1`,
       [userId]
@@ -21,8 +21,8 @@ router.get('/list', auth, async (req, res) => {
     if (preferencesResult.rows.length === 0) {
       return res.status(404).json({ message: 'Notification preferences not found' });
     }
-
-    const { friend_request, trip_update } = preferencesResult.rows[0];
+    console.log('Notification preferences found');
+    const { friend_request, trip_update, trip_status, ratio_changed } = preferencesResult.rows[0];
 
     // Fetch notifications based on preferences
     const result = await db.query(
@@ -31,10 +31,12 @@ router.get('/list', auth, async (req, res) => {
        WHERE user_id = $1
          AND (
            (type = 'friend_request' AND $2 = true) OR
-           (type = 'trip_update' AND $3 = true)
+           (type = 'trip_update' AND $3 = true) OR
+           (type = 'trip_status' AND $4 = true) OR
+           (type = 'ratio_changed' AND $5 = true)
          )
        ORDER BY created_at DESC`,
-      [userId, friend_request, trip_update]
+      [userId, friend_request, trip_update, trip_status, ratio_changed]
     );
 
     console.log('Notifications retrieved:', result.rows.length);
@@ -96,7 +98,7 @@ router.get('/count', auth, async (req, res) => {
   try {
     // Fetch user preferences
     const preferencesResult = await db.query(
-      `SELECT friend_request, trip_update
+      `SELECT friend_request, trip_update, trip_status, ratio_changed
        FROM notification_preferences
        WHERE user_id = $1`,
       [userId]
@@ -106,7 +108,7 @@ router.get('/count', auth, async (req, res) => {
       return res.status(404).json({ message: 'Notification preferences not found' });
     }
 
-    const { friend_request, trip_update } = preferencesResult.rows[0];
+    const { friend_request, trip_update, trip_status, ratio_changed } = preferencesResult.rows[0];
 
     // Count unread notifications based on preferences
     const result = await db.query(
@@ -116,9 +118,11 @@ router.get('/count', auth, async (req, res) => {
          AND is_read = false
          AND (
            (type = 'friend_request' AND $2 = true) OR
-           (type = 'trip_update' AND $3 = true)
+           (type = 'trip_update' AND $3 = true) OR
+           (type = 'trip_status' AND $4 = true) OR
+           (type = 'ratio_changed' AND $5 = true)
          )`,
-      [userId, friend_request, trip_update]
+      [userId, friend_request, trip_update, trip_status, ratio_changed]
     );
 
     res.json({ count: parseInt(result.rows[0].count) });
@@ -167,8 +171,8 @@ router.get('/preferences', auth, async (req, res) => {
     // If no preferences exist, create default preferences
     if (result.rows.length === 0) {
       result = await db.query(
-        `INSERT INTO notification_preferences (user_id, friend_request, trip_update)
-         VALUES ($1, true, true)
+        `INSERT INTO notification_preferences (user_id, friend_request, trip_update, trip_status, ratio_changed)
+         VALUES ($1, true, true, true, true)
          RETURNING *`,
         [userId]
       );
@@ -184,16 +188,16 @@ router.get('/preferences', auth, async (req, res) => {
 // Update notification preferences for the current user
 router.put('/preferences', auth, async (req, res) => {
   const userId = req.user.id;
-  const { friend_request, trip_update } = req.body;
+  const { friend_request, trip_update, trip_status, ratio_changed } = req.body;
 
   try {
     const result = await db.query(
-      `INSERT INTO notification_preferences (user_id, friend_request, trip_update)
-       VALUES ($1, $2, $3)
+      `INSERT INTO notification_preferences (user_id, friend_request, trip_update, trip_status, ratio_changed)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id)
-       DO UPDATE SET friend_request = $2, trip_update = $3
+       DO UPDATE SET friend_request = $2, trip_update = $3, trip_status = $4, ratio_changed = $5
        RETURNING *`,
-      [userId, friend_request, trip_update]
+      [userId, friend_request, trip_update, trip_status, ratio_changed]
     );
 
     res.json(result.rows[0]);

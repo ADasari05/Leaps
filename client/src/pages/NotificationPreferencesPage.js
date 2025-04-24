@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/NotificationPreferencesPage.css";
 
 const NotificationPreferencesPage = () => {
   const [preferences, setPreferences] = useState({
     friend_request: false,
     trip_update: false,
+    trip_status: false,
+    ratio_changed: false
   });
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const [error, setError] = useState(null);
   const token = localStorage.getItem('token');
 
@@ -52,6 +56,7 @@ const NotificationPreferencesPage = () => {
       }
 
       alert('Preferences updated successfully!');
+      navigate('/notifications')
     } catch (err) {
       setError(err.message);
     }
@@ -88,6 +93,26 @@ const NotificationPreferencesPage = () => {
             }
           />
           Trip Update Notifications
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={preferences.trip_status}
+            onChange={(e) =>
+              setPreferences({ ...preferences, trip_status: e.target.checked })
+            }
+          />
+          Trip Status Update Notifications
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={preferences.ratio_changed}
+            onChange={(e) =>
+              setPreferences({ ...preferences, ratio_changed: e.target.checked })
+            }
+          />
+          Cost Split Update Notifications
         </label>
         <button onClick={updatePreferences}>Save Preferences</button>
       </div>

@@ -954,6 +954,9 @@ const TripDetails = () => {
                 <button onClick={() => setActiveTab("calendar")} className={activeTab === "calendar" ? "active" : ""}>
                     Calendar View
                 </button>
+                <button onClick={() => navigate('/preferences')}>
+                    Notification Preferences
+                </button>
             </div>
             {activeTab === "details" && (
                 trip ? (

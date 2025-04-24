@@ -12,7 +12,8 @@ DROP TABLE IF EXISTS users,
                      trip_item_votes, 
                      trip_cancellation_votes, 
                      messages, 
-                     notifications, 
+                     notifications,
+                     notification_preferences,
                      CASCADE;
 DROP INDEX IF EXISTS idx_events_name, 
                      idx_events_location, 
@@ -210,6 +211,8 @@ CREATE TABLE notification_preferences (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     friend_request BOOLEAN DEFAULT true,
     trip_update BOOLEAN DEFAULT true,
+    trip_status BOOLEAN DEFAULT true,
+    ratio_changed BOOLEAN default true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
