@@ -87,7 +87,9 @@ const NotificationPage = () => {
     // Navigate based on notification type
     if (notification.type === 'friend_request' || notification.type === 'friend_request_accepted' || notification.type === 'friend_request_rejected') {
       navigate('/users');
-    } else if (notification.type === 'trip_update' && notification.trip_id) {
+    } else if (notification.type === 'trip_cancel' || notification.type === 'trip_complete' || notification.type === 'trip_delete' || notification.type === 'trip_current') {
+        navigate('/trips')
+    } else if (notification.type === 'trip_update' || notification.type === 'ratio_changed' && notification.trip_id) {
       navigate(`/trips/${notification.trip_id}`);
     }
   };

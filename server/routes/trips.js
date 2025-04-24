@@ -177,6 +177,28 @@ router.put('/:id', auth, async (req, res) => {
         }
 
         res.json(result.rows[0]);
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `Trip: ${trip.rows[0].name} has been updated.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (err) {
         console.error('Error updating trip:', err);
         res.status(500).json({ message: 'Server error updating trip' });
@@ -199,6 +221,27 @@ router.put('/complete/:id', auth, async (req, res) => {
 
         res.json(result.rows[0]);
 
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_complete', `Congrats! Trip: ${trip.rows[0].name} has been marked as complete.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     }
     catch (err) {
         console.error('Error completing trip:', err);
@@ -247,6 +290,28 @@ router.delete('/:tripId/events/:eventId', auth, async (req, res) => {
         }
 
         res.json({ message: 'Event deleted successfully' });
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `Trip: ${trip.rows[0].name} has been updated.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (err) {
         console.error('Error deleting event:', err);
         res.status(500).json({ message: 'Server error deleting event' });
@@ -263,6 +328,28 @@ router.post('/add-item', auth, async (req, res) => {
         [tripId, itemType, itemId, price]
       );
       res.json(result.rows[0]);
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `An item has been added to trip: ${trip.rows[0].name}.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (error) {
       console.error('Error adding item to trip:', error);
       res.status(500).json({ error: 'Failed to add item' });
@@ -295,6 +382,28 @@ router.delete('/items/:tripId/:itemType/:itemId', auth, async (req, res) => {
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Item not found in trip' });
       }
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `An item has been removed from trip: ${trip.rows[0].name}.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
       
       res.json({ message: 'Item deleted successfully', item: result.rows[0] });
     } catch (error) {
@@ -372,6 +481,32 @@ router.post('/items/:tripId/vote', auth, async (req, res) => {
         );
 
         res.json({ message: 'Vote recorded', vote: result.rows[0], counts: votes.rows[0] });
+        
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        const user = await db.query(
+            'SELECT username FROM users WHERE id = $1',
+            [userId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `${user.rows[0].username} voted on an item in "${trip.rows[0].name}".`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (error) {
         console.error('Error voting on trip item:', error);
         res.status(500).json({ error: 'Failed to record vote' });
@@ -461,9 +596,33 @@ router.post('/:id/add-friend', auth, async (req, res) => {
 
         if (insertResult.rows.length === 0) {
             return res.status(400).json({ message: 'Friend is already in the trip' });
+        } else {
+            res.status(200).json({ message: 'Friend added successfully to the trip' });
+            // Send Notification
+            const user = await db.query(
+                'SELECT username FROM users WHERE id = $1',
+                [userId]
+            );
+            const trip = await db.query(
+                'SELECT name FROM trips WHERE id = $1',
+                [tripId]
+            );
+            const notificationResult = await db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message, is_read) VALUES ($1, $2, $3, $4, $5)`,
+                [
+                    friendId,
+                    tripId,
+                    'trip_update',
+                    `${user.rows[0].username} added you to trip: ${trip.rows[0].name}!`,
+                    false,
+                ]
+            )
+            if (notificationResult.rows.length === 0) {
+                return res.status(400).json({ message: 'Notification failed to send' });
+            } else {
+                res.status(200).json({ message: 'Notification successfully sent' });
+            }
         }
-
-        res.status(200).json({ message: 'Friend added successfully to the trip' });
     } catch (err) {
         console.error('Error adding friend to trip:', err);
         res.status(500).json({ message: 'Server error adding friend to trip' });
@@ -598,6 +757,30 @@ router.put('/:tripId/members/:memberId/role', auth, async (req, res) => {
         );
 
         res.json({ message: 'Role updated successfully', member: result.rows[0] });
+
+        const user = await db.query(
+            'SELECT username FROM users WHERE id = $1',
+            [userId]
+        );
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        const notificationResult = await db.query(
+            `INSERT INTO notifications (user_id, trip_id, type, message, is_read) VALUES ($1, $2, $3, $4, $5)`,
+            [
+                memberId,
+                tripId,
+                'trip_update',
+                `${user.rows[0].username} updated your role in trip: ${trip.rows[0].name}!`,
+                false,
+            ]
+        )
+        if (notificationResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Notification failed to send' });
+        } else {
+            res.status(200).json({ message: 'Notification successfully sent' });
+        }
     } catch (err) {
         console.error('Error updating member role:', err);
         res.status(500).json({ message: 'Server error updating member role' });
@@ -655,6 +838,32 @@ router.post('/:id/vote-cancel', auth, async (req, res) => {
         }
 
         res.json({ message: 'Vote recorded', vote: result.rows[0] });
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        const user = await db.query(
+            'SELECT username FROM users WHERE id = $1',
+            [userId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `${user.rows[0].username} voted to cancel trip: ${trip.rows[0].name}.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (err) {
         console.error('Error voting to cancel trip:', err);
         res.status(500).json({ message: 'Server error voting to cancel trip' });
@@ -705,6 +914,32 @@ router.delete('/:id/rescind-vote', auth, async (req, res) => {
         );
 
         res.json({ message: 'Vote rescinded successfully' });
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        const user = await db.query(
+            'SELECT username FROM users WHERE id = $1',
+            [userId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `${user.rows[0].username} rescinded vote to cancel trip: ${trip.rows[0].name}.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (err) {
         console.error('Error rescinding vote:', err);
         res.status(500).json({ message: 'Server error rescinding vote' });
@@ -755,6 +990,28 @@ router.post('/:id/restore', auth, async (req, res) => {
         await db.query('COMMIT');
 
         res.json({ message: 'Trip restored successfully' });
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_update', `Cancelled trip: ${trip.rows[0].name} has been restored!`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (err) {
         console.error('Error restoring trip:', err);
         await db.query("ROLLBACK");
@@ -769,6 +1026,27 @@ router.put('/cancel/:tripId', async (req, res) => {
     try {
         await db.query('UPDATE trips SET status = $1 WHERE id = $2', ['Cancelled', tripId]);
         res.json({ message: 'Trip cancelled successfully' });
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_cancel', `Trip: ${trip.rows[0].name} has been cancelled.`]
+            );
+        });
+        await Promise.all(notificationPromises);
+        console.log('Members notified successfully');
     } catch (error) {
         console.error('Error cancelling trip:', error);
         res.status(500).json({ error: 'Failed to cancel trip' });
@@ -794,6 +1072,26 @@ router.put('/mark-as-current/:tripId', auth, async (req, res) => {
         }
 
         res.json({ message: 'Trip status updated to Current successfully' });
+
+        // Send Notification to all members
+        // Get all user_ids from trip_members
+        const memberResult = await db.query(
+            'SELECT user_id FROM trip_members WHERE trip_id = $1',
+            [tripId]
+        );
+        const userIds = memberResult.rows.map(row => row.user_id);
+        const tripname = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        // Send a notification for each member
+        const notificationPromises = userIds.map(userId1 => {
+            return db.query(
+                `INSERT INTO notifications (user_id, trip_id, type, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId1, tripId, 'trip_current', `Trip: ${tripname.rows[0].name} has been marked as current!`]
+            );
+        });
     } catch (err) {
         console.error('Error marking trip as current:', err);
         res.status(500).json({ message: 'Server error updating trip status' });

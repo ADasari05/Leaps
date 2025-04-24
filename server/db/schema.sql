@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 DROP TABLE IF EXISTS users, 
                      friendships, 
                      trips, 
-                     trip_members, 
+                     trip_members, trip_member_roles, 
                      events, customevents, 
                      travel, friend_requests, 
                      lodging, trip_items, 
