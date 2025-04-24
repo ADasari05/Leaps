@@ -36,6 +36,7 @@ const TripDetails = () => {
     const [eventsForSelectedDate, setEventsForSelectedDate] = useState([]);
     const [memberRsvps, setMemberRsvps] = useState([]);
     const [rsvpUpdated, setRsvpUpdated] = useState(false);
+    const [success, setSuccess] = useState(null);
 
     const fetchTrip = async () => {
         setIsLoading(true);
@@ -312,6 +313,12 @@ const TripDetails = () => {
         }
 
         try {
+            const friendToAdd = friends.find(f => f.id === selectedFriend);
+            if (!friendToAdd) {
+                console.error("Selected friend not found in friends list");
+                return;
+            }
+
             const response = await fetch(`http://localhost:3000/api/trips/${id}/add-friend`, {
                 method: "POST",
                 headers: {
@@ -328,10 +335,28 @@ const TripDetails = () => {
                 throw new Error(data.message || "Failed to add friend");
             }
 
-            alert("Friend added successfully!");
-            setFriends(friends.filter(friend => friend.id !== selectedFriend));
+            const newMember = {
+                id: friendToAdd.id,
+                username: friendToAdd.username,
+                profile_pic: friendToAdd.profile_pic,
+                role: "view" // Default role for new members
+            };
+              
+              // Add to tripMembers array
+            setTripMembers(prevMembers => [...prevMembers, newMember]);
+              
+              // Add default RSVP status for the new member
+            setMemberRsvps(prevRsvps => [
+                ...prevRsvps, 
+                { 
+                  id: friendToAdd.id, 
+                  username: friendToAdd.username,
+                  status: 'no_response',
+                  response_date: new Date().toISOString()
+                }
+            ]);
 
-            // Remove added friend from the dropdown list
+            alert("Friend added successfully!");
             setFriends(friends.filter(friend => friend.id !== selectedFriend));
 
             // Fetch updated trip members after adding a new friend
@@ -951,6 +976,8 @@ const TripDetails = () => {
 
                         <div className="members-section">
                             <h3>Trip Members</h3>
+                            {success && <div className="success-message">{success}</div>}
+                            {error && <div className="error-message">{error}</div>}
                             {trip.current && (
                                 <TripRSVP 
                                 tripId={id} 
