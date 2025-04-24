@@ -205,6 +205,16 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+/* Notification Preferences Table */
+CREATE TABLE notification_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    friend_request BOOLEAN DEFAULT true,
+    trip_update BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 CREATE INDEX idx_messages_trip_id ON messages(trip_id);
 CREATE INDEX idx_messages_sender_id ON messages(sender_id);
 

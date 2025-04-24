@@ -29,6 +29,7 @@ import Share from './pages/Share';
 import Lodgings from "./pages/Lodgings";
 import Travel from "./pages/Travel";
 import NotificationPage from "./pages/NotificationPage";
+import NotificationPreferencesPage from './pages/NotificationPreferencesPage';
 import { isAuthenticated } from "./services/authService"; 
 import { useState, useEffect } from "react";
 import './App.css';
@@ -93,6 +94,7 @@ function App() {
             <Route path="/notifications" element={
               <NotificationPage />
             } />
+            <Route path="/preferences" element={<NotificationPreferencesPage />} />
             <Route path="/trips" element={
               <Trips />
             } />

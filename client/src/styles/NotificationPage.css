@@ -43,6 +43,22 @@
   border-color: #d0d0d0;
 }
 
+.notification-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.preferences-btn {
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.preferences-btn:hover {
+  background-color: #218838;
+}
 
 .notification-list {
   display: flex;
@@ -129,7 +145,6 @@
   box-shadow: 0 0 0 2px rgba(77, 144, 254, 0.2);
   margin-right: 10px;
 }
-
 
 .no-notifications {
   text-align: center;

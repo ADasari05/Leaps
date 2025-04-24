@@ -127,14 +127,22 @@ const NotificationPage = () => {
     <div className="notification-page">
       <div className="notification-header">
         <h1>Notifications</h1>
-        {notifications.length > 0 && (
+        <div className="notification-actions">
+          {notifications.length > 0 && (
+            <button 
+              className="mark-all-read-btn"
+              onClick={markAllAsRead}
+            >
+              Mark all as read
+            </button>
+          )}
           <button 
-            className="mark-all-read-btn"
-            onClick={markAllAsRead}
+            className="preferences-btn"
+            onClick={() => navigate('/preferences')}
           >
-            Mark all as read
+            Notification Preferences
           </button>
-        )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (

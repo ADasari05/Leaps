@@ -6,16 +6,37 @@ const auth = require('../middleware/auth');
 // Get all notifications for the current user
 router.get('/list', auth, async (req, res) => {
   const userId = req.user.id;
-  
+
   try {
     console.log('Fetching notifications for user:', userId);
+
+    // Fetch user preferences
+    const preferencesResult = await db.query(
+      `SELECT friend_request, trip_update
+       FROM notification_preferences
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (preferencesResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Notification preferences not found' });
+    }
+
+    const { friend_request, trip_update } = preferencesResult.rows[0];
+
+    // Fetch notifications based on preferences
     const result = await db.query(
       `SELECT *
        FROM notifications
        WHERE user_id = $1
+         AND (
+           (type = 'friend_request' AND $2 = true) OR
+           (type = 'trip_update' AND $3 = true)
+         )
        ORDER BY created_at DESC`,
-      [userId]
+      [userId, friend_request, trip_update]
     );
+
     console.log('Notifications retrieved:', result.rows.length);
     res.json(result.rows);
   } catch (err) {
@@ -71,15 +92,35 @@ router.put('/read-all', auth, async (req, res) => {
 // Get unread notification count
 router.get('/count', auth, async (req, res) => {
   const userId = req.user.id;
-  
+
   try {
+    // Fetch user preferences
+    const preferencesResult = await db.query(
+      `SELECT friend_request, trip_update
+       FROM notification_preferences
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (preferencesResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Notification preferences not found' });
+    }
+
+    const { friend_request, trip_update } = preferencesResult.rows[0];
+
+    // Count unread notifications based on preferences
     const result = await db.query(
       `SELECT COUNT(*) 
        FROM notifications 
-       WHERE user_id = $1 AND is_read = false`,
-      [userId]
+       WHERE user_id = $1 
+         AND is_read = false
+         AND (
+           (type = 'friend_request' AND $2 = true) OR
+           (type = 'trip_update' AND $3 = true)
+         )`,
+      [userId, friend_request, trip_update]
     );
-    
+
     res.json({ count: parseInt(result.rows[0].count) });
   } catch (err) {
     console.error('Error getting notification count:', err);
@@ -107,6 +148,57 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Notification deleted' });
   } catch (err) {
     console.error('Error deleting notification:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get notification preferences for the current user
+router.get('/preferences', auth, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    let result = await db.query(
+      `SELECT *
+       FROM notification_preferences
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    // If no preferences exist, create default preferences
+    if (result.rows.length === 0) {
+      result = await db.query(
+        `INSERT INTO notification_preferences (user_id, friend_request, trip_update)
+         VALUES ($1, true, true)
+         RETURNING *`,
+        [userId]
+      );
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching preferences:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update notification preferences for the current user
+router.put('/preferences', auth, async (req, res) => {
+  const userId = req.user.id;
+  const { friend_request, trip_update } = req.body;
+
+  try {
+    const result = await db.query(
+      `INSERT INTO notification_preferences (user_id, friend_request, trip_update)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id)
+       DO UPDATE SET friend_request = $2, trip_update = $3
+       RETURNING *`,
+      [userId, friend_request, trip_update]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating preferences:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
