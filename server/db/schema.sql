@@ -2,7 +2,18 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
-DROP TABLE IF EXISTS users, friendships, trips, trip_members, events, customevents, travel, friend_requests, lodging, trip_items, trip_item_votes, trip_cancellation_votes, messages,  CASCADE;
+DROP TABLE IF EXISTS users, 
+                     friendships, 
+                     trips, 
+                     trip_members, 
+                     events, customevents, 
+                     travel, friend_requests, 
+                     lodging, trip_items, 
+                     trip_item_votes, 
+                     trip_cancellation_votes, 
+                     messages, 
+                     notifications, 
+                     CASCADE;
 DROP INDEX IF EXISTS idx_events_name, 
                      idx_events_location, 
                      idx_events_type, 
@@ -72,6 +83,16 @@ CREATE TABLE trip_members (
         CHECK (cost_ratio > 0 AND cost_ratio <= 1),    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, user_id)
+);
+
+
+-- table for trip member roles
+CREATE TABLE trip_member_roles (
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('view', 'edit', 'co-creator')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (trip_id, user_id)
 );
 
 -- Events Table 
@@ -170,6 +191,17 @@ CREATE TABLE messages (
     sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     attachment_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+/* Notification table */
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    type TEXT,
+    message TEXT,
+    is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

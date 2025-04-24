@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from "react-router-dom";
 import "./Navbar.css";
 import LeapsLogo from "../assets/logopng.png";
+import NotificationBell from "../assets/bell.png";
 import { isAuthenticated, isGuest, logout } from '../services/authService';
 
 
@@ -10,10 +11,34 @@ const Navbar = () => {
     const [hoverEvent, setHoverEvent] = useState(false);
 
     const navigate = useNavigate();
+    const [unreadCount, setUnreadCount] = useState(0);
     const [auth, setAuth] = useState(isAuthenticated());
 
     useEffect(() => {
-        setAuth(isAuthenticated());  
+        // Get Unread Notifcation Count
+        const fetchUnreadCount = async () => {
+            try {
+                const res = await fetch('/api/notifications/count', {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+    
+                const data = await res.json();
+                if (res.ok) {
+                    console.log(data.count);
+                    setUnreadCount(data.count);
+                }
+            } catch (err) {
+                console.error('Failed to fetch unread notification count:', err);
+            }
+        };
+        setAuth(isAuthenticated()); 
+        if (isAuthenticated()) {
+            fetchUnreadCount();
+            const intervalId = setInterval(fetchUnreadCount, 1000);
+            return () => clearInterval(intervalId);
+        } 
     }, []);
 
     const handleLogout = async () => {
@@ -42,7 +67,7 @@ const Navbar = () => {
         <nav className="navbar">
             {/*Home button*/}
             <div className="home">
-                <Link to="/signup">
+                <Link to="/home">
                 <img src={LeapsLogo} alt="Home" className="home"/>
                 </Link>
             </div>
@@ -72,7 +97,11 @@ const Navbar = () => {
                 <div className="auth-links">
                     {isAuthenticated() ? (
                         <>
-                            <Link onClick={handleLogout} className="nav-item">Logout</Link>
+                            <Link to="/notifications" className="bell-container">
+                                <img src={NotificationBell} alt="Bell" className="bell"/>
+                                {unreadCount > 0 && (<span className="bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>)}
+                            </Link>
+                            <Link onClick={handleLogout} className="logout-button">Logout</Link>
                         </>
                     ) : (
                         <>

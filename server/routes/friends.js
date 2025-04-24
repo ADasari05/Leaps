@@ -109,12 +109,38 @@ router.post('/request', auth, async (req, res) => {
     }
   
     try {
+      await db.query('BEGIN');
       await db.query(
         `INSERT INTO friend_requests (sender_id, receiver_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [sender_id, receiver_id]
       );
+
+      // Send Notification 
+      const sender = await db.query(
+        'SELECT username FROM users WHERE id = $1',
+        [sender_id]
+      );
+
+      if (sender.rows.length > 0) {
+        const senderUsername = sender.rows[0].username;
+
+        // Create notification for receiver
+        await db.query(
+          `INSERT INTO notifications (user_id, type, message, is_read)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            receiver_id, 
+            'friend_request', 
+            `${senderUsername} sent you a friend request!`, 
+            false
+          ]
+        );
+      }
+
+      await db.query('COMMIT');
       res.json({ message: 'Friend request sent' });
     } catch (err) {
+      await db.query('ROLLBACK');
       console.error(err);
       res.status(500).json({ message: 'Error sending friend request' });
     }
@@ -153,12 +179,42 @@ router.post('/request', auth, async (req, res) => {
       }
   
       const { sender_id } = requestResult.rows[0];
+
+      const user = await db.query(
+        'SELECT username FROM users WHERE id = $1',
+        [user_id]
+      );
   
       if (action === 'accept') {
         const [smaller, larger] = [sender_id, user_id].sort();
         await db.query(
           `INSERT INTO friendships (user1_id, user2_id) VALUES ($1, $2)`,
           [smaller, larger]
+        );
+
+        // Send notification
+        await db.query(
+          `INSERT INTO notifications (user_id, type, message, is_read) 
+           VALUES ($1, $2, $3, $4)`,
+          [
+            sender_id,
+            'friend_request_accepted',
+            `${user.rows[0].username} accepted your friend request.`,
+            false,
+          ]
+        );
+
+      } else if (action === 'reject') {
+        // Send Notification
+        await db.query(
+          `INSERT INTO notifications (user_id, type, message, is_read) 
+           VALUES ($1, $2, $3, $4)`,
+          [
+            sender_id,
+            'friend_request_rejected',
+            `${user.rows[0].username} rejected your friend request.`,
+            false,
+          ]
         );
       }
   
