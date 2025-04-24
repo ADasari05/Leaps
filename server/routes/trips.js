@@ -944,41 +944,84 @@ router.put('/:tripId/items/:itemId/price', auth, async (req, res) => {
 });
   
 router.put('/:tripId/cost-ratios', auth, async (req, res) => {
-    const { tripId } = req.params;
-    const { perUser } = req.body;   // [{ userId, ratio }, …]
-    const creatorId = req.user.id;
+    const { tripId }   = req.params;
+    const { perUser }  = req.body;   // [{ userId, ratio }, …]
+    const creatorId    = req.user.id;
+    const userIds      = perUser.map(u => u.userId);
+    const newRatiosMap = Object.fromEntries(perUser.map(u => [u.userId, u.ratio]));
   
     // 0) Only the trip creator can change ratios
-    const owner = await db.query(
-      'SELECT creator_id FROM trips WHERE id = $1',
+    const ownerRes = await db.query(
+      'SELECT creator_id, name FROM trips WHERE id = $1',
       [tripId]
     );
-    if (!owner.rows.length || owner.rows[0].creator_id !== creatorId) {
+    if (!ownerRes.rows.length || ownerRes.rows[0].creator_id !== creatorId) {
       return res.status(403).json({ message: 'Only leader can adjust.' });
     }
+    const tripName= ownerRes.rows[0].name;
   
-    // 1) Extract parallel arrays
-    const userIds = perUser.map(u => u.userId);
-    const ratios  = perUser.map(u => u.ratio);
-  
-    // 2) Bulk‐update in one shot
-    await db.query(
-      `
-      UPDATE trip_members AS tm
-      SET cost_ratio = data.ratio
-      FROM (
-        SELECT
-          unnest($1::uuid[])    AS user_id,
-          unnest($2::numeric[]) AS ratio
-      ) AS data
-      WHERE tm.trip_id = $3
-        AND tm.user_id = data.user_id
-      `,
-      [userIds, ratios, tripId]
+    // 1) Fetch old ratios for these users
+    const oldRes = await db.query(
+      `SELECT user_id, cost_ratio
+         FROM trip_members
+        WHERE trip_id = $1
+          AND user_id = ANY($2::uuid[])`,
+      [tripId, userIds]
+    );
+    const oldRatiosMap = Object.fromEntries(
+      oldRes.rows.map(r => [r.user_id, parseFloat(r.cost_ratio)])
     );
   
-    res.sendStatus(204);
-  });
+    try {
+      // 2) Start transaction
+      await db.query('BEGIN');
+  
+      // 3) Bulk-update all ratios
+      await db.query(
+        `
+        UPDATE trip_members AS tm
+        SET cost_ratio = data.ratio
+        FROM (
+          SELECT
+            unnest($1::uuid[])    AS user_id,
+            unnest($2::numeric[]) AS ratio
+        ) AS data
+        WHERE tm.trip_id = $3
+          AND tm.user_id = data.user_id
+        `,
+        [userIds, perUser.map(u => u.ratio), tripId]
+      );
+  
+      // 4) For each changed ratio, insert a notification
+      for (const userId of userIds) {
+        const oldRatio = oldRatiosMap[userId]  ?? 0;
+        const newRatio = newRatiosMap[userId] ?? 0;
+        if (Math.abs(oldRatio - newRatio) > 1e-6) {
+          const pctOld = (oldRatio * 100).toFixed(0);
+          const pctNew = (newRatio * 100).toFixed(0);
+          const message = `Your cost share on “${tripName}” changed from ${pctOld}% to ${pctNew}%.`;
+  
+          await db.query(
+            `INSERT INTO notifications
+               (user_id, type, message, trip_id, created_at, is_read)
+             VALUES
+               ($1, 'ratio_changed', $2, $3, NOW(), FALSE)`,
+            [userId, message, tripId]
+          );
+        }
+      }
+  
+      // 5) Commit
+      await db.query('COMMIT');
+      res.sendStatus(204);
+  
+    } catch (err) {
+      // Roll back on error
+      await db.query('ROLLBACK');
+      console.error('Error updating ratios & notifications:', err);
+      res.status(500).json({ message: 'Server error updating ratios.' });
+    }
+});
   
   
   
