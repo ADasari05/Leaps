@@ -68,7 +68,8 @@ CREATE TABLE trips (
 CREATE TABLE trip_members (
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    cost_ratio NUMERIC(5,4) CHECK (cost_ratio > 0 AND cost_ratio <= 1),
+    cost_ratio   NUMERIC(5,4) NOT NULL DEFAULT 1.0
+        CHECK (cost_ratio > 0 AND cost_ratio <= 1),    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(trip_id, user_id)
 );
@@ -81,6 +82,7 @@ CREATE TABLE events (
     location VARCHAR(255) NOT NULL,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP,
+    set_price DOUBLE PRECISION,
     min_price DOUBLE PRECISION,
     max_price DOUBLE PRECISION,
     price DOUBLE PRECISION,
@@ -99,6 +101,7 @@ CREATE TABLE customevents (
     end_time TIMESTAMP,
     price DOUBLE PRECISION,
     description TEXT,
+    is_public BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

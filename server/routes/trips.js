@@ -79,8 +79,14 @@ router.post('/', auth, async (req, res) => {
             'INSERT INTO trips (name, description, creator_id, destination, start_date, end_date, is_public, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [name, description, creatorId, destination, startDate, endDate, isPublic, status]
         );
+        const newTrip = result.rows[0];
+        await db.query(
+          `INSERT INTO trip_members (trip_id, user_id, cost_ratio)
+             VALUES ($1, $2, 1.0)`,
+          [ newTrip.id, creatorId ]
+        );
 
-        res.status(201).json(result.rows[0]);
+        res.status(201).json(newTrip);
     } catch (err) {
         console.error('Error creating trip:', err);
         res.status(500).json({ message: 'Server error creating trip' });
@@ -686,55 +692,67 @@ router.put('/mark-as-current/:tripId', auth, async (req, res) => {
     }
 });
 
-router.get('/:tripId/cost-summary', auth, async (req, res, next) => {
-    try {
-      const tripId = req.params.tripId;
-      const userId = req.user.id;
+router.get('/:tripId/cost-summary', auth, async (req, res) => {
+    const tripId = req.params.tripId;
+    const userId = req.user.id;
   
-      // 1. sum all prices on this trip
-      const { rows: evs } = await db.query(
-        `SELECT price FROM trip_items WHERE trip_id = $1`, [tripId]
-      );
-      const total = evs.reduce((sum, r) => sum + Number(r.price||0), 0);
+    const { rows } = await db.query(
+      `
+      WITH
+        item_sum   AS (
+          SELECT COALESCE(SUM(price),0) AS total
+            FROM trip_items
+           WHERE trip_id = $1
+        ),
+        weight_sum AS (
+          SELECT COALESCE(SUM(cost_ratio),0) AS sum_weight
+            FROM trip_members
+           WHERE trip_id = $1
+        )
+      SELECT
+        u.id               AS "userId",
+        u.username         AS "username",
+        tm.cost_ratio      AS "ratio",
+        ROUND(
+          item_sum.total * tm.cost_ratio
+          / NULLIF(weight_sum.sum_weight,0),
+          2
+        )                  AS "cost",
+        item_sum.total     AS "totalCost"
+      FROM trip_members tm
+      JOIN users u ON u.id = tm.user_id
+      CROSS JOIN item_sum, weight_sum
+      WHERE tm.trip_id = $1;
+      `,
+      [tripId]
+    );
   
-      // 2. load members
-      const { rows: members } = await db.query(
-        `SELECT u.id, u.username 
-           FROM trip_members tm 
-           JOIN users u ON tm.user_id = u.id 
-          WHERE tm.trip_id = $1
-         UNION
-         SELECT creator_id AS id, '' AS username
-           FROM trips WHERE id = $1`, [tripId]
-      );
-      const share = members.length ? total / members.length : 0;
+    // Pull out the totalCost (same for every row)
+    const totalCost = rows.length > 0
+      ? Number(rows[0].totalCost)
+      : 0;
   
-      const perUser = members.map(u => ({
-        userId:   u.id,
-        username: u.username || (u.id === userId ? req.user.username : '—'),
-        cost:     Number(share.toFixed(2))
-      }));
+    // Build perUser array without repeating totalCost
+    const perUser = rows.map(r => ({
+      userId:   r.userId,
+      username: r.username,
+      ratio:    Number(r.ratio),
+      cost:     Number(r.cost)
+    }));
   
-      const yourCost = perUser.find(u => u.userId === userId)?.cost || 0;
-      res.json({
-        totalCost: Number(total.toFixed(2)),
-        perUser,
-        yourCost
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Server error in cost-summary' });
-    }
+    const yourCost = perUser.find(u => u.userId === userId)?.cost || 0;
+  
+    res.json({ totalCost, perUser, yourCost });
   });
   
-  router.put('/:tripId/items/:itemId/price', auth, async (req, res) => {
+router.put('/:tripId/items/:itemId/price', auth, async (req, res) => {
     try {
       const { tripId, itemId } = req.params;
       const { price } = req.body;
       await db.query(
         `UPDATE trip_items
             SET price = $1
-          WHERE trip_id = $2 AND id = $3`,
+          WHERE trip_id = $2 AND item_id = $3`,
         [price, tripId, itemId]
       );
       res.sendStatus(204);
@@ -742,7 +760,46 @@ router.get('/:tripId/cost-summary', auth, async (req, res, next) => {
       console.error(err);
       res.status(500).json({ message: 'Server error updating price' });
     }
+});
+  
+router.put('/:tripId/cost-ratios', auth, async (req, res) => {
+    const { tripId } = req.params;
+    const { perUser } = req.body;   // [{ userId, ratio }, …]
+    const creatorId = req.user.id;
+  
+    // 0) Only the trip creator can change ratios
+    const owner = await db.query(
+      'SELECT creator_id FROM trips WHERE id = $1',
+      [tripId]
+    );
+    if (!owner.rows.length || owner.rows[0].creator_id !== creatorId) {
+      return res.status(403).json({ message: 'Only leader can adjust.' });
+    }
+  
+    // 1) Extract parallel arrays
+    const userIds = perUser.map(u => u.userId);
+    const ratios  = perUser.map(u => u.ratio);
+  
+    // 2) Bulk‐update in one shot
+    await db.query(
+      `
+      UPDATE trip_members AS tm
+      SET cost_ratio = data.ratio
+      FROM (
+        SELECT
+          unnest($1::uuid[])    AS user_id,
+          unnest($2::numeric[]) AS ratio
+      ) AS data
+      WHERE tm.trip_id = $3
+        AND tm.user_id = data.user_id
+      `,
+      [userIds, ratios, tripId]
+    );
+  
+    res.sendStatus(204);
   });
+  
+  
   
 
 module.exports = router;

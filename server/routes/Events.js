@@ -136,10 +136,10 @@ router.get('/:id', (req, res, next) => {
             if (tripItemResult.rows.length === 0) {
                 console.log(`[GET /events/:id] ${eventID} not found in trip_items — assuming external Ticketmaster event`);
                 itemType = 'external';
-              } else {
+            } else {
                 itemType = tripItemResult.rows[0].item_type;
                 console.log(`Item type found in trip_items: ${itemType}`);
-              }
+          }
             //itemType = tripItemResult.rows[0].item_type;
             //console.log(`Item type found in trip-items table: ${itemType}`);
         } catch (err) {
@@ -212,9 +212,9 @@ router.get('/:id', (req, res, next) => {
         }  else if (itemType === 'external') {
             console.log("Falling back to Ticketmaster fetch");
             // continue to Ticketmaster fetch
-          } else {
+        } else {
             return res.status(404).json({ message: 'Invalid item type in trip-items table' });
-          }
+        }
 
         const tmApiKey = process.env.TICKETMASTER_API_KEY;
         if (!tmApiKey) {
@@ -231,8 +231,24 @@ router.get('/:id', (req, res, next) => {
         }
 
         const eventData = await response.json();
-        const priceData = eventData.priceRanges?.[0] || randomPrice(eventData);
-        console.log("Price data:", priceData);
+        const overrideRes = await db.query(
+            `SELECT price
+               FROM trip_items
+              WHERE trip_id = $1
+                AND item_id = $2`,
+            [ /* the tripId */ req.query.tripId, eventID ]
+          );
+          
+          // 2) if we found one, use it verbatim
+          if (overrideRes.rows.length && overrideRes.rows[0].price != null) {
+            const override = overrideRes.rows[0].price;
+            priceData = { min: override, max: override, currency: 'USD', type: 'override' };
+          } else {
+            // 3) only now fall back to Ticketmaster or random
+            priceData = eventData.priceRanges?.[0] || randomPrice(eventData);
+          }
+
+        //console.log("Price data:", priceData);
         // Transform the Ticketmaster data to match your application's format
         const formattedEvent = {
             id: eventData.id,
@@ -259,6 +275,37 @@ router.get('/:id', (req, res, next) => {
         res.status(500).json({ message: 'Server error fetching event' });
     }
 });
+
+router.put('/:id/price', auth, async (req, res) => {
+    try {
+      const eventId = req.params.id;
+      const userId  = req.user.id;
+      const { price } = req.body;
+      if (price == null) {
+        return res.status(400).json({ message: 'Must supply a price' });
+      }
+  
+      const result = await db.query(
+        `UPDATE trip_items
+           SET price = $1
+         WHERE item_id = $2
+           AND user_id = $3
+         RETURNING *`,
+        [price, eventId, userId]
+      );
+  
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Trip item not found or not yours' });
+      }
+  
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error('Error updating trip item price:', err);
+      res.status(500).json({ message: 'Server error updating price' });
+    }
+  });
+
+
 
 
 module.exports = router;

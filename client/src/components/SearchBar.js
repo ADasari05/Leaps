@@ -46,11 +46,34 @@ const SearchBar = ({ onResults }) => {
       ? `${filters.endDateTime}:59Z` // Add seconds and Z timezone
       : '';
 
-    // Fetch user location and include it in the request
-    const locationData = userLocation || await getUserLocation();
-    const { latitude, longitude } = locationData;
-
-    const url = `/api/search?q=${query}&location=${filters.location}${filters.eventType ? `&eventType=${filters.eventType}` : ''}${formattedStartDateTime ? `&startDateTime=${encodeURIComponent(formattedStartDateTime)}` : ''}${formattedEndDateTime ? `&endDateTime=${encodeURIComponent(formattedEndDateTime)}` : ''}${filters.priceSort ? `&priceSort=${filters.priceSort}` : ''}${filters.locationSort ? `&locationSort=${filters.locationSort}` : ''}&latitude=${latitude}&longitude=${longitude}`;
+      let latitude = '';
+      let longitude = '';
+      if (userLocation) {
+        ({ latitude, longitude } = userLocation);
+      } else {
+        try {
+          const loc = await getUserLocation();  // might throw
+          setUserLocation(loc);
+          ({ latitude, longitude } = loc);
+        } catch (geoError) {
+          console.warn('Could not get geolocation:', geoError);
+          // fallback: leave latitude/longitude blank,
+          // or set to a default city center if you prefer.
+        }
+      }
+    
+      // 3) Build your URL including coords only if you have them
+      let url = `/api/search?q=${encodeURIComponent(query)}` +
+                `&location=${encodeURIComponent(filters.location)}` +
+                (filters.eventType ? `&eventType=${encodeURIComponent(filters.eventType)}` : '') +
+                (formattedStartDateTime ? `&startDateTime=${encodeURIComponent(formattedStartDateTime)}` : '') +
+                (formattedEndDateTime   ? `&endDateTime=${encodeURIComponent(formattedEndDateTime)}` : '') +
+                (filters.priceSort      ? `&priceSort=${filters.priceSort}` : '') +
+                (filters.locationSort   ? `&locationSort=${filters.locationSort}` : '');
+      if (latitude && longitude) {
+        url += `&latitude=${latitude}&longitude=${longitude}`;
+      }
+    
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Fetch failed with status: ${res.status}`);

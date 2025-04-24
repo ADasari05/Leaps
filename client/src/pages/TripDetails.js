@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ChatWindow from "../components/ChatWindow";
 import "../styles/TripDetails.css";
@@ -33,8 +33,28 @@ const TripDetails = () => {
                                         yourCost: 0
                                     });
     const [isAdjusting, setIsAdjusting] = useState(false);
+    const [ratios, setRatios] = useState({});
+    const [ priceOverrides, setPriceOverrides ] = useState({});
 
 
+    const fetchCostSummary = async () => {
+        try {
+          const res = await fetch(`/api/trips/${id}/cost-summary`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('cost summary failed');
+          const data = await res.json();
+          setCosts(data);
+          setRatios(
+            data.perUser.reduce(
+              (acc, u) => ({ ...acc, [u.userId]: u.ratio }),
+              {}
+            )
+          );
+        } catch (err) {
+          console.error('Failed to fetch cost summary', err);
+        }
+      };
 
     const fetchTrip = async () => {
         setIsLoading(true);
@@ -80,6 +100,7 @@ const TripDetails = () => {
             setEvents(data.events || []); // Assuming events are part of the trip data
             setTripMembers(data.members || []); // Ensure members are stored
             console.log("Trip Members:", data.members); // Debugging log
+            await fetchCostSummary();
         } catch (err) {
             setError('Error loading trip. Please try again later.');
             console.error('Error fetching trip:', err);
@@ -90,15 +111,10 @@ const TripDetails = () => {
 
 
     useEffect(() => {
-        if (!trip) return;
-      
-        fetch(`/api/trips/${id}/cost-summary`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(r => r.json())
-          .then(setCosts)
-          .catch(console.error);
-    }, [trip, id, token]);
+        fetchCostSummary();
+    }, [id, token]);
+
+    
 
 
     useEffect(() => {
@@ -388,7 +404,33 @@ const TripDetails = () => {
         }
     };
 
-    const ItemPreview = ({ type, id }) => {
+    const savePriceChange = async (eventId, price) => {
+        try {
+          const response = await fetch(
+            `/api/trips/${trip.id}/items/${eventId}/price`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ price: parseFloat(price) })
+            }
+          );
+          if (!response.ok) throw new Error('Failed to update price');
+          alert('Price updated!');
+          // locally remember this override
+          setPriceOverrides(prev => ({ ...prev, [eventId]: parseFloat(price) }));
+          await fetchCostSummary();
+        } catch (err) {
+          console.error(err);
+          alert('Error updating price');
+        }
+    };
+    
+
+
+    const ItemPreview = ({ type, id, overridePrice }) => {
         const [preview, setPreview] = useState(null);
         const [loading, setLoading] = useState(true);
 
@@ -413,6 +455,8 @@ const TripDetails = () => {
                         if (response.ok) {
                             const data = await response.json();
                             setPreview(data);
+                        } else {
+                            
                         }
                     }
                 } catch (err) {
@@ -425,6 +469,21 @@ const TripDetails = () => {
             fetchPreview();
         }, [type, id]);
 
+        const [priceInput, setPriceInput] = useState('');
+
+        useEffect(() => {
+          if (preview) {
+            console.log(`Preview for ${type} with ID ${id}:`, preview);
+            // prefer override (number), otherwise parse the preview.price
+            const initial = overridePrice != null
+                ? overridePrice
+                : (typeof preview.price === 'string'
+                    ? preview.price.match(/\d+(\.\d+)?/)?.[0] || ''
+                    : preview.price);
+            setPriceInput(initial);
+          }
+        }, [preview, overridePrice]);
+
         if (loading) return <p>Loading...</p>;
 
         if (!preview) return (
@@ -435,15 +494,33 @@ const TripDetails = () => {
         );
 
         // Render different previews based on item type
-        if (type === 'events' || type === 'custom-event') {
+        if (type === 'events' || type === 'custom-event') { 
             return (
-                <div className="event-preview">
-                    {preview.image && (
-                        <img src={preview.image} alt={preview.name} className="preview-image" />
-                    )}
-                    <h5>{preview.name}</h5>
-                    <p>{preview.date} | {preview.location}</p>
+            <div className="event-preview">
+                {preview.image && (
+                    <img src={preview.image} alt={preview.name} className="preview-image" />
+                )}
+                <h5>{preview.name}</h5>
+                <p>{preview.date} | {preview.location}</p>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
+                    <label htmlFor={`price-${id}`}>Price:</label>
+                    <input
+                        id={`price-${id}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={priceInput}
+                        onChange={(e) => setPriceInput(e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => savePriceChange(id, priceInput)}
+                    >
+                        Save
+                    </button>
                 </div>
+            </div>
             );
         } else if (type === 'lodging') {
             return (
@@ -463,6 +540,8 @@ const TripDetails = () => {
 
         return <p>Unknown item type</p>;
     };
+
+    const [localPrices, setLocalPrices] = useState({});
 
     const renderTripItems = () => {
         if (!trip.items || trip.items.length === 0) {
@@ -487,7 +566,11 @@ const TripDetails = () => {
                         <div className="items-grid">
                             {items.map((item) => (
                                 <div key={item.id} className="trip-item-card">
-                                    <ItemPreview type={item.item_type} id={item.item_id} />
+                                    <ItemPreview
+                                        type={item.item_type}
+                                        id={item.item_id}
+                                        overridePrice={priceOverrides[item.item_id]}
+                                    />                                    
                                     <button
                                         onClick={() => fetchItemDetails(item.item_type, item.item_id)}
                                         className="view-details-btn"
@@ -609,6 +692,44 @@ const TripDetails = () => {
         }
     };
 
+    const lastEdited = useRef(null);
+
+
+
+  function handleRatioChange(userId, val) {
+    lastEdited.current = userId;
+    setRatios(prev => ({
+      ...prev,
+      [userId]: Math.max(0, Math.min(1, parseFloat(val) || 0))
+    }));
+  }
+  async function saveRatios() {
+    setIsAdjusting(true);
+    try {
+      const payload = {
+        perUser: Object.entries(ratios).map(([userId, ratio]) => ({
+          userId, ratio
+        }))
+      };
+      await fetch(`/api/trips/${id}/cost-ratios`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type':'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      await fetchCostSummary();
+      // then re-fetch cost-summary as before…
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save percentages');
+    } finally {
+      setIsAdjusting(false);
+    }
+  }
+  
+
     const navRecommendations = () => {
         navigate('./recommendation');
     }
@@ -625,16 +746,46 @@ const TripDetails = () => {
         <div className="trip-details">
             <div className="cost-summary-card">
                 <h3>Cost Summary</h3>
-                <p><strong>Total:</strong> ${costs.totalCost}</p>
+                <p><strong>Total:</strong> ${costs.totalCost.toFixed(2)}</p>
 
-                { Array.isArray(costs.perUser) && (
                 <ul>
-                    {costs.perUser.map(u => (
-                    <li key={u.userId} className={u.userId === userId ? 'you' : ''}>
-                        {u.username}: ${u.cost}
-                    </li>
-                    ))}
+                    {costs.perUser.map(u => {
+                        const isLeader = trip.creator_id === userId;
+                        const isMe = u.userId === userId;
+                        const pct = (ratios[u.userId] * 100).toFixed(0);
+                        const amt = isMe && !isLeader
+                            ? costs.yourCost.toFixed(2)
+                            : (costs.totalCost * ratios[u.userId]).toFixed(2);
+
+                        return (
+                        <li key={u.userId} className={isMe ? 'you' : ''}>
+                            {u.username}:&nbsp;
+                            {isLeader ? (
+                            <>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="1"
+                                value={ratios[u.userId]}
+                                onChange={e => handleRatioChange(u.userId, e.target.value)}
+                                style={{ width:'4rem', marginRight:'.5rem' }}
+                            />
+                            ({pct}%) — {isMe ? 'you' : u.username} pay ${amt}
+                                </>
+                            ) : isMe ? (
+                                <>you pay ${amt} ({pct}%)</>
+                            ) : (
+                                <>${amt} ({pct}%)</>
+                            )}
+                        </li>
+                        );
+                    })}
                 </ul>
+                {trip.creator_id === userId && (
+                    <button onClick={saveRatios} disabled={isAdjusting}>
+                        {isAdjusting ? 'Saving…' : 'Save Percentages'}
+                    </button>
                 )}
             </div>
             {isTripCancelled && (
