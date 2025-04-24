@@ -9,7 +9,8 @@ require('dotenv').config();
 router.post('/', auth, async (req, res) => {
     try {
         console.log(req.body);
-        const { name, description, location, date, start_time, price, type } = req.body;
+        const { name, description, location, date, start_time, price, type,
+                public: isPublic = false } = req.body;
         const creator_id = req.user.id; // From auth middleware
         if (!name || !location || !start_time || !type) {
             return res.status(400).json({ message: 'Missing required fields' });
@@ -18,8 +19,8 @@ router.post('/', auth, async (req, res) => {
         const formattedStartTime = `${date} ${start_time}:00`;
         // Insert event data into the database
         const result = await db.query(
-            'INSERT INTO customevents (creator_id, name, description, location, start_time, price, type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [creator_id, name, description, location, formattedStartTime, price, type]
+            'INSERT INTO customevents (creator_id, name, description, location, start_time, price, type, public) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [creator_id, name, description, location, formattedStartTime, price, type, isPublic]
         );
 
         res.status(201).json(result.rows[0]);
@@ -29,14 +30,28 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+router.patch('/:id/public', auth, async (req, res) => {
+    const { id } = req.params;
+    const { public: isPublic } = req.body;
+    const result = await db.query(
+      `UPDATE customevents
+          SET public = $1
+        WHERE id = $2 AND creator_id = $3
+        RETURNING *`,
+      [isPublic, id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ message: 'Not found or not yours' });
+    res.json(result.rows[0]);
+  });
+
 // Get all custom events for the authenticated user
 router.get('/', auth, async (req, res) => {
     try {
-        const userId = req.user.id; // From auth middleware
-
-        const result = await db.query(
-            'SELECT * FROM customevents WHERE creator_id = $1', [userId]
-        );
+        const sql = 
+        `SELECT * FROM customevents
+         WHERE public = TRUE
+            OR creator_id = $1`;
+      const result = await db.query(sql, [req.user.id]);
 
         res.json(result.rows);
     } catch (err) {

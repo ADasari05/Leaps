@@ -13,6 +13,7 @@ const CreateNewEvent = () => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isPublic, setPublic] = useState(false);
     const token = localStorage.getItem("token");
     const navigate = useNavigate();
 
@@ -30,6 +31,7 @@ const CreateNewEvent = () => {
             type: type || "N/A",
             price: price || "N/A",
             description: description || "N/A",
+            public: isPublic,
         };
 
         try {
@@ -124,6 +126,12 @@ const CreateNewEvent = () => {
                 <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                />
+                <label>public</label>
+                <input
+                        type="checkbox"
+                        checked={isPublic}
+                        onChange={(e) => setPublic(e.target.checked)}
                 />
 
                 <div className="button-group">

@@ -101,7 +101,7 @@ CREATE TABLE customevents (
     end_time TIMESTAMP,
     price DOUBLE PRECISION,
     description TEXT,
-    is_public BOOLEAN DEFAULT false,
+    public BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
