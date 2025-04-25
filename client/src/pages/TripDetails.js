@@ -35,35 +35,81 @@ const TripDetails = () => {
     const [selectedDate, setSelectedDate] = useState(null);
     const [eventsForSelectedDate, setEventsForSelectedDate] = useState([]);
     const [costs, setCosts] = useState({
-                                        totalCost: 0,
-                                        perUser: [],
-                                        yourCost: 0
-                                    });
+        totalCost: 0,
+        perUser: [],
+        yourCost: 0
+    });
     const [isAdjusting, setIsAdjusting] = useState(false);
     const [ratios, setRatios] = useState({});
-    const [ priceOverrides, setPriceOverrides ] = useState({});
+    const [priceOverrides, setPriceOverrides] = useState({});
     const [memberRsvps, setMemberRsvps] = useState([]);
     const [rsvpUpdated, setRsvpUpdated] = useState(false);
     const [success, setSuccess] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [uploadMessage, setUploadMessage] = useState('');
+    const [tripFiles, setTripFiles] = useState([]);
+
 
     const fetchCostSummary = async () => {
         try {
-          const res = await fetch(`/api/trips/${id}/cost-summary`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (!res.ok) throw new Error('cost summary failed');
-          const data = await res.json();
-          setCosts(data);
-          setRatios(
-            data.perUser.reduce(
-              (acc, u) => ({ ...acc, [u.userId]: u.ratio }),
-              {}
-            )
-          );
+            const res = await fetch(`/api/trips/${id}/cost-summary`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('cost summary failed');
+            const data = await res.json();
+            setCosts(data);
+            setRatios(
+                data.perUser.reduce(
+                    (acc, u) => ({ ...acc, [u.userId]: u.ratio }),
+                    {}
+                )
+            );
         } catch (err) {
-          console.error('Failed to fetch cost summary', err);
+            console.error('Failed to fetch cost summary', err);
         }
     };
+
+    const handleFileUpload = async () => {
+        if (!selectedFile) return;
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            const res = await fetch(`/api/trips/${id}/upload-file`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error('Failed to upload');
+
+            setUploadMessage('File uploaded successfully!');
+            setSelectedFile(null);
+            fetchTripFiles(); // Refresh file list
+        } catch (err) {
+            console.error('Upload error:', err);
+            setUploadMessage('Failed to upload file.');
+        }
+    };
+
+    const fetchTripFiles = async () => {
+        try {
+            const res = await fetch(`/api/trips/${id}/files`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch files');
+
+            const data = await res.json();
+            setTripFiles(data);
+        } catch (err) {
+            console.error('Error fetching trip files:', err);
+        }
+    };
+
 
     const fetchTrip = async () => {
         setIsLoading(true);
@@ -157,24 +203,24 @@ const TripDetails = () => {
         fetchCostSummary();
     }, [id, token]);
 
-    
+
 
     const fetchRsvpStatuses = async () => {
         if (!token || !id) return;
-        
+
         try {
-          const response = await fetch(`/api/trip-rsvp/${id}/rsvp-status`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-      
-          if (!response.ok) throw new Error('Failed to fetch RSVP statuses');
-      
-          const data = await response.json();
-          setMemberRsvps(data);
+            const response = await fetch(`/api/trip-rsvp/${id}/rsvp-status`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch RSVP statuses');
+
+            const data = await response.json();
+            setMemberRsvps(data);
         } catch (err) {
-          console.error('Error fetching RSVP status:', err);
+            console.error('Error fetching RSVP status:', err);
         }
     };
 
@@ -182,6 +228,7 @@ const TripDetails = () => {
         fetchTrip();
         fetchTripItemsWithDates();
         fetchRsvpStatuses();
+        fetchTripFiles();
 
         const fetchFriends = async () => {
             try {
@@ -203,21 +250,21 @@ const TripDetails = () => {
 
     useEffect(() => {
         if (rsvpUpdated) {
-          fetchRsvpStatuses();
-          setRsvpUpdated(false);
+            fetchRsvpStatuses();
+            setRsvpUpdated(false);
         }
     }, [rsvpUpdated]);
 
     const handleRsvpUpdate = (userId, newStatus) => {
         // Update the memberRsvps state immediately
-        setMemberRsvps(prev => 
-          prev.map(member => 
-            member.id === userId 
-              ? {...member, status: newStatus, response_date: new Date().toISOString()} 
-              : member
-          )
+        setMemberRsvps(prev =>
+            prev.map(member =>
+                member.id === userId
+                    ? { ...member, status: newStatus, response_date: new Date().toISOString() }
+                    : member
+            )
         );
-        
+
         // Also trigger a full refresh of RSVP data
         setRsvpUpdated(true);
     };
@@ -263,32 +310,32 @@ const TripDetails = () => {
 
     const sendRsvpReminder = async (memberId) => {
         try {
-          const response = await fetch(`/api/trip-rsvp/${id}/send-reminder/${memberId}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-      
-          if (!response.ok) throw new Error('Failed to send reminder');
-      
-          const data = await response.json();
-          
-          // Show success message
-          alert(data.message);
-          
-          // Update the memberRsvps state to show the reminder was sent
-          // This is mostly to trigger a UI update
-          setMemberRsvps(prev => 
-            prev.map(member => 
-              member.id === memberId 
-                ? {...member, reminded: true} 
-                : member
-            )
-          );
+            const response = await fetch(`/api/trip-rsvp/${id}/send-reminder/${memberId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to send reminder');
+
+            const data = await response.json();
+
+            // Show success message
+            alert(data.message);
+
+            // Update the memberRsvps state to show the reminder was sent
+            // This is mostly to trigger a UI update
+            setMemberRsvps(prev =>
+                prev.map(member =>
+                    member.id === memberId
+                        ? { ...member, reminded: true }
+                        : member
+                )
+            );
         } catch (err) {
-          console.error('Error sending RSVP reminder:', err);
-          setError('Error sending reminder');
+            console.error('Error sending RSVP reminder:', err);
+            setError('Error sending reminder');
         }
     };
 
@@ -379,18 +426,18 @@ const TripDetails = () => {
                 profile_pic: friendToAdd.profile_pic,
                 role: "view" // Default role for new members
             };
-              
-              // Add to tripMembers array
+
+            // Add to tripMembers array
             setTripMembers(prevMembers => [...prevMembers, newMember]);
-              
-              // Add default RSVP status for the new member
+
+            // Add default RSVP status for the new member
             setMemberRsvps(prevRsvps => [
-                ...prevRsvps, 
-                { 
-                  id: friendToAdd.id, 
-                  username: friendToAdd.username,
-                  status: 'no_response',
-                  response_date: new Date().toISOString()
+                ...prevRsvps,
+                {
+                    id: friendToAdd.id,
+                    username: friendToAdd.username,
+                    status: 'no_response',
+                    response_date: new Date().toISOString()
                 }
             ]);
 
@@ -556,28 +603,28 @@ const TripDetails = () => {
 
     const savePriceChange = async (eventId, price) => {
         try {
-          const response = await fetch(
-            `/api/trips/${trip.id}/items/${eventId}/price`,
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ price: parseFloat(price) })
-            }
-          );
-          if (!response.ok) throw new Error('Failed to update price');
-          alert('Price updated!');
-          // locally remember this override
-          setPriceOverrides(prev => ({ ...prev, [eventId]: parseFloat(price) }));
-          await fetchCostSummary();
+            const response = await fetch(
+                `/api/trips/${trip.id}/items/${eventId}/price`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ price: parseFloat(price) })
+                }
+            );
+            if (!response.ok) throw new Error('Failed to update price');
+            alert('Price updated!');
+            // locally remember this override
+            setPriceOverrides(prev => ({ ...prev, [eventId]: parseFloat(price) }));
+            await fetchCostSummary();
         } catch (err) {
-          console.error(err);
-          alert('Error updating price');
+            console.error(err);
+            alert('Error updating price');
         }
     };
-    
+
 
 
     const ItemPreview = ({ type, id, overridePrice }) => {
@@ -606,7 +653,7 @@ const TripDetails = () => {
                             const data = await response.json();
                             setPreview(data);
                         } else {
-                            
+
                         }
                     }
                 } catch (err) {
@@ -622,16 +669,16 @@ const TripDetails = () => {
         const [priceInput, setPriceInput] = useState('');
 
         useEffect(() => {
-          if (preview) {
-            console.log(`Preview for ${type} with ID ${id}:`, preview);
-            // prefer override (number), otherwise parse the preview.price
-            const initial = overridePrice != null
-                ? overridePrice
-                : (typeof preview.price === 'string'
-                    ? preview.price.match(/\d+(\.\d+)?/)?.[0] || ''
-                    : preview.price);
-            setPriceInput(initial);
-          }
+            if (preview) {
+                console.log(`Preview for ${type} with ID ${id}:`, preview);
+                // prefer override (number), otherwise parse the preview.price
+                const initial = overridePrice != null
+                    ? overridePrice
+                    : (typeof preview.price === 'string'
+                        ? preview.price.match(/\d+(\.\d+)?/)?.[0] || ''
+                        : preview.price);
+                setPriceInput(initial);
+            }
         }, [preview, overridePrice]);
 
         if (loading) return <p>Loading...</p>;
@@ -644,33 +691,33 @@ const TripDetails = () => {
         );
 
         // Render different previews based on item type
-        if (type === 'events' || type === 'custom-event') { 
+        if (type === 'events' || type === 'custom-event') {
             return (
-            <div className="event-preview">
-                {preview.image && (
-                    <img src={preview.image} alt={preview.name} className="preview-image" />
-                )}
-                <h5>{preview.name}</h5>
-                <p>{preview.date} | {preview.location}</p>
+                <div className="event-preview">
+                    {preview.image && (
+                        <img src={preview.image} alt={preview.name} className="preview-image" />
+                    )}
+                    <h5>{preview.name}</h5>
+                    <p>{preview.date} | {preview.location}</p>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
-                    <label htmlFor={`price-${id}`}>Price:</label>
-                    <input
-                        id={`price-${id}`}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={priceInput}
-                        onChange={(e) => setPriceInput(e.target.value)}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => savePriceChange(id, priceInput)}
-                    >
-                        Save
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        <label htmlFor={`price-${id}`}>Price:</label>
+                        <input
+                            id={`price-${id}`}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={priceInput}
+                            onChange={(e) => setPriceInput(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => savePriceChange(id, priceInput)}
+                        >
+                            Save
+                        </button>
+                    </div>
                 </div>
-            </div>
             );
         } else if (type === 'lodging') {
             return (
@@ -720,7 +767,7 @@ const TripDetails = () => {
                                         type={item.item_type}
                                         id={item.item_id}
                                         overridePrice={priceOverrides[item.item_id]}
-                                    />                                    
+                                    />
                                     <button
                                         onClick={() => fetchItemDetails(item.item_type, item.item_id)}
                                         className="view-details-btn"
@@ -833,16 +880,16 @@ const TripDetails = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-    
+
             if (!response.ok) throw new Error('Failed to cancel trip');
-    
+
             await response.json();
         } catch (err) {
             console.error('Error cancelling trip:', err);
             setError('Error cancelling trip. Please try again later.');
         }
     };
-    
+
     useEffect(() => {
         if (isTripCancelled) {
             handleCancelTrip();
@@ -895,39 +942,39 @@ const TripDetails = () => {
 
 
 
-  function handleRatioChange(userId, val) {
-    lastEdited.current = userId;
-    setRatios(prev => ({
-      ...prev,
-      [userId]: Math.max(0, Math.min(1, parseFloat(val) || 0))
-    }));
-  }
-  async function saveRatios() {
-    setIsAdjusting(true);
-    try {
-      const payload = {
-        perUser: Object.entries(ratios).map(([userId, ratio]) => ({
-          userId, ratio
-        }))
-      };
-      await fetch(`/api/trips/${id}/cost-ratios`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type':'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      await fetchCostSummary();
-      // then re-fetch cost-summary as before…
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save percentages');
-    } finally {
-      setIsAdjusting(false);
+    function handleRatioChange(userId, val) {
+        lastEdited.current = userId;
+        setRatios(prev => ({
+            ...prev,
+            [userId]: Math.max(0, Math.min(1, parseFloat(val) || 0))
+        }));
     }
-  }
-  
+    async function saveRatios() {
+        setIsAdjusting(true);
+        try {
+            const payload = {
+                perUser: Object.entries(ratios).map(([userId, ratio]) => ({
+                    userId, ratio
+                }))
+            };
+            await fetch(`/api/trips/${id}/cost-ratios`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            await fetchCostSummary();
+            // then re-fetch cost-summary as before…
+        } catch (err) {
+            console.error(err);
+            alert('Failed to save percentages');
+        } finally {
+            setIsAdjusting(false);
+        }
+    }
+
 
     const navRecommendations = () => {
         navigate('./recommendation');
@@ -953,6 +1000,85 @@ const TripDetails = () => {
             alert('Failed to update role');
         }
     };
+
+    const downloadFile = async (fileId, filename) => {
+        try {
+            const res = await fetch(`/api/trips/${id}/files/${fileId}/download`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!res.ok) throw new Error('Failed to download file');
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Download failed:', err);
+            alert('Failed to download file');
+        }
+    };
+
+    const hasEditAccess = () => {
+        if (!trip || !tripMembers) return false;
+
+        const me = tripMembers.find(m => m.id === userId);
+        return (
+            trip.creator_id === userId ||
+            me?.role === 'edit' ||
+            me?.role === 'co-creator'
+        );
+    };
+
+    const handleDeleteFile = async (fileId) => {
+        try {
+            const res = await fetch(`/api/trips/${id}/files/${fileId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error('Failed to delete file');
+
+            // Refresh file list
+            fetchTripFiles();
+        } catch (err) {
+            console.error('Error deleting file:', err);
+            alert('Failed to delete file');
+        }
+    };
+
+    const openFileInNewTab = async (fileId) => {
+        try {
+          const res = await fetch(`/api/trips/${id}/files/${fileId}/view`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+      
+          if (!res.ok) throw new Error('Failed to fetch file');
+      
+          const blob = await res.blob();
+      
+          const blobUrl = window.URL.createObjectURL(blob);
+      
+          window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+        } catch (err) {
+          console.error('Error opening file:', err);
+          alert('Failed to open file');
+        }
+      };
+      
+      
 
     const handlePromoteToCreator = async (memberId) => {
         const confirmPromotion = window.confirm(
@@ -983,10 +1109,10 @@ const TripDetails = () => {
 
     const getAvailableFriends = () => {
         if (!friends || !tripMembers) return [];
-        
+
         // Get the IDs of all trip members
         const memberIds = tripMembers.map(member => member.id);
-        
+
         // Filter out friends who are already in the trip
         return friends.filter(friend => !memberIds.includes(friend.id));
     };
@@ -1015,27 +1141,27 @@ const TripDetails = () => {
                             : (costs.totalCost * ratios[u.userId]).toFixed(2);
 
                         return (
-                        <li key={u.userId} className={isMe ? 'you' : ''}>
-                            {u.username}:&nbsp;
-                            {isLeader ? (
-                            <>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max="1"
-                                value={ratios[u.userId]}
-                                onChange={e => handleRatioChange(u.userId, e.target.value)}
-                                style={{ width:'4rem', marginRight:'.5rem' }}
-                            />
-                            ({pct}%) — {isMe ? 'you' : u.username} pay ${amt}
-                                </>
-                            ) : isMe ? (
-                                <>you pay ${amt} ({pct}%)</>
-                            ) : (
-                                <>${amt} ({pct}%)</>
-                            )}
-                        </li>
+                            <li key={u.userId} className={isMe ? 'you' : ''}>
+                                {u.username}:&nbsp;
+                                {isLeader ? (
+                                    <>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="1"
+                                            value={ratios[u.userId]}
+                                            onChange={e => handleRatioChange(u.userId, e.target.value)}
+                                            style={{ width: '4rem', marginRight: '.5rem' }}
+                                        />
+                                        ({pct}%) — {isMe ? 'you' : u.username} pay ${amt}
+                                    </>
+                                ) : isMe ? (
+                                    <>you pay ${amt} ({pct}%)</>
+                                ) : (
+                                    <>${amt} ({pct}%)</>
+                                )}
+                            </li>
                         );
                     })}
                 </ul>
@@ -1109,6 +1235,58 @@ const TripDetails = () => {
                         )}
                         {renderTripItems()}
 
+                        {hasEditAccess() && (<div className="file-upload-section">
+                            <h3>Upload a File</h3>
+                            <input
+                                type="file"
+                                onChange={(e) => setSelectedFile(e.target.files[0])}
+                                accept="*"
+                            />
+                            <button onClick={handleFileUpload} disabled={!selectedFile}>
+                                Upload
+                            </button>
+                            {uploadMessage && <p>{uploadMessage}</p>}
+                        </div>)}
+                        <h4>Uploaded Files</h4>
+                        {tripFiles.length === 0 ? (
+                            <p>No files uploaded yet.</p>
+                        ) : (
+                            <div className="trip-files-list">
+                                {tripFiles.map((file) => (
+                                    <div key={file.id} className="file-row">
+                                        <button
+                                            className="file-name-btn"
+                                            onClick={() => openFileInNewTab(file.id)}
+                                        >
+                                            {file.filename}
+                                        </button>
+
+                                        <span className="file-date">
+                                            {new Date(file.uploaded_at).toLocaleString()}
+                                        </span>
+
+                                        <button
+                                            className="file-download-btn"
+                                            onClick={() => downloadFile(file.id, file.filename)}
+                                        >
+                                            📥 Download
+                                        </button>
+
+                                        {hasEditAccess() && (
+                                            <button
+                                                className="file-delete-btn"
+                                                onClick={() => handleDeleteFile(file.id)}
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+
+                        )}
+
                         <div className="event-recommendations">
                             {trip.current && (<button
                                 onClick={navRecommendations}
@@ -1116,7 +1294,7 @@ const TripDetails = () => {
                                 View Recommendations
                             </button>)}
                         </div>
-           
+
 
                         {/* <div className="add-friend">
                             <h3>Trip Members</h3>
@@ -1170,125 +1348,125 @@ const TripDetails = () => {
                             {success && <div className="success-message">{success}</div>}
                             {error && <div className="error-message">{error}</div>}
                             {trip.current && (
-                                <TripRSVP 
-                                tripId={id} 
-                                currentUserId={userId} 
-                                isCreator={trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")}
-                                onRsvpUpdate={handleRsvpUpdate}
+                                <TripRSVP
+                                    tripId={id}
+                                    currentUserId={userId}
+                                    isCreator={trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")}
+                                    onRsvpUpdate={handleRsvpUpdate}
                                 />
                             )}
-                            
+
                             {/* Add Friend Form */}
                             {(trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
                                 <div className="add-member-container">
                                     <div className="add-member-form">
-                                    <select 
-                                        value={selectedFriend} 
-                                        onChange={(e) => setSelectedFriend(e.target.value)}
-                                        className="friend-select"
-                                        disabled={getAvailableFriends().length === 0}
-                                    >
-                                        {getAvailableFriends().length === 0 ? (
-                                        <option value="">No more friends to add</option>
-                                        ) : (
-                                        <>
-                                            <option value="">Add a friend to this trip...</option>
-                                            {getAvailableFriends().map((friend) => (
-                                            <option key={friend.id} value={friend.id}>
-                                                {friend.username}
-                                            </option>
-                                            ))}
-                                        </>
-                                        )}
-                                    </select>
-                                    <button 
-                                        onClick={handleAddFriend} 
-                                        className="add-friend-btn" 
-                                        disabled={!selectedFriend || getAvailableFriends().length === 0}
-                                    >
-                                        Add
-                                    </button>
+                                        <select
+                                            value={selectedFriend}
+                                            onChange={(e) => setSelectedFriend(e.target.value)}
+                                            className="friend-select"
+                                            disabled={getAvailableFriends().length === 0}
+                                        >
+                                            {getAvailableFriends().length === 0 ? (
+                                                <option value="">No more friends to add</option>
+                                            ) : (
+                                                <>
+                                                    <option value="">Add a friend to this trip...</option>
+                                                    {getAvailableFriends().map((friend) => (
+                                                        <option key={friend.id} value={friend.id}>
+                                                            {friend.username}
+                                                        </option>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </select>
+                                        <button
+                                            onClick={handleAddFriend}
+                                            className="add-friend-btn"
+                                            disabled={!selectedFriend || getAvailableFriends().length === 0}
+                                        >
+                                            Add
+                                        </button>
                                     </div>
                                 </div>
                             )}
 
-                            
+
                             {/* Members List */}
                             <div className="members-list-container">
                                 <ul className="members-list">
-                                {tripMembers.map(member => {
-                                    const memberRsvp = memberRsvps.find(rsvp => rsvp.id === member.id);
-                                    const rsvpStatus = memberRsvp?.status || 'no_response';
-                                    
-                                    return (
-                                    <li key={member.id} className={`member-item ${member.id === userId ? "current-user" : ""}`}>
-                                        <div className="member-info">
-                                        <img
-                                            src={member.profile_pic}
-                                            className="profile-pic"
-                                            alt={member.username}
-                                        />
-                                        <div className="member-details">
-                                            <span className="member-name">
-                                            {member.username}
-                                            {member.id === userId && <span className="current-user-tag">(me)</span>}
-                                            </span>
-                                            <span className={`rsvp-status ${rsvpStatus ? `rsvp-${rsvpStatus}` : 'rsvp-no-response'}`}>
-                                            {rsvpStatus === 'attending' ? 'Going' : 
-                                            rsvpStatus === 'not_attending' ? 'Not Going' : 
-                                            rsvpStatus === 'maybe' ? 'Maybe' : 'No Response'}
-                                            </span>
-                                        </div>
-                                        </div>
-                                        
-                                        {trip.creator_id === userId && member.id !== userId && (
-                                        <div className="member-actions">
-                                            {/* Direct action buttons for key functions */}
-                                            <button 
-                                            className="remove-member-btn"
-                                            onClick={() => handleRemoveMember(member.id)}
-                                            >
-                                            Remove
-                                            </button>
-                                            
-                                            {trip.current && (
-                                            rsvpStatus === 'no_response' || // Only show for no response
-                                            rsvpStatus === null || // Also handle null case
-                                            rsvpStatus === undefined // Also handle undefined case
-                                            ) && (
-                                            <button 
-                                                className="rsvp-reminder-btn"
-                                                onClick={() => sendRsvpReminder(member.id)}
-                                            >
-                                                RSVP Reminder
-                                            </button>
-                                            )}
-                                            
-                                            {/* Advanced options dropdown */}
-                                            <div className="action-dropdown">
-                                            <button className="action-btn">More ▾</button>
-                                            <div className="action-dropdown-content">
-                                                <button onClick={() => handlePromoteToCreator(member.id)}>
-                                                Promote to Creator
-                                                </button>
-                                                <div className="role-selector">
-                                                <span>Permissions:</span>
-                                                <select
-                                                    value={member.role || "view"}
-                                                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                                                >
-                                                    <option value="view">View Only</option>
-                                                    <option value="edit">Edit</option>
-                                                    <option value="co-creator">Co-Creator</option>
-                                                </select>
+                                    {tripMembers.map(member => {
+                                        const memberRsvp = memberRsvps.find(rsvp => rsvp.id === member.id);
+                                        const rsvpStatus = memberRsvp?.status || 'no_response';
+
+                                        return (
+                                            <li key={member.id} className={`member-item ${member.id === userId ? "current-user" : ""}`}>
+                                                <div className="member-info">
+                                                    <img
+                                                        src={member.profile_pic}
+                                                        className="profile-pic"
+                                                        alt={member.username}
+                                                    />
+                                                    <div className="member-details">
+                                                        <span className="member-name">
+                                                            {member.username}
+                                                            {member.id === userId && <span className="current-user-tag">(me)</span>}
+                                                        </span>
+                                                        <span className={`rsvp-status ${rsvpStatus ? `rsvp-${rsvpStatus}` : 'rsvp-no-response'}`}>
+                                                            {rsvpStatus === 'attending' ? 'Going' :
+                                                                rsvpStatus === 'not_attending' ? 'Not Going' :
+                                                                    rsvpStatus === 'maybe' ? 'Maybe' : 'No Response'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            </div>
-                                        </div>
-                                        )}
-                                    </li>
-                                    );
-                                })}
+
+                                                {trip.creator_id === userId && member.id !== userId && (
+                                                    <div className="member-actions">
+                                                        {/* Direct action buttons for key functions */}
+                                                        <button
+                                                            className="remove-member-btn"
+                                                            onClick={() => handleRemoveMember(member.id)}
+                                                        >
+                                                            Remove
+                                                        </button>
+
+                                                        {trip.current && (
+                                                            rsvpStatus === 'no_response' || // Only show for no response
+                                                            rsvpStatus === null || // Also handle null case
+                                                            rsvpStatus === undefined // Also handle undefined case
+                                                        ) && (
+                                                                <button
+                                                                    className="rsvp-reminder-btn"
+                                                                    onClick={() => sendRsvpReminder(member.id)}
+                                                                >
+                                                                    RSVP Reminder
+                                                                </button>
+                                                            )}
+
+                                                        {/* Advanced options dropdown */}
+                                                        <div className="action-dropdown">
+                                                            <button className="action-btn">More ▾</button>
+                                                            <div className="action-dropdown-content">
+                                                                <button onClick={() => handlePromoteToCreator(member.id)}>
+                                                                    Promote to Creator
+                                                                </button>
+                                                                <div className="role-selector">
+                                                                    <span>Permissions:</span>
+                                                                    <select
+                                                                        value={member.role || "view"}
+                                                                        onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                                                                    >
+                                                                        <option value="view">View Only</option>
+                                                                        <option value="edit">Edit</option>
+                                                                        <option value="co-creator">Co-Creator</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             </div>
                         </div>

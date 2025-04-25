@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS users,
                      messages, 
                      notifications,
                      notification_preferences,
+                     trip_files,
                      CASCADE;
 DROP INDEX IF EXISTS idx_events_name, 
                      idx_events_location, 
@@ -203,6 +204,15 @@ CREATE TABLE messages (
     content TEXT NOT NULL,
     attachment_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trip_files (
+    id SERIAL PRIMARY KEY,
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    mime_type TEXT,
+    uploaded_at TIMESTAMP DEFAULT NOW()
 );
 
 /* Notification table */

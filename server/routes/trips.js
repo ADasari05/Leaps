@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../config/db');
 const auth = require('../middleware/auth');
 const fetch = require('node-fetch');
+const multer = require('multer');
+
 
 // Get all trips for the authenticated user
 router.get('/', auth, async (req, res) => {
@@ -82,6 +84,210 @@ router.get('/:id', auth, async (req, res) => {
         res.status(500).json({ message: 'Server error fetching trip' });
     }
 });
+
+
+//uploading files
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post('/:id/upload-file', auth, upload.single('file'), async (req, res) => {
+    try {
+        const { id: tripId } = req.params;
+        const userId = req.user.id;
+        const file = req.file;
+
+
+        // Validate tripId
+        if (!tripId) {
+            return res.status(400).json({ message: 'Missing trip ID' });
+        }
+
+        // Validate file
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const { originalname, buffer } = req.file;
+
+        // Validate user has access to trip
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips
+             WHERE id = $1 AND (creator_id = $2 OR id IN (
+                SELECT trip_id FROM trip_members WHERE user_id = $2
+             ))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'Unauthorized to upload to this trip' });
+        }
+
+        const result = await db.query(
+            `INSERT INTO trip_files (trip_id, filename, data, mime_type)
+             VALUES ($1, $2, $3, $4)
+             RETURNING *`,
+            [tripId, file.originalname, file.buffer, file.mimetype]
+          );
+
+        res.status(201).json({ message: 'File uploaded successfully' });
+    } catch (err) {
+        console.error('Error uploading file:', err);
+        res.status(500).json({ message: 'Server error uploading file' });
+    }
+});
+
+
+
+//listing files in a trip
+router.get('/:id/files', auth, async (req, res) => {
+    try {
+        const tripId = req.params.id;
+        const userId = req.user.id;
+
+        //Verify user has access to trip
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips
+            WHERE id = $1
+            AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'Not authorized' })
+        }
+
+        const files = await db.query(
+            `SELECT id, filename, uploaded_at
+            FROM trip_files
+            WHERE trip_id = $1
+            ORDER BY uploaded_at DESC`,
+            [tripId]
+        );
+
+        res.json(files.rows);
+    }
+    catch (err) {
+        console.error('Error fetching trip files:', err);
+        res.status(500).json({ message: 'Server error fetching trip files'});
+    }
+});
+
+// Download a specific trip file by ID
+router.get('/:tripId/files/:fileId/download', auth, async (req, res) => {
+    try {
+        const { tripId, fileId } = req.params;
+        const userId = req.user.id;
+
+        // Check access
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips
+             WHERE id = $1
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'Not authorized to download files for this trip' });
+        }
+
+        const fileResult = await db.query(
+            `SELECT filename, data
+             FROM trip_files
+             WHERE id = $1 AND trip_id = $2`,
+            [fileId, tripId]
+        );
+
+        if (fileResult.rows.length === 0) {
+            return res.status(404).json({ message: 'File not found' });
+        }
+
+        const { filename, data } = fileResult.rows[0];
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.send(data);
+    } catch (err) {
+        console.error('Error downloading file:', err);
+        res.status(500).json({ message: 'Server error downloading file' });
+    }
+});
+
+//deleting a file
+router.delete('/:tripId/files/:fileId', auth, async (req, res) => {
+    try {
+        const { tripId, fileId } = req.params;
+        const userId = req.user.id;
+
+        // Check edit permissions
+        const access = await db.query(
+            `SELECT 1 FROM trips t
+             LEFT JOIN trip_member_roles r ON t.id = r.trip_id AND r.user_id = $2
+             WHERE t.id = $1 AND (
+                 t.creator_id = $2 OR r.role IN ('edit', 'co-creator')
+             )`,
+            [tripId, userId]
+        );
+
+        if (access.rows.length === 0) {
+            return res.status(403).json({ message: 'Not authorized to delete this file' });
+        }
+
+        // Delete the file
+        const result = await db.query(
+            `DELETE FROM trip_files WHERE id = $1 AND trip_id = $2 RETURNING *`,
+            [fileId, tripId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'File not found' });
+        }
+
+        res.json({ message: 'File deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting file:', err);
+        res.status(500).json({ message: 'Server error deleting file' });
+    }
+});
+
+// View a file
+router.get('/:tripId/files/:fileId/view', auth, async (req, res) => {
+    try {
+        const { tripId, fileId } = req.params;
+        const userId = req.user.id;
+
+        // Check access
+        const tripCheck = await db.query(
+            `SELECT 1 FROM trips
+             WHERE id = $1
+             AND (creator_id = $2 OR id IN (SELECT trip_id FROM trip_members WHERE user_id = $2))`,
+            [tripId, userId]
+        );
+
+        if (tripCheck.rows.length === 0) {
+            return res.status(403).json({ message: 'Unauthorized to view this file' });
+        }
+
+        // Fetch file data
+        const result = await db.query(
+            `SELECT filename, mime_type, data FROM trip_files
+             WHERE id = $1 AND trip_id = $2`,
+            [fileId, tripId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'File not found' });
+        }
+
+        const { filename, mime_type, data } = result.rows[0];
+
+        res.setHeader('Content-Type', mime_type || 'application/octet-stream');
+        res.send(data);
+    } catch (err) {
+        console.error('Error viewing file:', err);
+        res.status(500).json({ message: 'Server error viewing file' });
+    }
+});
+
+
 
 // Get trip items with associated date information
 router.get('/:id/items-with-dates', auth, async (req, res) => {
@@ -626,6 +832,8 @@ router.post('/:id/add-friend', auth, async (req, res) => {
         return res.status(500).json({ message: 'Server error adding friend to trip' });
     }
 });
+
+
 
 //add a friend to a trip by link
 router.post('/:id/share', auth, async (req, res) => {
