@@ -40,6 +40,7 @@ router.get('/list', auth, async (req, res) => {
     );
 
     console.log('Notifications retrieved:', result.rows.length);
+    console.log('user id: ', userId)
     res.json(result.rows);
   } catch (err) {
     console.log('Error fetching notifications:', err);
