@@ -1138,385 +1138,390 @@ const TripDetails = () => {
     }
 
     return (
-        <div className="trip-details">
-            <div className="cost-summary-card">
-                <h3>Cost Summary</h3>
-                <p><strong>Total:</strong> ${costs.totalCost.toFixed(2)}</p>
-
-                <ul>
-                    {costs.perUser.map(u => {
-                        const isLeader = trip.creator_id === userId;
-                        const isMe = u.userId === userId;
-                        const pct = (ratios[u.userId] * 100).toFixed(0);
-                        const amt = isMe && !isLeader
-                            ? costs.yourCost.toFixed(2)
-                            : (costs.totalCost * ratios[u.userId]).toFixed(2);
-
-                        return (
-                            <li key={u.userId} className={isMe ? 'you' : ''}>
-                                {u.username}:&nbsp;
-                                {isLeader ? (
-                                    <>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="1"
-                                            value={ratios[u.userId]}
-                                            onChange={e => handleRatioChange(u.userId, e.target.value)}
-                                            style={{ width: '4rem', marginRight: '.5rem' }}
-                                        />
-                                        ({pct}%) — {isMe ? 'you' : u.username} pay ${amt}
-                                    </>
-                                ) : isMe ? (
-                                    <>you pay ${amt} ({pct}%)</>
-                                ) : (
-                                    <>${amt} ({pct}%)</>
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
-                {trip.creator_id === userId && (
-                    <button onClick={saveRatios} disabled={isAdjusting}>
-                        {isAdjusting ? 'Saving…' : 'Save Percentages'}
-                    </button>
-                )}
-            </div>
-            {isTripCancelled && (
-                <div className="cancelled-sidebar">
-                    <h3>Trip Cancelled</h3>
-                    <p>This trip has been cancelled as more than half of the members have voted to cancel.</p>
-                    {trip?.creator_id === userId && (
-                        <button onClick={restoreTrip} className="restore-trip-btn">
-                            Restore Trip
+        <div className="trip-container">
+            {/* Main two-column layout */}
+            <div className="two-column-layout">
+                {/* LEFT COLUMN: Calendar & Members */}
+                <div className="left-column">
+                    {/* Navigation Tabs */}
+                    <div className="tabs">
+                        <button
+                            onClick={() => setActiveTab("details")}
+                            className={activeTab === "details" ? "active" : ""}
+                        >
+                            Trip Details
                         </button>
-                    )}
-                </div>
-            )}
-            <div className="tabs">
-                <button onClick={() => setActiveTab("details")} className={activeTab === "details" ? "active" : ""}>
-                    Trip Details
-                </button>
-                <button onClick={() => setActiveTab("calendar")} className={activeTab === "calendar" ? "active" : ""}>
-                    Calendar View
-                </button>
-                <button onClick={() => navigate('/preferences')}>
-                    Notification Preferences
-                </button>
-            </div>
-            {activeTab === "details" && (
-                trip ? (
-                    <>
-                        {isEditing ? (
-                            <>
-                                <input
-                                    type="text"
-                                    value={trip.name}
-                                    onChange={(e) => setTrip({ ...trip, name: e.target.value })}
-                                />
-                                <textarea
-                                    value={trip.description}
-                                    onChange={(e) => setTrip({ ...trip, description: e.target.value })}
-                                />
-                                <input
-                                    type="text"
-                                    value={trip.destination}
-                                    onChange={(e) => setTrip({ ...trip, destination: e.target.value })}
-                                />
-                                <input
-                                    type="date"
-                                    value={trip.startDate}
-                                    onChange={(e) => setTrip({ ...trip, startDate: e.target.value })}
-                                />
-                                <input
-                                    type="date"
-                                    value={trip.endDate}
-                                    onChange={(e) => setTrip({ ...trip, endDate: e.target.value })}
-                                />
-                                <button onClick={handleSaveTrip} className="save-trip-btn">Save Trip</button>
-                            </>
-                        ) : (
-                            <>
-                                <h2>{trip.name}</h2>
-                                <p>{trip.description}</p>
-                                <p><strong>Destination:</strong> {trip.destination}</p>
-                                <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                                {trip.current && (<button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>)}
-                            </>
-                        )}
-                        {renderTripItems()}
+                        <button
+                            onClick={() => setActiveTab("calendar")}
+                            className={activeTab === "calendar" ? "active" : ""}
+                        >
+                            Calendar View
+                        </button>
+                        <button onClick={() => navigate('/preferences')}>
+                            Notification Preferences
+                        </button>
+                    </div>
 
-                        {hasEditAccess() && (<div className="file-upload-section">
-                            <h3>Upload a File</h3>
-                            <input
-                                type="file"
-                                onChange={(e) => setSelectedFile(e.target.files[0])}
-                                accept="*"
-                            />
-                            <button onClick={handleFileUpload} disabled={!selectedFile}>
-                                Upload
-                            </button>
-                            {uploadMessage && <p>{uploadMessage}</p>}
-                        </div>)}
-                        <h4>Uploaded Files</h4>
-                        {tripFiles.length === 0 ? (
-                            <p>No files uploaded yet.</p>
-                        ) : (
-                            <div className="trip-files-list">
-                                {tripFiles.map((file) => (
-                                    <div key={file.id} className="file-row">
-                                        <button
-                                            className="file-name-btn"
-                                            onClick={() => openFileInNewTab(file.id)}
-                                        >
-                                            <span className="file-icon">{getFileIcon(file.filename)}</span>
-                                            {file.filename}
-                                        </button>
-
-                                        <span className="file-date">
-                                            {new Date(file.uploaded_at).toLocaleString()}
-                                        </span>
-
-                                        <button
-                                            className="file-download-btn"
-                                            onClick={() => downloadFile(file.id, file.filename)}
-                                        >
-                                            📥 Download
-                                        </button>
-
-                                        {hasEditAccess() && (
-                                            <button
-                                                className="file-delete-btn"
-                                                onClick={() => handleDeleteFile(file.id)}
-                                            >
-                                                Delete
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-
-
-                        )}
-
-                        <div className="event-recommendations">
-                            {trip.current && (<button
-                                onClick={navRecommendations}
-                            >
-                                View Recommendations
-                            </button>)}
+                    {/* Calendar View */}
+                    {activeTab === "calendar" && (
+                        <div className="calendar-section">
+                            {renderCalendarView()}
                         </div>
+                    )}
 
+                    {/* Members Section */}
+                    <div className="members-section">
+                        <h3>Trip Members</h3>
+                        {success && <div className="success-message">{success}</div>}
+                        {error && <div className="error-message">{error}</div>}
 
-                        {/* <div className="add-friend">
-                            <h3>Trip Members</h3>
-                            <ul>
-                                {tripMembers.map(member => (
-                                    <li key={member.id} className={member.id === userId ? "current-user" : ""}>
-                                        <img
-                                            src={member.profile_pic}
-                                            className="profile-pic"
-                                        />
-                                        {member.username}
-                                        {member.id === userId ? "(me)" : ""}
-                                        {trip.creator_id === userId && member.id !== userId && (
+                        {trip?.current && (
+                            <TripRSVP
+                                tripId={id}
+                                currentUserId={userId}
+                                isCreator={trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")}
+                                onRsvpUpdate={handleRsvpUpdate}
+                            />
+                        )}
+
+                        {/* Add Friend Form */}
+                        {(trip?.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
+                            <div className="add-member-container">
+                                <div className="add-member-form">
+                                    <select
+                                        value={selectedFriend}
+                                        onChange={(e) => setSelectedFriend(e.target.value)}
+                                        className="friend-select"
+                                        disabled={getAvailableFriends().length === 0}
+                                    >
+                                        {getAvailableFriends().length === 0 ? (
+                                            <option value="">No more friends to add</option>
+                                        ) : (
                                             <>
-                                                <button onClick={() => handleRemoveMember(member.id)}>Remove</button>
-                                                <select
-                                                    value={member.role || "permissions"}
-                                                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                                                >
-                                                    <option value="permissions" disabled>Permissions</option>
-                                                    <option value="view">View</option>
-                                                    <option value="edit">Edit</option>
-                                                    <option value="co-creator">Co-Creator</option>
-                                                </select>
-                                                <button
-                                                    onClick={() => handlePromoteToCreator(member.id)}
-                                                    className="promote-to-creator-btn"
-                                                >
-                                                    Promote to Creator
-                                                </button>
+                                                <option value="">Add a friend to this trip...</option>
+                                                {getAvailableFriends().map((friend) => (
+                                                    <option key={friend.id} value={friend.id}>
+                                                        {friend.username}
+                                                    </option>
+                                                ))}
                                             </>
                                         )}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <h3>Add a Friend</h3>
-                            <select onChange={(e) => setSelectedFriend(e.target.value)} value={selectedFriend}>
-                                <option value="">Select a friend</option>
-                                {friends.map((friend) => (
-                                    <option key={friend.id} value={friend.id}>
-                                        {friend.username}
-                                    </option>
-                                ))}
-                            </select>
-                            <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
-                        </div> */}
-
-                        <div className="members-section">
-                            <h3>Trip Members</h3>
-                            {success && <div className="success-message">{success}</div>}
-                            {error && <div className="error-message">{error}</div>}
-                            {trip.current && (
-                                <TripRSVP
-                                    tripId={id}
-                                    currentUserId={userId}
-                                    isCreator={trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")}
-                                    onRsvpUpdate={handleRsvpUpdate}
-                                />
-                            )}
-
-                            {/* Add Friend Form */}
-                            {(trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
-                                <div className="add-member-container">
-                                    <div className="add-member-form">
-                                        <select
-                                            value={selectedFriend}
-                                            onChange={(e) => setSelectedFriend(e.target.value)}
-                                            className="friend-select"
-                                            disabled={getAvailableFriends().length === 0}
-                                        >
-                                            {getAvailableFriends().length === 0 ? (
-                                                <option value="">No more friends to add</option>
-                                            ) : (
-                                                <>
-                                                    <option value="">Add a friend to this trip...</option>
-                                                    {getAvailableFriends().map((friend) => (
-                                                        <option key={friend.id} value={friend.id}>
-                                                            {friend.username}
-                                                        </option>
-                                                    ))}
-                                                </>
-                                            )}
-                                        </select>
-                                        <button
-                                            onClick={handleAddFriend}
-                                            className="add-friend-btn"
-                                            disabled={!selectedFriend || getAvailableFriends().length === 0}
-                                        >
-                                            Add
-                                        </button>
-                                    </div>
+                                    </select>
+                                    <button
+                                        onClick={handleAddFriend}
+                                        className="add-friend-btn"
+                                        disabled={!selectedFriend || getAvailableFriends().length === 0}
+                                    >
+                                        Add
+                                    </button>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
+                        {/* Members List */}
+                        <div className="members-list-container">
+                            <ul className="members-list">
+                                {tripMembers.map(member => {
+                                    const memberRsvp = memberRsvps.find(rsvp => rsvp.id === member.id);
+                                    const rsvpStatus = memberRsvp?.status || 'no_response';
 
-                            {/* Members List */}
-                            <div className="members-list-container">
-                                <ul className="members-list">
-                                    {tripMembers.map(member => {
-                                        const memberRsvp = memberRsvps.find(rsvp => rsvp.id === member.id);
-                                        const rsvpStatus = memberRsvp?.status || 'no_response';
-
-                                        return (
-                                            <li key={member.id} className={`member-item ${member.id === userId ? "current-user" : ""}`}>
-                                                <div className="member-info">
-                                                    <img
-                                                        src={member.profile_pic}
-                                                        className="profile-pic"
-                                                        alt={member.username}
-                                                    />
-                                                    <div className="member-details">
-                                                        <span className="member-name">
-                                                            {member.username}
-                                                            {member.id === userId && <span className="current-user-tag">(me)</span>}
-                                                        </span>
-                                                        <span className={`rsvp-status ${rsvpStatus ? `rsvp-${rsvpStatus}` : 'rsvp-no-response'}`}>
-                                                            {rsvpStatus === 'attending' ? 'Going' :
-                                                                rsvpStatus === 'not_attending' ? 'Not Going' :
-                                                                    rsvpStatus === 'maybe' ? 'Maybe' : 'No Response'}
-                                                        </span>
-                                                    </div>
+                                    return (
+                                        <li key={member.id} className={`member-item ${member.id === userId ? "current-user" : ""}`}>
+                                            <div className="member-info">
+                                                <img
+                                                    src={member.profile_pic}
+                                                    className="profile-pic"
+                                                    alt={member.username}
+                                                />
+                                                <div className="member-details">
+                                                    <span className="member-name">
+                                                        {member.username}
+                                                        {member.id === userId && <span className="current-user-tag">(me)</span>}
+                                                    </span>
+                                                    <span className={`rsvp-status ${rsvpStatus ? `rsvp-${rsvpStatus}` : 'rsvp-no-response'}`}>
+                                                        {rsvpStatus === 'attending' ? 'Going' :
+                                                            rsvpStatus === 'not_attending' ? 'Not Going' :
+                                                                rsvpStatus === 'maybe' ? 'Maybe' : 'No Response'}
+                                                    </span>
                                                 </div>
+                                            </div>
 
-                                                {trip.creator_id === userId && member.id !== userId && (
-                                                    <div className="member-actions">
-                                                        {/* Direct action buttons for key functions */}
-                                                        <button
-                                                            className="remove-member-btn"
-                                                            onClick={() => handleRemoveMember(member.id)}
-                                                        >
-                                                            Remove
-                                                        </button>
+                                            {trip?.creator_id === userId && member.id !== userId && (
+                                                <div className="member-actions">
+                                                    <button
+                                                        className="remove-member-btn"
+                                                        onClick={() => handleRemoveMember(member.id)}
+                                                    >
+                                                        Remove
+                                                    </button>
 
-                                                        {trip.current && (
-                                                            rsvpStatus === 'no_response' || // Only show for no response
-                                                            rsvpStatus === null || // Also handle null case
-                                                            rsvpStatus === undefined // Also handle undefined case
-                                                        ) && (
-                                                                <button
-                                                                    className="rsvp-reminder-btn"
-                                                                    onClick={() => sendRsvpReminder(member.id)}
+                                                    {trip.current && (
+                                                        rsvpStatus === 'no_response' ||
+                                                        rsvpStatus === null ||
+                                                        rsvpStatus === undefined
+                                                    ) && (
+                                                            <button
+                                                                className="rsvp-reminder-btn"
+                                                                onClick={() => sendRsvpReminder(member.id)}
+                                                            >
+                                                                RSVP Reminder
+                                                            </button>
+                                                        )}
+
+                                                    <div className="action-dropdown">
+                                                        <button className="action-btn">More ▾</button>
+                                                        <div className="action-dropdown-content">
+                                                            <button onClick={() => handlePromoteToCreator(member.id)}>
+                                                                Promote to Creator
+                                                            </button>
+                                                            <div className="role-selector">
+                                                                <span>Permissions:</span>
+                                                                <select
+                                                                    value={member.role || "view"}
+                                                                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
                                                                 >
-                                                                    RSVP Reminder
-                                                                </button>
-                                                            )}
-
-                                                        {/* Advanced options dropdown */}
-                                                        <div className="action-dropdown">
-                                                            <button className="action-btn">More ▾</button>
-                                                            <div className="action-dropdown-content">
-                                                                <button onClick={() => handlePromoteToCreator(member.id)}>
-                                                                    Promote to Creator
-                                                                </button>
-                                                                <div className="role-selector">
-                                                                    <span>Permissions:</span>
-                                                                    <select
-                                                                        value={member.role || "view"}
-                                                                        onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                                                                    >
-                                                                        <option value="view">View Only</option>
-                                                                        <option value="edit">Edit</option>
-                                                                        <option value="co-creator">Co-Creator</option>
-                                                                    </select>
-                                                                </div>
+                                                                    <option value="view">View Only</option>
+                                                                    <option value="edit">Edit</option>
+                                                                    <option value="co-creator">Co-Creator</option>
+                                                                </select>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </div>
+                                                </div>
+                                            )}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
                         </div>
+                    </div>
+                </div>
 
-                        <div>
-                            <h3>Share by Link</h3>
-                            <p>Link: http://localhost:3001/trips/{id}/share</p>
-                        </div>
-                        {trip.current && (<button onClick={handleAddEvent} className="add-event-btn">Add Event</button>)}
-                        {(trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
-                            <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
+                {/* RIGHT COLUMN: Trip Info & Items */}
+                <div className="right-column">
+                    {/* Cost Summary */}
+                    <div className="cost-summary-card">
+                        <h3>Cost Summary</h3>
+                        <p><strong>Total:</strong> ${costs.totalCost.toFixed(2)}</p>
+
+                        <ul>
+                            {costs.perUser.map(u => {
+                                const isLeader = trip?.creator_id === userId;
+                                const isMe = u.userId === userId;
+                                const pct = (ratios[u.userId] * 100).toFixed(0);
+                                const amt = isMe && !isLeader
+                                    ? costs.yourCost.toFixed(2)
+                                    : (costs.totalCost * ratios[u.userId]).toFixed(2);
+
+                                return (
+                                    <li key={u.userId} className={isMe ? 'you' : ''}>
+                                        {u.username}:&nbsp;
+                                        {isLeader ? (
+                                            <>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max="1"
+                                                    value={ratios[u.userId]}
+                                                    onChange={e => handleRatioChange(u.userId, e.target.value)}
+                                                    style={{ width: '4rem', marginRight: '.5rem' }}
+                                                />
+                                                ({pct}%) — {isMe ? 'you' : u.username} pay ${amt}
+                                            </>
+                                        ) : isMe ? (
+                                            <>you pay ${amt} ({pct}%)</>
+                                        ) : (
+                                            <>${amt} ({pct}%)</>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        {trip?.creator_id === userId && (
+                            <button onClick={saveRatios} disabled={isAdjusting}>
+                                {isAdjusting ? 'Saving…' : 'Save Percentages'}
+                            </button>
                         )}
+                    </div>
 
-                        {trip.current && (<div className="trip-cancellation">
-                            <h3>Cancel Votes</h3><p><strong>Cancel Votes:</strong> {cancelVotes}</p>
-                            {hasVotedToCancel ? (
-                                <button onClick={rescindVote} className="rescind-vote-btn">
-                                    Rescind Cancellation Vote
-                                </button>
-                            ) : (
-                                <button onClick={voteToCancel} className="cancel-vote-btn">
-                                    Vote to Cancel Trip
-                                </button>
-                            )}
-                            {trip.isCancelled && (
-                                <button onClick={restoreTrip} className="restore-trip-btn">
-                                    Restore Trip
-                                </button>
-                            )}
-                        </div>)}
-                    </>
-                ) : (
-                    <p className="error">Trip not found.</p>
-                )
-            )}
-            {activeTab === "calendar" && renderCalendarView()}
-            <ChatWindow tripId={id} userId={userId} />
+                    {/* Trip Details Content */}
+                    {activeTab === "details" && (
+                        trip ? (
+                            <div className="trip-details-content">
+                                {isEditing ? (
+                                    <div className="edit-trip-form">
+                                        <input
+                                            type="text"
+                                            value={trip.name}
+                                            onChange={(e) => setTrip({ ...trip, name: e.target.value })}
+                                        />
+                                        <textarea
+                                            value={trip.description}
+                                            onChange={(e) => setTrip({ ...trip, description: e.target.value })}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={trip.destination}
+                                            onChange={(e) => setTrip({ ...trip, destination: e.target.value })}
+                                        />
+                                        <input
+                                            type="date"
+                                            value={trip.startDate}
+                                            onChange={(e) => setTrip({ ...trip, startDate: e.target.value })}
+                                        />
+                                        <input
+                                            type="date"
+                                            value={trip.endDate}
+                                            onChange={(e) => setTrip({ ...trip, endDate: e.target.value })}
+                                        />
+                                        <button onClick={handleSaveTrip} className="save-trip-btn">Save Trip</button>
+                                    </div>
+                                ) : (
+                                    <div className="trip-info">
+                                        <h1>{trip.name}</h1>
+                                        <p>{trip.description}</p>
+                                        <p><strong>Destination:</strong> {trip.destination}</p>
+                                        <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
+                                        {trip.current && (
+                                            <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Trip Items */}
+                                <div className="trip-items">
+                                    {renderTripItems()}
+                                </div>
+
+                                {trip.current && (
+                                    <button onClick={handleAddEvent} className="add-event-btn">Add Event</button>
+                                )}
+
+                                <div className="event-recommendations">
+                                    {trip.current && (
+                                        <button onClick={navRecommendations}>
+                                            View Recommendations
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="error">Trip not found.</p>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Bottom centered content */}
+            <div className="bottom-content">
+                {/* Cancellation Banner */}
+                {isTripCancelled && (
+                    <div className="cancelled-sidebar">
+                        <h3>Trip Cancelled</h3>
+                        <p>This trip has been cancelled as more than half of the members have voted to cancel.</p>
+                        {trip?.creator_id === userId && (
+                            <button onClick={restoreTrip} className="restore-trip-btn">
+                                Restore Trip
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* File Upload Section */}
+                {hasEditAccess() && (
+                    <div className="file-upload-section">
+                        <h3>Upload a File</h3>
+                        <input
+                            type="file"
+                            onChange={(e) => setSelectedFile(e.target.files[0])}
+                            accept="*"
+                        />
+                        <button onClick={handleFileUpload} disabled={!selectedFile}>
+                            Upload
+                        </button>
+                        {uploadMessage && <p>{uploadMessage}</p>}
+                    </div>
+                )}
+
+                {/* Uploaded Files */}
+                <div className="uploaded-files">
+                    <h4>Uploaded Files</h4>
+                    {tripFiles.length === 0 ? (
+                        <p>No files uploaded yet.</p>
+                    ) : (
+                        <div className="trip-files-list">
+                            {tripFiles.map((file) => (
+                                <div key={file.id} className="file-row">
+                                    <button
+                                        className="file-name-btn"
+                                        onClick={() => openFileInNewTab(file.id)}
+                                    >
+                                        <span className="file-icon">{getFileIcon(file.filename)}</span>
+                                        {file.filename}
+                                    </button>
+
+                                    <span className="file-date">
+                                        {new Date(file.uploaded_at).toLocaleString()}
+                                    </span>
+
+                                    <button
+                                        className="file-download-btn"
+                                        onClick={() => downloadFile(file.id, file.filename)}
+                                    >
+                                        📥 Download
+                                    </button>
+
+                                    {hasEditAccess() && (
+                                        <button
+                                            className="file-delete-btn"
+                                            onClick={() => handleDeleteFile(file.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Share Link */}
+                <div className="share-section">
+                    <h3>Share by Link</h3>
+                    <p>Link: http://localhost:3001/trips/{id}/share</p>
+                </div>
+
+                {/* Trip Cancellation */}
+                {trip?.current && (
+                    <div className="trip-cancellation">
+                        <h3>Cancel Votes</h3>
+                        <p><strong>Cancel Votes:</strong> {cancelVotes}</p>
+                        {hasVotedToCancel ? (
+                            <button onClick={rescindVote} className="rescind-vote-btn">
+                                Rescind Cancellation Vote
+                            </button>
+                        ) : (
+                            <button onClick={voteToCancel} className="cancel-vote-btn">
+                                Vote to Cancel Trip
+                            </button>
+                        )}
+                        {trip.isCancelled && (
+                            <button onClick={restoreTrip} className="restore-trip-btn">
+                                Restore Trip
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Delete Trip button */}
+                {(trip?.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
+                    <button onClick={handleDeleteTrip} className="delete-trip-btn">Delete Trip</button>
+                )}
+
+                {/* Chat Window */}
+                <ChatWindow tripId={id} userId={userId} />
+            </div>
         </div>
     );
 };

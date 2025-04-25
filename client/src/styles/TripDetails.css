@@ -1,542 +1,108 @@
-.trip-details {
-    padding: 20px;
-    padding-top: 60px; /* Add padding to move content below the navbar */
-    text-align: center;
-    margin: 0 auto;
-    background-color: #f9f9f9;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
 }
 
-.trip-details h2,
-.trip-details input,
-.trip-details textarea {
-    color: #333;
-    margin-bottom: 10px;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
 }
 
-.trip-details p {
-    color: #333;
-    margin: 5px 0;
+/* Main container */
+.trip-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.trip-details p:hover,
-.trip-details h2:hover {
-    color: #333;
-    text-decoration: none;
+/* GUARANTEED TWO-COLUMN LAYOUT */
+.two-column-layout {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 20px 0;
+  margin-bottom: 30px;
 }
 
-.trip-details ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.trip-details li {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #fff;
-}
-
-.add-event-btn,
-.edit-trip-btn,
-.save-trip-btn,
-.delete-trip-btn,
-.remove-event-btn {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-.add-event-btn:hover,
-.edit-trip-btn:hover,
-.save-trip-btn:hover {
-    background-color: #0056b3;
-}
-
-.delete-trip-btn,
-.remove-event-btn {
-    background-color: #dc3545;
-}
-
-.delete-trip-btn:hover,
-.remove-event-btn:hover {
-    background-color: #c82333;
-}
-
-.trip-items {
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-  
-.trip-items h3 {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    color: #333;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-  
-.trip-item-card {
-    background-color: #f9f9f9;
-    border-radius: 15px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 4px rgba(118, 145, 255, 0.2);
-    display: flex;
-    flex-direction: column;
-}
-  
-.trip-item-card p {
-    margin: 5px 0;
-}
-  
-.trip-item-card button {
-    align-self: flex-end;
-    background-color: #7691ff;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    padding: 8px 16px;
-    margin-top: 10px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.3s, transform 0.3s;
-}
-  
-.trip-item-card button:hover {
-    background-color: #5a78ff;
-    transform: translateY(-2px);
-}
-
-
-.item-type-section {
-    margin-bottom: 20px;
-  }
-  
-  .item-type-section h4 {
-    margin-bottom: 12px;
-    font-size: 18px;
-    color: #555;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 8px;
-  }
-  
-  .items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 15px;
-  }
-  
-  .trip-item-card {
-    background-color: #f9f9f9;
-    border-radius: 15px;
-    padding: 16px;
-    box-shadow: 0 2px 4px rgba(118, 145, 255, 0.2);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  
-  .event-preview, .lodging-preview, .travel-preview {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .preview-image {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 10px;
-  }
-  
-  .view-details-btn {
-    align-self: center;
-    margin-top: 12px;
-  }
-  
-  .preview-placeholder {
-    padding: 15px;
-    text-align: center;
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    font-style: italic;
-    color: #777;
-  }
-  
-  .preview-id {
-    font-size: 12px;
-    color: #999;
-  }
-
-  .item-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 12px;
-  }
-  
-  .delete-item-btn {
-    background-color: #ff4d4d;
-    color: white;
-  }
-  
-  .delete-item-btn:hover {
-    background-color: #e63939;
-  }
-
-.error {
-    color: red;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.loading {
-    color: blue;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.trip-members-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .trip-member-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #f5f5f5;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-  }
-  
-  .member-name {
-    flex-grow: 1;
-  }
-  
-  .remove-member-btn {
-    background: #ff4d4d;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .remove-member-btn:hover {
-    background: #cc0000;
-  }
-  
-  .current-user {
-    font-weight: bold;
-    color: black; /* Bootstrap primary blue */
-  }
-
-.cancelled-sidebar {
-    position: fixed;
-    top: 20%;
-    right: 0;
-    width: 250px;
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    padding: 15px;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-.cancelled-sidebar h3 {
-    margin-top: 0;
-    font-size: 18px;
-}
-
-.cancelled-sidebar p {
-    font-size: 14px;
-}
-
-.cancelled-sidebar .restore-trip-btn {
-    display: block;
-    margin-top: 15px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: center;
-}
-
-.cancelled-sidebar .restore-trip-btn:hover {
-    background-color: #0056b3;
-}
-
-  .profile-pic {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: #d3d3d3;
-    box-shadow: 0 2px 4px rgba(118,145,255,0.3);
-    margin-right: 10px;
-    margin-bottom: -10px;
-}
-
-.file-upload-section {
-  margin-top: 2rem;
-  padding: 1rem;
-  border: 1px solid #ccc;
+/* Left column - fixed at 40% width */
+.left-column {
+  display: table-cell;
+  width: 40%;
+  vertical-align: top;
+  background-color: #f5f5f5;
   border-radius: 8px;
-  background-color: #f7f9fc;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.file-upload-section input[type="file"] {
-  margin-right: 1rem;
+/* Right column - fixed at 60% width */
+.right-column {
+  display: table-cell;
+  width: 60%;
+  vertical-align: top;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.trip-files-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+/* Bottom centered content */
+.bottom-content {
+  width: 100%;
+  margin: 0 auto;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid #ccc;
+/* Calendar section */
+.calendar-section {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.file-name {
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.file-date {
-  font-size: 0.9rem;
-  color: #666;
-  flex-shrink: 0;
-}
-
-.file-download-btn,
-.file-delete-btn {
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.file-download-btn:hover {
-  background-color: #155a9c;
-}
-
-.file-delete-btn {
-  background-color: #f44336;
-}
-
-.file-delete-btn:hover {
-  background-color: #d32f2f;
-}
-
-.file-row button {
-  flex-shrink: 0;
-}
-
-.file-name-btn {
-  background: none;
-  border: none;
-  color: #0077cc;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.file-name-btn:hover {
-  color: #005299;
-}
-
-.file-icon {
-  margin-right: 0.4rem;
-  font-size: 1.2rem;
-  vertical-align: middle;
-}
-
-
-
+/* Tabs styling */
 .tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+  display: flex;
+  margin-bottom: 15px;
 }
 
 .tabs button {
-    padding: 10px 20px;
-    margin: 0 5px;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s;
+  padding: 8px 12px;
+  background-color: #e0e0e0;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  margin-right: 5px;
 }
 
 .tabs button.active {
-    background-color: #0056b3;
+  background-color: #007bff;
+  color: white;
 }
 
-.tabs button:hover {
-    background-color: #0056b3;
-}
-
-.calendar-view {
-    margin: 20px auto;
-    max-width: 800px;
-}
-
-.calendar-event {
-    background-color: #7691ff;
-    color: white;
-    padding: 5px;
-    border-radius: 3px;
-    margin-top: 5px;
-    font-size: 0.8rem;
-}
-
-.selected-date-events {
-    margin-top: 20px;
-    text-align: left;
-}
-
-.selected-date-events h4 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.selected-date-events ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.selected-date-events li {
-    background-color: #f9f9f9;
-    padding: 10px;
-    margin-bottom: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-.cost-summary-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
-}
-.cost-summary-card ul {
-  list-style: none;
-  padding: 0;
-}
-.cost-summary-card .you {
-  font-weight: bold;
-}
-.price-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-/* Members Section */
+/* Members section */
 .members-section {
-  margin: 25px 0;
-  max-width: 650px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 20px;
 }
 
 .members-section h3 {
-  font-size: 1.4rem;
-  margin-bottom: 15px;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  margin-top: 0;
 }
 
-/* Add Member Form */
-.add-member-container {
-  margin-bottom: 20px;
-}
-
-.add-member-form {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.friend-select {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  font-size: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-}
-
-.friend-select:focus {
-  border-color: #7691ff;
-  outline: none;
-}
-
-.add-friend-btn {
-  padding: 10px 20px;
-  background-color: #7691ff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.add-friend-btn:hover {
-  background-color: #5a78ff;
-  transform: translateY(-1px);
-}
-
-.add-friend-btn:disabled {
-  background-color: #b4bfff;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Members List */
 .members-list-container {
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
 }
 
 .members-list {
@@ -549,36 +115,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
+  padding: 10px;
   border-bottom: 1px solid #eee;
-  transition: background-color 0.2s;
 }
 
 .member-item:last-child {
   border-bottom: none;
 }
 
-.member-item:hover {
-  background-color: #f8f9fa;
-}
-
-.member-item.current-user {
-  background-color: #f0f7ff;
-}
-
 .member-info {
   display: flex;
   align-items: center;
-  flex: 1;
 }
 
 .profile-pic {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  margin-right: 12px;
-  object-fit: cover;
-  border: 1px solid #eee;
+  margin-right: 10px;
 }
 
 .member-details {
@@ -587,37 +141,230 @@
 }
 
 .member-name {
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.current-user {
+  background-color: #f0f7ff;
 }
 
 .current-user-tag {
-  font-weight: normal;
-  font-style: italic;
-  color: #7691ff;
+  font-size: 0.8em;
+  color: #007bff;
   margin-left: 5px;
-  font-size: 13px;
 }
 
-/* Action Dropdown */
+/* RSVP status indicators */
+.rsvp-status {
+  font-size: 0.85em;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background-color: #eee;
+}
+
+.rsvp-attending {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.rsvp-not_attending {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.rsvp-maybe {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.rsvp-no-response {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+/* Cost summary card */
+.cost-summary-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cost-summary-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.cost-summary-card li {
+  margin-bottom: 8px;
+}
+
+.cost-summary-card li.you {
+  font-weight: bold;
+}
+
+/* Trip details content */
+.trip-details-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.trip-info h1 {
+  margin-top: 0;
+  text-align: center;
+}
+
+/* Trip items */
+.trip-items {
+  margin-top: 20px;
+}
+
+/* Edit form */
+.edit-trip-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-trip-form input,
+.edit-trip-form textarea {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Add member form */
+.add-member-container {
+  margin: 15px 0;
+}
+
+.add-member-form {
+  display: flex;
+  gap: 10px;
+}
+
+.friend-select {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Buttons */
+button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #0069d9;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.edit-trip-btn,
+.save-trip-btn {
+  background-color: #28a745;
+}
+
+.delete-trip-btn {
+  background-color: #dc3545;
+}
+
+/* File section */
+.trip-files-list {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  background-color: white;
+}
+
+.file-row:last-child {
+  border-bottom: none;
+}
+
+.file-name-btn {
+  background: none;
+  color: #007bff;
+  border: none;
+  text-align: left;
+  font-weight: normal;
+  padding: 0;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.file-icon {
+  margin-right: 5px;
+}
+
+.file-date {
+  color: #6c757d;
+  font-size: 0.85em;
+  margin-right: auto;
+}
+
+.file-download-btn {
+  background-color: #6c757d;
+  margin-right: 5px;
+}
+
+.file-delete-btn {
+  background-color: #dc3545;
+}
+
+/* Trip cancellation */
+.cancelled-sidebar {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.trip-cancellation {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.cancel-vote-btn {
+  background-color: #dc3545;
+}
+
+.rescind-vote-btn {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.restore-trip-btn {
+  background-color: #28a745;
+}
+
+/* Action dropdown */
 .action-dropdown {
   position: relative;
   display: inline-block;
-}
-
-.action-btn {
-  padding: 8px 12px;
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  background-color: #e0e0e0;
 }
 
 .action-dropdown-content {
@@ -625,11 +372,11 @@
   position: absolute;
   right: 0;
   background-color: white;
-  min-width: 180px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  padding: 8px 0;
-  z-index: 10;
+  min-width: 160px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 4px;
+  padding: 5px;
 }
 
 .action-dropdown:hover .action-dropdown-content {
@@ -639,171 +386,77 @@
 .action-dropdown-content button {
   display: block;
   width: 100%;
-  padding: 8px 16px;
   text-align: left;
   background: none;
-  border: none;
-  color: #333;
-  font-size: 13px;
-  cursor: pointer;
+  color: black;
+  padding: 8px;
+  border-radius: 0;
 }
 
 .action-dropdown-content button:hover {
-  background-color: #f5f5f5;
-  color: #7691ff;
+  background-color: #f1f1f1;
 }
 
 .role-selector {
-  padding: 8px 16px;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-  margin: 5px 0;
-}
-
-.role-selector span {
-  display: block;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 5px;
+  padding: 8px;
 }
 
 .role-selector select {
+  margin-top: 5px;
   width: 100%;
-  padding: 5px 8px;
+  padding: 5px;
+}
+
+/* File upload section */
+.file-upload-section {
+  margin: 20px 0;
+  padding: 15px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 13px;
 }
 
-/* Member actions row with direct buttons */
-.member-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
+/* Response messages */
+.success-message {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
 }
 
-/* Remove member button styling */
-.remove-member-btn {
-  padding: 6px 10px;
-  background-color: #ff4d4d;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
 }
 
-.remove-member-btn:hover {
-  background-color: #e04040;
-  transform: translateY(-1px);
+/* Share section */
+.share-section {
+  margin: 20px 0;
 }
 
-/* RSVP reminder button styling */
-.rsvp-reminder-btn {
-  padding: 6px 10px;
-  background-color: #7691ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.rsvp-reminder-btn:hover {
-  background-color: #5a78ff;
-  transform: translateY(-1px);
-}
-
-/* More dropdown button is now smaller and less prominent */
-.action-btn {
-  padding: 6px 10px;
-  background-color: #f0f0f0;
-  color: #555;
+/* Chat window */
+.chat-window {
+  margin-top: 30px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.action-btn:hover {
-  background-color: #e0e0e0;
-}
-
-/* Make the members list a bit cleaner with more padding */
-.member-item {
-  padding: 10px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-}
-
-/* Make sure there's enough space for the action buttons */
-@media (max-width: 600px) {
-  .member-item {
-    flex-direction: column;
-    align-items: flex-start;
+/* Additional spacing for mobile */
+@media (max-width: 768px) {
+  .two-column-layout {
+    display: block;
   }
   
-  .member-actions {
-    margin-top: 10px;
+  .left-column,
+  .right-column {
+    display: block;
     width: 100%;
-    justify-content: flex-end;
+    margin-bottom: 20px;
   }
-}
-
-.no-friends-message {
-  font-size: 14px;
-  color: #666;
-  font-style: italic;
-  margin-top: 8px;
-  text-align: center;
-}
-
-/* Make the dropdown appear disabled when empty */
-.friend-select:disabled {
-  background-color: #f5f5f5;
-  color: #aaa;
-  cursor: not-allowed;
-}
-
-/* Update the add friend button to be disabled when appropriate */
-.add-friend-btn:disabled {
-  background-color: #b4bfff;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.members-section .success-message,
-.members-section .error-message {
-  padding: 10px 15px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  font-size: 14px;
-  animation: fadeInOut 3s ease-in-out;
-}
-
-.members-section .success-message {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.members-section .error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-@keyframes fadeInOut {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { opacity: 0; }
 }
