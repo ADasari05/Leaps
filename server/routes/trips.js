@@ -596,36 +596,34 @@ router.post('/:id/add-friend', auth, async (req, res) => {
 
         if (insertResult.rows.length === 0) {
             return res.status(400).json({ message: 'Friend is already in the trip' });
-        } else {
-            res.status(200).json({ message: 'Friend added successfully to the trip' });
-            // Send Notification
-            const user = await db.query(
-                'SELECT username FROM users WHERE id = $1',
-                [userId]
-            );
-            const trip = await db.query(
-                'SELECT name FROM trips WHERE id = $1',
-                [tripId]
-            );
-            const notificationResult = await db.query(
-                `INSERT INTO notifications (user_id, trip_id, type, message, is_read) VALUES ($1, $2, $3, $4, $5)`,
-                [
-                    friendId,
-                    tripId,
-                    'trip_update',
-                    `${user.rows[0].username} added you to trip: ${trip.rows[0].name}!`,
-                    false,
-                ]
-            )
-            if (notificationResult.rows.length === 0) {
-                return res.status(400).json({ message: 'Notification failed to send' });
-            } else {
-                res.status(200).json({ message: 'Notification successfully sent' });
-            }
+        } 
+        // Send Notification
+        const user = await db.query(
+            'SELECT username FROM users WHERE id = $1',
+            [userId]
+        );
+        const trip = await db.query(
+            'SELECT name FROM trips WHERE id = $1',
+            [tripId]
+        );
+        const notificationResult = await db.query(
+            `INSERT INTO notifications (user_id, trip_id, type, message, is_read) VALUES ($1, $2, $3, $4, $5)`,
+            [
+                friendId,
+                tripId,
+                'trip_update',
+                `${user.rows[0].username} added you to trip: ${trip.rows[0].name}!`,
+                false,
+            ]
+        );
+        if (notificationResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Notification failed to send' });
         }
+
+        return res.status(200).json({ message: 'Friend added successfully to the trip' });
     } catch (err) {
         console.error('Error adding friend to trip:', err);
-        res.status(500).json({ message: 'Server error adding friend to trip' });
+        return res.status(500).json({ message: 'Server error adding friend to trip' });
     }
 });
 
