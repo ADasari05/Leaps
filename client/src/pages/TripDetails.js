@@ -637,7 +637,7 @@ const TripDetails = () => {
                 try {
                     let endpoint;
                     if (type === 'events' || type === 'custom-event') {
-                        endpoint = `/api/events/${id}`;
+                        endpoint = `/api/events/${id}?tripId=${trip.id}`;
                     } else if (type === 'lodging') {
                         endpoint = `/api/lodging/${id}`;
                     } else if (type === 'travel') {
