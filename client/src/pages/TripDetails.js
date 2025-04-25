@@ -1434,6 +1434,7 @@ const TripDetails = () => {
                         <h3>Upload a File</h3>
                         <input
                             type="file"
+                            style={{width:400}}
                             onChange={(e) => setSelectedFile(e.target.files[0])}
                             accept="*"
                         />
