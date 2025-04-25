@@ -725,7 +725,7 @@ const TripDetails = () => {
                         />
                         <button
                             className="save-price-btn"
-                            onClick={() => savePriceChange(id, priceInput)}
+                            onClick={() => savePriceChange(id, priceInput, preview.name, trip.name)}
                         >
                             Save
                         </button>
