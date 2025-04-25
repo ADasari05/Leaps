@@ -13,6 +13,7 @@ const lodgingsRoutes = require('./routes/lodgings');
 const travelRoutes = require('./routes/travel');
 const eventsRoutes = require('./routes/Events');
 const notificationRoutes = require('./routes/notifications');
+const tripRsvpRoutes = require('./routes/trip-rsvp');
 
 const http = require('http'); 
 const socketIo = require('socket.io');
@@ -57,6 +58,7 @@ app.use('/api/travel', travelRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/trip-rsvp', tripRsvpRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Leaps' });

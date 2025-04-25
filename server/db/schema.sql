@@ -5,14 +5,17 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 DROP TABLE IF EXISTS users, 
                      friendships, 
                      trips, 
-                     trip_members, 
+                     trip_members, trip_member_roles, 
                      events, customevents, 
                      travel, friend_requests, 
                      lodging, trip_items, 
                      trip_item_votes, 
                      trip_cancellation_votes, 
+                     trip_rsvp_status, 
                      messages, 
-                     notifications, 
+                     notifications,
+                     notification_preferences,
+                     trip_files,
                      CASCADE;
 DROP INDEX IF EXISTS idx_events_name, 
                      idx_events_location, 
@@ -167,6 +170,15 @@ CREATE TABLE trip_items (
     UNIQUE(trip_id, item_type, item_id)
 );
 
+-- RSVP Feature
+CREATE TABLE trip_rsvp_status (
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('attending', 'not_attending', 'maybe', 'no_response')),
+    response_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (trip_id, user_id)
+);
+
 -- Trip Cancellation Votes Table
 CREATE TABLE trip_cancellation_votes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -194,6 +206,15 @@ CREATE TABLE messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE trip_files (
+    id SERIAL PRIMARY KEY,
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    mime_type TEXT,
+    uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
 /* Notification table */
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -204,6 +225,18 @@ CREATE TABLE notifications (
     is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+/* Notification Preferences Table */
+CREATE TABLE notification_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    friend_request BOOLEAN DEFAULT true,
+    trip_update BOOLEAN DEFAULT true,
+    trip_status BOOLEAN DEFAULT true,
+    ratio_changed BOOLEAN default true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 CREATE INDEX idx_messages_trip_id ON messages(trip_id);
 CREATE INDEX idx_messages_sender_id ON messages(sender_id);

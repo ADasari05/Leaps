@@ -87,7 +87,9 @@ const NotificationPage = () => {
     // Navigate based on notification type
     if (notification.type === 'friend_request' || notification.type === 'friend_request_accepted' || notification.type === 'friend_request_rejected') {
       navigate('/users');
-    } else if (notification.type === 'trip_update' && notification.trip_id) {
+    } else if (notification.type === 'trip_status') {
+      navigate('/trips');
+    } else if (notification.type === 'trip_update' || notification.type === 'ratio_changed' && notification.trip_id) {
       navigate(`/trips/${notification.trip_id}`);
     }
   };
@@ -127,14 +129,22 @@ const NotificationPage = () => {
     <div className="notification-page">
       <div className="notification-header">
         <h1>Notifications</h1>
-        {notifications.length > 0 && (
+        <div className="notification-actions">
+          {notifications.length > 0 && (
+            <button 
+              className="mark-all-read-btn"
+              onClick={markAllAsRead}
+            >
+              Mark all as read
+            </button>
+          )}
           <button 
-            className="mark-all-read-btn"
-            onClick={markAllAsRead}
+            className="preferences-btn"
+            onClick={() => navigate('/preferences')}
           >
-            Mark all as read
+            Notification Preferences
           </button>
-        )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (

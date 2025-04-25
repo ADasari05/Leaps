@@ -198,7 +198,7 @@ router.post('/request', auth, async (req, res) => {
            VALUES ($1, $2, $3, $4)`,
           [
             sender_id,
-            'friend_request_accepted',
+            'friend_request',
             `${user.rows[0].username} accepted your friend request.`,
             false,
           ]
@@ -211,7 +211,7 @@ router.post('/request', auth, async (req, res) => {
            VALUES ($1, $2, $3, $4)`,
           [
             sender_id,
-            'friend_request_rejected',
+            'friend_request',
             `${user.rows[0].username} rejected your friend request.`,
             false,
           ]
