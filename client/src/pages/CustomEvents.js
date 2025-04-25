@@ -14,6 +14,15 @@ function CustomEvents() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
+    let userId = null;
+   try {
+     // TripDetails uses this pattern—just copy it
+     const payload = JSON.parse(window.atob(token.split('.')[1]));
+     userId = payload.id;   // adjust if your token uses `sub` or another key
+   } catch (e) {
+     console.warn("Could not parse userId from token", e);
+   }
+
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -79,6 +88,26 @@ function CustomEvents() {
             closeDeleteModal();
         }
     };
+    const togglePublic = async (eventId, makePublic) => {
+        try {
+          const res = await fetch(`/api/events/${eventId}/public`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ public: makePublic })
+          });
+          if (!res.ok) throw new Error();
+          const updated = await res.json();
+          // update the list
+          setEvents(evts =>
+            evts.map(e => (e.id === updated.id ? updated : e))
+          );
+        } catch {
+          alert('Failed to update visibility');
+        }
+      };
 
     return (
         <div className="events-container">
@@ -114,6 +143,14 @@ function CustomEvents() {
                                 <button onClick={() => openDeleteModal(customEvent)} className="delete-event-btn">
                                     Delete Event
                                 </button>
+                                {customEvent.creator_id === userId && (
+  <button
+    onClick={() => togglePublic(customEvent.id, !customEvent.public)}
+    className="toggle-public-btn"
+  >
+    {customEvent.public ? 'Make Private' : 'Make Public'}
+  </button>
+)}
                             </div>
                         </div>
                     ))
