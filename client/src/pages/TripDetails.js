@@ -711,8 +711,8 @@ const TripDetails = () => {
                             onChange={(e) => setPriceInput(e.target.value)}
                         />
                         <button
-                            type="button"
-                            onClick={() => savePriceChange(id, priceInput, preview.name, trip.name)}
+                            className="save-price-btn"
+                            onClick={() => savePriceChange(id, priceInput)}
                         >
                             Save
                         </button>

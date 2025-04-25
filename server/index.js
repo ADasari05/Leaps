@@ -81,6 +81,8 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something went wrong!' });
 });
 
+require('./jobs/reminderJob');
+
 server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
