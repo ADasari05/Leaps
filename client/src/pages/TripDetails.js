@@ -601,10 +601,10 @@ const TripDetails = () => {
         }
     };
 
-    const savePriceChange = async (eventId, price) => {
+    const savePriceChange = async (eventId, price, eventName, tripName) => {
         try {
             const response = await fetch(
-                `/api/trips/${trip.id}/items/${eventId}/price`,
+                `/api/trips/${trip.id}/items/${eventId}/price?eventName=${eventName}&tripName=${tripName}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -712,7 +712,7 @@ const TripDetails = () => {
                         />
                         <button
                             type="button"
-                            onClick={() => savePriceChange(id, priceInput)}
+                            onClick={() => savePriceChange(id, priceInput, preview.name, trip.name)}
                         >
                             Save
                         </button>
