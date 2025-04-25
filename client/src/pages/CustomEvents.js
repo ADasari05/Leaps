@@ -14,6 +14,7 @@ function CustomEvents() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
+    const [editingId, setEditingId] = useState(null);
     let userId = null;
    try {
      // TripDetails uses this pattern—just copy it
@@ -143,14 +144,32 @@ function CustomEvents() {
                                 <button onClick={() => openDeleteModal(customEvent)} className="delete-event-btn">
                                     Delete Event
                                 </button>
-                                {customEvent.creator_id === userId && (
-  <button
-    onClick={() => togglePublic(customEvent.id, !customEvent.public)}
-    className="toggle-public-btn"
-  >
-    {customEvent.public ? 'Make Private' : 'Make Public'}
-  </button>
-)}
+                                +                            {customEvent.creator_id === userId && (
+                              editingId !== customEvent.id
+                                ? (
+                                  // step 1: show Edit
+                                  <button
+                                    className="edit-btn"
+                                    onClick={() => setEditingId(customEvent.id)}
+                                  >Edit</button>
+                                ) : (
+                                  // step 2: now allow toggle + “Done”
+                                  <>
+                                    <button
+                                      className="toggle-public-btn"
+                                      onClick={() =>
+                                        togglePublic(customEvent.id, !customEvent.public)
+                                      }
+                                    >
+                                      {customEvent.public ? 'Make Private' : 'Make Public'}
+                                    </button>
+                                    <button
+                                      className="done-btn"
+                                      onClick={() => setEditingId(null)}
+                                    >Done</button>
+                                  </>
+                                )
+                            )}
                             </div>
                         </div>
                     ))
