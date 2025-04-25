@@ -1056,29 +1056,29 @@ const TripDetails = () => {
 
     const openFileInNewTab = async (fileId) => {
         try {
-          const res = await fetch(`/api/trips/${id}/files/${fileId}/view`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-      
-          if (!res.ok) throw new Error('Failed to fetch file');
-      
-          const blob = await res.blob();
-      
-          const blobUrl = window.URL.createObjectURL(blob);
-      
-          window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      
-          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+            const res = await fetch(`/api/trips/${id}/files/${fileId}/view`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch file');
+
+            const blob = await res.blob();
+
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            window.open(blobUrl, '_blank', 'noopener,noreferrer');
+
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
         } catch (err) {
-          console.error('Error opening file:', err);
-          alert('Failed to open file');
+            console.error('Error opening file:', err);
+            alert('Failed to open file');
         }
-      };
-      
-      
+    };
+
+
 
     const handlePromoteToCreator = async (memberId) => {
         const confirmPromotion = window.confirm(
@@ -1115,6 +1115,18 @@ const TripDetails = () => {
 
         // Filter out friends who are already in the trip
         return friends.filter(friend => !memberIds.includes(friend.id));
+    };
+
+    const getFileIcon = (filename) => {
+        const ext = filename.split('.').pop().toLowerCase();
+
+        if (['pdf'].includes(ext)) return '📄';
+        if (['doc', 'docx'].includes(ext)) return '📝';
+        if (['xls', 'xlsx'].includes(ext)) return '📊';
+        if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) return '🖼️';
+        if (['zip', 'rar'].includes(ext)) return '🗜️';
+        if (['txt', 'md'].includes(ext)) return '📃';
+        return '📁'; // Default icon
     };
 
     if (isLoading) {
@@ -1258,6 +1270,7 @@ const TripDetails = () => {
                                             className="file-name-btn"
                                             onClick={() => openFileInNewTab(file.id)}
                                         >
+                                            <span className="file-icon">{getFileIcon(file.filename)}</span>
                                             {file.filename}
                                         </button>
 

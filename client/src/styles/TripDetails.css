@@ -372,6 +372,12 @@
   color: #005299;
 }
 
+.file-icon {
+  margin-right: 0.4rem;
+  font-size: 1.2rem;
+  vertical-align: middle;
+}
+
 
 
 .tabs {
