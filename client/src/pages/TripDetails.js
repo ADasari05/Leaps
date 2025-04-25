@@ -8,6 +8,8 @@ import AddToTripDialog from '../components/AddToTripDialog';
 import AddRecommendationDialog from "../components/AddRecommendationDialog";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import TripRSVP from '../components/TripRSVP';
+import '../styles/TripRSVP.css';
 
 const TripDetails = () => {
     const { id } = useParams();
@@ -40,7 +42,9 @@ const TripDetails = () => {
     const [isAdjusting, setIsAdjusting] = useState(false);
     const [ratios, setRatios] = useState({});
     const [ priceOverrides, setPriceOverrides ] = useState({});
-
+    const [memberRsvps, setMemberRsvps] = useState([]);
+    const [rsvpUpdated, setRsvpUpdated] = useState(false);
+    const [success, setSuccess] = useState(null);
 
     const fetchCostSummary = async () => {
         try {
@@ -59,7 +63,7 @@ const TripDetails = () => {
         } catch (err) {
           console.error('Failed to fetch cost summary', err);
         }
-      };
+    };
 
     const fetchTrip = async () => {
         setIsLoading(true);
@@ -155,10 +159,29 @@ const TripDetails = () => {
 
     
 
+    const fetchRsvpStatuses = async () => {
+        if (!token || !id) return;
+        
+        try {
+          const response = await fetch(`/api/trip-rsvp/${id}/rsvp-status`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+      
+          if (!response.ok) throw new Error('Failed to fetch RSVP statuses');
+      
+          const data = await response.json();
+          setMemberRsvps(data);
+        } catch (err) {
+          console.error('Error fetching RSVP status:', err);
+        }
+    };
 
     useEffect(() => {
         fetchTrip();
         fetchTripItemsWithDates();
+        fetchRsvpStatuses();
 
         const fetchFriends = async () => {
             try {
@@ -177,6 +200,27 @@ const TripDetails = () => {
 
         fetchFriends();
     }, [id, token, userId]);
+
+    useEffect(() => {
+        if (rsvpUpdated) {
+          fetchRsvpStatuses();
+          setRsvpUpdated(false);
+        }
+    }, [rsvpUpdated]);
+
+    const handleRsvpUpdate = (userId, newStatus) => {
+        // Update the memberRsvps state immediately
+        setMemberRsvps(prev => 
+          prev.map(member => 
+            member.id === userId 
+              ? {...member, status: newStatus, response_date: new Date().toISOString()} 
+              : member
+          )
+        );
+        
+        // Also trigger a full refresh of RSVP data
+        setRsvpUpdated(true);
+    };
 
     useEffect(() => {
         const fetchCancelVotes = async () => {
@@ -216,6 +260,37 @@ const TripDetails = () => {
 
         fetchCancelVotes();
     }, [tripMembers]); // Run fetchCancelVotes only after tripMembers is updated
+
+    const sendRsvpReminder = async (memberId) => {
+        try {
+          const response = await fetch(`/api/trip-rsvp/${id}/send-reminder/${memberId}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+      
+          if (!response.ok) throw new Error('Failed to send reminder');
+      
+          const data = await response.json();
+          
+          // Show success message
+          alert(data.message);
+          
+          // Update the memberRsvps state to show the reminder was sent
+          // This is mostly to trigger a UI update
+          setMemberRsvps(prev => 
+            prev.map(member => 
+              member.id === memberId 
+                ? {...member, reminded: true} 
+                : member
+            )
+          );
+        } catch (err) {
+          console.error('Error sending RSVP reminder:', err);
+          setError('Error sending reminder');
+        }
+    };
 
     const fetchTripMembers = async () => {
         try {
@@ -276,6 +351,12 @@ const TripDetails = () => {
         }
 
         try {
+            const friendToAdd = friends.find(f => f.id === selectedFriend);
+            if (!friendToAdd) {
+                console.error("Selected friend not found in friends list");
+                return;
+            }
+
             const response = await fetch(`http://localhost:3000/api/trips/${id}/add-friend`, {
                 method: "POST",
                 headers: {
@@ -292,10 +373,28 @@ const TripDetails = () => {
                 throw new Error(data.message || "Failed to add friend");
             }
 
-            alert("Friend added successfully!");
-            setFriends(friends.filter(friend => friend.id !== selectedFriend));
+            const newMember = {
+                id: friendToAdd.id,
+                username: friendToAdd.username,
+                profile_pic: friendToAdd.profile_pic,
+                role: "view" // Default role for new members
+            };
+              
+              // Add to tripMembers array
+            setTripMembers(prevMembers => [...prevMembers, newMember]);
+              
+              // Add default RSVP status for the new member
+            setMemberRsvps(prevRsvps => [
+                ...prevRsvps, 
+                { 
+                  id: friendToAdd.id, 
+                  username: friendToAdd.username,
+                  status: 'no_response',
+                  response_date: new Date().toISOString()
+                }
+            ]);
 
-            // Remove added friend from the dropdown list
+            alert("Friend added successfully!");
             setFriends(friends.filter(friend => friend.id !== selectedFriend));
 
             // Fetch updated trip members after adding a new friend
@@ -882,6 +981,16 @@ const TripDetails = () => {
         }
     };
 
+    const getAvailableFriends = () => {
+        if (!friends || !tripMembers) return [];
+        
+        // Get the IDs of all trip members
+        const memberIds = tripMembers.map(member => member.id);
+        
+        // Filter out friends who are already in the trip
+        return friends.filter(friend => !memberIds.includes(friend.id));
+    };
+
     if (isLoading) {
         return <div className="trip-details"><p className="loading">Loading trip details...</p></div>;
     }
@@ -1009,7 +1118,7 @@ const TripDetails = () => {
                         </div>
            
 
-                        <div className="add-friend">
+                        {/* <div className="add-friend">
                             <h3>Trip Members</h3>
                             <ul>
                                 {tripMembers.map(member => (
@@ -1054,6 +1163,134 @@ const TripDetails = () => {
                                 ))}
                             </select>
                             <button onClick={handleAddFriend} className="add-friend-btn" disabled={!selectedFriend}>Add Friend</button>
+                        </div> */}
+
+                        <div className="members-section">
+                            <h3>Trip Members</h3>
+                            {success && <div className="success-message">{success}</div>}
+                            {error && <div className="error-message">{error}</div>}
+                            {trip.current && (
+                                <TripRSVP 
+                                tripId={id} 
+                                currentUserId={userId} 
+                                isCreator={trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")}
+                                onRsvpUpdate={handleRsvpUpdate}
+                                />
+                            )}
+                            
+                            {/* Add Friend Form */}
+                            {(trip.creator_id === userId || tripMembers.find(m => m.id === userId && m.role === "co-creator")) && (
+                                <div className="add-member-container">
+                                    <div className="add-member-form">
+                                    <select 
+                                        value={selectedFriend} 
+                                        onChange={(e) => setSelectedFriend(e.target.value)}
+                                        className="friend-select"
+                                        disabled={getAvailableFriends().length === 0}
+                                    >
+                                        {getAvailableFriends().length === 0 ? (
+                                        <option value="">No more friends to add</option>
+                                        ) : (
+                                        <>
+                                            <option value="">Add a friend to this trip...</option>
+                                            {getAvailableFriends().map((friend) => (
+                                            <option key={friend.id} value={friend.id}>
+                                                {friend.username}
+                                            </option>
+                                            ))}
+                                        </>
+                                        )}
+                                    </select>
+                                    <button 
+                                        onClick={handleAddFriend} 
+                                        className="add-friend-btn" 
+                                        disabled={!selectedFriend || getAvailableFriends().length === 0}
+                                    >
+                                        Add
+                                    </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            
+                            {/* Members List */}
+                            <div className="members-list-container">
+                                <ul className="members-list">
+                                {tripMembers.map(member => {
+                                    const memberRsvp = memberRsvps.find(rsvp => rsvp.id === member.id);
+                                    const rsvpStatus = memberRsvp?.status || 'no_response';
+                                    
+                                    return (
+                                    <li key={member.id} className={`member-item ${member.id === userId ? "current-user" : ""}`}>
+                                        <div className="member-info">
+                                        <img
+                                            src={member.profile_pic}
+                                            className="profile-pic"
+                                            alt={member.username}
+                                        />
+                                        <div className="member-details">
+                                            <span className="member-name">
+                                            {member.username}
+                                            {member.id === userId && <span className="current-user-tag">(me)</span>}
+                                            </span>
+                                            <span className={`rsvp-status ${rsvpStatus ? `rsvp-${rsvpStatus}` : 'rsvp-no-response'}`}>
+                                            {rsvpStatus === 'attending' ? 'Going' : 
+                                            rsvpStatus === 'not_attending' ? 'Not Going' : 
+                                            rsvpStatus === 'maybe' ? 'Maybe' : 'No Response'}
+                                            </span>
+                                        </div>
+                                        </div>
+                                        
+                                        {trip.creator_id === userId && member.id !== userId && (
+                                        <div className="member-actions">
+                                            {/* Direct action buttons for key functions */}
+                                            <button 
+                                            className="remove-member-btn"
+                                            onClick={() => handleRemoveMember(member.id)}
+                                            >
+                                            Remove
+                                            </button>
+                                            
+                                            {trip.current && (
+                                            rsvpStatus === 'no_response' || // Only show for no response
+                                            rsvpStatus === null || // Also handle null case
+                                            rsvpStatus === undefined // Also handle undefined case
+                                            ) && (
+                                            <button 
+                                                className="rsvp-reminder-btn"
+                                                onClick={() => sendRsvpReminder(member.id)}
+                                            >
+                                                RSVP Reminder
+                                            </button>
+                                            )}
+                                            
+                                            {/* Advanced options dropdown */}
+                                            <div className="action-dropdown">
+                                            <button className="action-btn">More ▾</button>
+                                            <div className="action-dropdown-content">
+                                                <button onClick={() => handlePromoteToCreator(member.id)}>
+                                                Promote to Creator
+                                                </button>
+                                                <div className="role-selector">
+                                                <span>Permissions:</span>
+                                                <select
+                                                    value={member.role || "view"}
+                                                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                                                >
+                                                    <option value="view">View Only</option>
+                                                    <option value="edit">Edit</option>
+                                                    <option value="co-creator">Co-Creator</option>
+                                                </select>
+                                                </div>
+                                            </div>
+                                            </div>
+                                        </div>
+                                        )}
+                                    </li>
+                                    );
+                                })}
+                                </ul>
+                            </div>
                         </div>
 
                         <div>

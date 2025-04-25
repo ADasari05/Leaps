@@ -168,6 +168,15 @@ CREATE TABLE trip_items (
     UNIQUE(trip_id, item_type, item_id)
 );
 
+-- RSVP Feature
+CREATE TABLE trip_rsvp_status (
+    trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('attending', 'not_attending', 'maybe', 'no_response')),
+    response_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (trip_id, user_id)
+);
+
 -- Trip Cancellation Votes Table
 CREATE TABLE trip_cancellation_votes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
