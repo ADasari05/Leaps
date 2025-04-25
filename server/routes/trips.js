@@ -826,7 +826,7 @@ router.post('/:id/add-friend', auth, async (req, res) => {
             return res.status(400).json({ message: 'Notification failed to send' });
         }
 
-        return res.status(200).json({ message: 'Friend added successfully to the trip' });
+        return res.status(200).json({ message: 'Friend added successfully and notified' });
     } catch (err) {
         console.error('Error adding friend to trip:', err);
         return res.status(500).json({ message: 'Server error adding friend to trip' });
@@ -962,8 +962,6 @@ router.put('/:tripId/members/:memberId/role', auth, async (req, res) => {
             [tripId, memberId, role]
         );
 
-        res.json({ message: 'Role updated successfully', member: result.rows[0] });
-
         const user = await db.query(
             'SELECT username FROM users WHERE id = $1',
             [userId]
@@ -984,9 +982,13 @@ router.put('/:tripId/members/:memberId/role', auth, async (req, res) => {
         )
         if (notificationResult.rows.length === 0) {
             return res.status(400).json({ message: 'Notification failed to send' });
-        } else {
-            res.status(200).json({ message: 'Notification successfully sent' });
         }
+
+        return res.status(200).json({
+            message: 'Role updated and notification sent successfully',
+            member: result.rows[0],
+        });
+
     } catch (err) {
         console.error('Error updating member role:', err);
         res.status(500).json({ message: 'Server error updating member role' });

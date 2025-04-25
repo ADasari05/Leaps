@@ -774,7 +774,7 @@ const TripDetails = () => {
                                     >
                                         View Details
                                     </button>
-                                    {tripMembers.find(m => m.id === userId)?.role !== "view" && (
+                                    {hasEditAccess() && (
                                         <button
                                             onClick={() => handleDeleteItem(trip.id, item.item_type, item.item_id)}
                                             className="delete-item-btn"
@@ -1082,7 +1082,7 @@ const TripDetails = () => {
 
     const handlePromoteToCreator = async (memberId) => {
         const confirmPromotion = window.confirm(
-            "Are you sure you want to promote this user to Creator? You will lose your Creator status."
+            "Are you sure you want to promote this user to Leader? You will lose your Leader status."
         );
 
         if (!confirmPromotion) return;
@@ -1097,13 +1097,13 @@ const TripDetails = () => {
                 body: JSON.stringify({ newCreatorId: memberId }),
             });
 
-            if (!response.ok) throw new Error("Failed to promote user to Creator");
+            if (!response.ok) throw new Error("Failed to promote user to Leader");
 
-            alert("User promoted to Creator successfully!");
+            alert("User promoted to Leader successfully!");
             window.location.reload();
         } catch (err) {
-            console.error("Error promoting user to Creator:", err);
-            alert("Failed to promote user to Creator.");
+            console.error("Error promoting user to Leader:", err);
+            alert("Failed to promote user to Leader.");
         }
     };
 
@@ -1272,7 +1272,7 @@ const TripDetails = () => {
                                                         <button className="action-btn">More ▾</button>
                                                         <div className="action-dropdown-content">
                                                             <button onClick={() => handlePromoteToCreator(member.id)}>
-                                                                Promote to Creator
+                                                                Promote to Leader
                                                             </button>
                                                             <div className="role-selector">
                                                                 <span>Permissions:</span>
@@ -1282,7 +1282,7 @@ const TripDetails = () => {
                                                                 >
                                                                     <option value="view">View Only</option>
                                                                     <option value="edit">Edit</option>
-                                                                    <option value="co-creator">Co-Creator</option>
+                                                                    <option value="co-creator">Co-Leader</option>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -1383,7 +1383,7 @@ const TripDetails = () => {
                                         <p>{trip.description}</p>
                                         <p><strong>Destination:</strong> {trip.destination}</p>
                                         <p><strong>Dates:</strong> {trip.startDate} to {trip.endDate}</p>
-                                        {trip.current && (
+                                        {trip.current && hasEditAccess() && (
                                             <button onClick={handleEditTrip} className="edit-trip-btn">Edit Trip</button>
                                         )}
                                     </div>
@@ -1394,7 +1394,7 @@ const TripDetails = () => {
                                     {renderTripItems()}
                                 </div>
 
-                                {trip.current && (
+                                {trip.current && hasEditAccess() && (
                                     <button onClick={handleAddEvent} className="add-event-btn">Add Event</button>
                                 )}
 
