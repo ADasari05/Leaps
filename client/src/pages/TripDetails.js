@@ -135,9 +135,8 @@ const TripDetails = () => {
 
             const votesData = await votesResponse.json();
 
-            // Map vote counts to trip 
+            // Map vote counts to trip items
             const itemsWithVotes = data.items.map(item => {
-                // Ensure proper matching of trip_item_id with item.id
                 const vote = votesData.find(v => v.trip_item_id === item.id) || {};
                 return {
                     ...item,
@@ -146,18 +145,35 @@ const TripDetails = () => {
                 };
             });
 
+            // Fetch additional trip members
+            const membersResponse = await fetch(`/api/trips/${id}/members`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!membersResponse.ok) throw new Error("Failed to fetch trip members");
+
+            const additionalMembers = await membersResponse.json();
+
+            // Merge members from `data` and `fetchTripMembers`, preserving roles
+            const mergedMembers = [...data.members, ...additionalMembers].reduce((acc, member) => {
+                const existingMember = acc.find(m => m.id === member.id);
+                if (existingMember) {
+                    // Preserve the role from `data.members` if it exists
+                    existingMember.role = existingMember.role || member.role;
+                } else {
+                    acc.push(member);
+                }
+                return acc;
+            }, []);
+
             setTrip({
                 ...data,
                 items: itemsWithVotes,
                 startDate: data.start_date ? new Date(data.start_date).toISOString().split('T')[0] : '',
                 endDate: data.end_date ? new Date(data.end_date).toISOString().split('T')[0] : ''
             });
+            setTripMembers(mergedMembers);
             setEvents(data.events || []);
-            setTripMembers(data.members || []);
-            fetchTripMembers();
-            setEvents(data.events || []); // Assuming events are part of the trip data
-            setTripMembers(data.members || []); // Ensure members are stored
-            console.log("Trip Members:", data.members); // Debugging log
             await fetchCostSummary();
         } catch (err) {
             setError('Error loading trip. Please try again later.');
@@ -348,7 +364,7 @@ const TripDetails = () => {
             if (!response.ok) throw new Error("Failed to fetch trip members");
 
             const data = await response.json();
-            //setTripMembers(data || []);
+            setTripMembers(data || []);
         } catch (err) {
             console.error("Error fetching trip members:", err);
         }
@@ -847,9 +863,11 @@ const TripDetails = () => {
                     <h4>Events on {selectedDate.toDateString()}</h4>
                     {eventsForSelectedDate.length > 0 ? (
                         <ul>
-                            {eventsForSelectedDate.map((event, index) => (
-                                <li key={index}>{event.title}</li>
-                            ))}
+                            <li>
+                                {eventsForSelectedDate.map((event, index) => (
+                                    <li key={index}>{event.title}</li>
+                                ))}
+                            </li>
                         </ul>
                     ) : (
                         <p>No events on this day.</p>
@@ -994,6 +1012,8 @@ const TripDetails = () => {
     }
 
     const handleUpdateRole = async (memberId, newRole) => {
+        //console.log('Updating role for member:', memberId, 'to', newRole);
+        //console.log(id)
         try {
             const response = await fetch(`/api/trips/${id}/members/${memberId}/role`, {
                 method: 'PUT',
@@ -1004,7 +1024,7 @@ const TripDetails = () => {
                 body: JSON.stringify({ role: newRole })
             });
 
-            if (!response.ok) throw new Error('Failed to update role');
+            //if (!response.ok) throw new Error('Failed to update role');
 
             alert('Role updated successfully');
             window.location.reload();
@@ -1040,7 +1060,9 @@ const TripDetails = () => {
     const hasEditAccess = () => {
         if (!trip || !tripMembers) return false;
 
+        //console.log("Tripmembers" , tripMembers);
         const me = tripMembers.find(m => m.id === userId);
+        //console.log('Me:', me);
         return (
             trip.creator_id === userId ||
             me?.role === 'edit' ||
