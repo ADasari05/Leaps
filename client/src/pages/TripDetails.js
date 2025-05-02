@@ -195,18 +195,14 @@ const TripDetails = () => {
 
             const items = await response.json();
 
-            const events = items.map((item) => {
-                const startDate =
-                    item.event_start_date || item.travel_start_date || item.lodging_start_date;
-                const endDate =
-                    item.event_end_date || item.travel_end_date || item.lodging_end_date;
-
-                return {
-                    title: item.name || item.item_type,
-                    startDate: startDate ? new Date(startDate) : null,
-                    endDate: endDate ? new Date(endDate) : null,
-                };
-            });
+            const events = items.map((item) => ({
+                title: item.name,
+                startDate: item.start_date ? new Date(item.start_date) : null,
+                endDate: item.end_date ? new Date(item.end_date) : null,
+                price: item.price,
+                description: item.description,
+                type: item.item_type,
+            }));
 
             setCalendarEvents(events);
         } catch (err) {
@@ -372,13 +368,7 @@ const TripDetails = () => {
 
     useEffect(() => {
         if (trip && trip.items) {
-            console.log("Trip Items:", trip.items);
-            const events = trip.items.map((item) => ({
-                title: item.name || item.item_type,
-                startDate: item.start_date ? new Date(item.start_date) : null,
-                endDate: item.end_date ? new Date(item.end_date) : null,
-            }));
-            setCalendarEvents(events);
+            fetchTripItemsWithDates();
         }
     }, [trip]);
 
@@ -830,7 +820,7 @@ const TripDetails = () => {
 
     const handleDateClick = (date) => {
         setSelectedDate(date);
-        console.log('calendarEvents:', calendarEvents);
+        //console.log('calendarEvents:', calendarEvents);
         const eventsOnDate = calendarEvents.filter((event) => {
             const eventStartDate = event.startDate ? new Date(event.startDate).setHours(0, 0, 0, 0) : null;
             const eventEndDate = event.endDate ? new Date(event.endDate).setHours(23, 59, 59, 999) : null;
@@ -853,7 +843,7 @@ const TripDetails = () => {
                     });
                     return eventsOnDate.map((event, index) => (
                         <div key={index} className="calendar-event">
-                            {event.title}
+                            {event.type}
                         </div>
                     ));
                 }}
@@ -863,11 +853,15 @@ const TripDetails = () => {
                     <h4>Events on {selectedDate.toDateString()}</h4>
                     {eventsForSelectedDate.length > 0 ? (
                         <ul>
-                            <li>
-                                {eventsForSelectedDate.map((event, index) => (
-                                    <li key={index}>{event.title}</li>
-                                ))}
-                            </li>
+                            {eventsForSelectedDate.map((event, index) => (
+                                <li key={index}>
+                                    <strong>{event.title}</strong>
+                                    <ul>
+                                        {event.price && <li>Price: ${event.price}</li>}
+                                        {event.description && <li>Description: {event.description}</li>}
+                                    </ul>
+                                </li>
+                            ))}
                         </ul>
                     ) : (
                         <p>No events on this day.</p>
